@@ -55,7 +55,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEPS = { #Dictionary with STEP activation, description, and times
             1:{'Execute': True, 'description': 'Transfer LYSIS'},#
             2:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
-            3:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300}, #
+            3:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 600}, #
             4:{'Execute': True, 'description': 'Remove supernatant'},#
             5:{'Execute': True, 'description': 'Switch off magnet'},#
             6:{'Execute': True, 'description': 'Add WASH'},#
@@ -63,9 +63,9 @@ def run(ctx: protocol_api.ProtocolContext):
             8:{'Execute': True, 'description': 'Remove supernatant'},#
             9:{'Execute': True, 'description': 'Switch off magnet'},#
             10:{'Execute': True, 'description': 'Add ETHANOL'},#
-            11:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#300
+            11:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
             12:{'Execute': True, 'description': 'Remove supernatant'},#
-            13:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 120},
+            13:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 600},
             14:{'Execute': True, 'description': 'Switch off magnet'},#
             15:{'Execute': True, 'description': 'Add ELUTION'},#
             16:{'Execute': True, 'description': 'Wait rest', 'wait_time': 60},#
