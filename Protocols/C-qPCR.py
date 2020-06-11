@@ -147,10 +147,10 @@ def run(ctx: protocol_api.ProtocolContext):
             pipette.dispense(volume, drop)
             pipette.move_to(d.top(z=5))
             pipette.aspirate(5)  # air gap
-        #try:
-            #pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
-        #except:
-            #pipette.blow_out(waste_pool.bottom(pickup_height + 3))
+        try:
+            pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
+        except:
+            pipette.blow_out(waste_pool.bottom(pickup_height + 3))
         return (len(dest) * volume)
 
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
