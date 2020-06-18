@@ -334,9 +334,6 @@ def run(ctx: protocol_api.ProtocolContext):
     reagent_res_1 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 1')
     res_1 = reagent_res_1.wells()[0]
 
-    reagent_res_2 = ctx.load_labware('nest_1_reservoir_195ml', '10', 'Single reagent reservoir 2')
-    res_2 = reagent_res_2.wells()[0]
-
 ############################################
     ########## tempdeck
     tempdeck = ctx.load_module('Temperature Module Gen2', '1')
@@ -369,9 +366,9 @@ def run(ctx: protocol_api.ProtocolContext):
 
 ###############################################################################
     #Declare which reagents are in each reservoir as well as deepwell and elution plate
-    Lysis.reagent_reservoir = reagent_res.rows()[0][1:5]
-    Beads.reagent_reservoir = reagent_res.rows()[0][6:10]
-    Elution.reagent_reservoir = reagent_res.rows()[0][11:12]
+    Lysis.reagent_reservoir = reagent_res.rows()[0][1:4]
+    Beads.reagent_reservoir = reagent_res.rows()[0][5:9]
+    Elution.reagent_reservoir = reagent_res.rows()[0][10:11]
     Wash.reagent_reservoir   = res_1
     work_destinations       = deepwell_plate.rows()[0][:Sample.num_wells]
     final_destinations      = elution_plate.rows()[0][:Sample.num_wells]
