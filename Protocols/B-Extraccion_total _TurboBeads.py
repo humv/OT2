@@ -108,10 +108,10 @@ def run(ctx: protocol_api.ProtocolContext):
 
     #Reagents and their characteristics
     Lysis = Reagent(name = 'Lysis',
-                    flow_rate_aspirate = 3,
-                    flow_rate_dispense = 3,
-                    flow_rate_aspirate_mix = 2,
-                    flow_rate_dispense_mix = 2,
+                    flow_rate_aspirate = 1,
+                    flow_rate_dispense = 1,
+                    flow_rate_aspirate_mix = 1,
+                    flow_rate_dispense_mix = 1,
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
@@ -417,7 +417,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False, touch_tip = False, drop_height = 1)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
@@ -588,7 +588,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False)
+                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True)
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
