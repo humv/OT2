@@ -48,11 +48,11 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
             1:{'Execute': True, 'description': 'Transfer lysis'},#
-            2:{'Execute': False, 'description': 'Wait rest', 'wait_time': 300},#
-            3:{'Execute': False, 'description': 'Transfer beads'},
-            4:{'Execute': False, 'description': 'Transfer wash'},
-            5:{'Execute': False, 'description': 'Transfer ethanol'},
-            6:{'Execute': False, 'description': 'Transfer elution'}
+            2:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
+            3:{'Execute': True, 'description': 'Transfer beads'},
+            4:{'Execute': True, 'description': 'Transfer wash'},
+            5:{'Execute': True, 'description': 'Transfer ethanol'},
+            6:{'Execute': True, 'description': 'Transfer elution'}
             }
 
     #Folder and file_path for log time
@@ -121,10 +121,10 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 750) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Lysis = Reagent(name = 'Lysis',
-                    flow_rate_aspirate = 3,
-                    flow_rate_dispense = 3,
-                    flow_rate_aspirate_mix = 2,
-                    flow_rate_dispense_mix = 2,
+                    flow_rate_aspirate = 1,
+                    flow_rate_dispense = 1,
+                    flow_rate_aspirate_mix = 1,
+                    flow_rate_dispense_mix = 1,
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
@@ -344,7 +344,7 @@ def run(ctx: protocol_api.ProtocolContext):
 ####################################
     ######### Load tip_racks
     tips300 = [ctx.load_labware('opentrons_96_tiprack_300ul', slot, '200µl filter tiprack')
-        for slot in ['8', '9']]
+        for slot in ['8', '9', '11']]
 
 ###############################################################################
     #Declare which reagents are in each reservoir as well as deepwell and sample plate
@@ -402,7 +402,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False, drop_height = 1)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
