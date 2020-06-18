@@ -36,7 +36,7 @@ RECYCLE_TIP                 = False # Do you want to recycle tips? It shoud onl
 run_id                      = 'B_Extraccion_total_TurboBeads'
 
 #mag_height = 11 # Height needed for NUNC deepwell in magnetic deck
-mag_height                  = 6 # Height needed for NEST deepwell in magnetic deck
+mag_height                  = 7 # Height needed for NEST deepwell in magnetic deck
 
 L_deepwell                  = 8 # Deepwell lenght (NEST deepwell)
 #D_deepwell = 8.35 # Deepwell diameter (NUNC deepwell)
@@ -126,10 +126,10 @@ def run(ctx: protocol_api.ProtocolContext):
                     tip_recycling = 'A1')
             
     Beads = Reagent(name = 'Beads',
-                    flow_rate_aspirate = 0.5, # Original = 0.5
-                    flow_rate_dispense = 0.5, # Original = 1
-                    flow_rate_aspirate_mix = 0.5, # Liquid density very high, needs slow aspiration
-                    flow_rate_dispense_mix = 0.5, # Liquid density very high, needs slow dispensation
+                    flow_rate_aspirate = 3, #
+                    flow_rate_dispense = 3, #
+                    flow_rate_aspirate_mix = 15, #
+                    flow_rate_dispense_mix = 20, #
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
@@ -227,7 +227,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if wait_time != 0:
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
 
-    def calc_height(reagent, cross_section_area, aspirate_volume):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -243,15 +243,15 @@ def run(ctx: protocol_api.ProtocolContext):
                     #- reagent.h_cono
             reagent.vol_well = reagent.vol_well - aspirate_volume
             ctx.comment('Remaining volume:' + str(reagent.vol_well))
-            if height < 5:
-                height = 1
+            if height < min_height:
+                height = min_height
             col_change = True
         else:
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - aspirate_volume
             ctx.comment('Calculated height is ' + str(height))
-            if height < 5:
-                height = 1
+            if height < min_height:
+                height = min_height
             ctx.comment('Used height is ' + str(height))
             col_change = False
         return height, col_change
@@ -420,7 +420,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False, drop_height = 1)
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
@@ -500,12 +500,12 @@ def run(ctx: protocol_api.ProtocolContext):
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mixing new reservoir column: ' + str(Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 3, offset = 0)
+                            vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 0.3, offset = 0)
                     first_mix_done = True
                 else:
                     ctx.comment('Mixing reservoir column: ' + str(Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = 3, blow_out = False, mix_height = 3, offset = 0)
+                            vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 0.3, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 #if j!=0:

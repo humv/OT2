@@ -26,7 +26,6 @@ BEADS_VOLUME_PER_SAMPLE     = 420
 WASH_VOLUME_PER_SAMPLE      = 500
 ETHANOL_VOLUME_PER_SAMPLE   = 500
 ELUTION_VOLUME_PER_SAMPLE   = 50
-VOLUME_SAMPLE               = 200   # Sample volume received in station A
 ################################################
 
 run_id                      = 'B_Extraccion_total'
@@ -50,9 +49,9 @@ def run(ctx: protocol_api.ProtocolContext):
             1:{'Execute': True, 'description': 'Transfer lysis'},#
             2:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
             3:{'Execute': True, 'description': 'Transfer beads'},
-            4:{'Execute': True, 'description': 'Transfer wash'},
-            5:{'Execute': True, 'description': 'Transfer ethanol'},
-            6:{'Execute': True, 'description': 'Transfer elution'}
+            4:{'Execute': False, 'description': 'Transfer wash'},
+            5:{'Execute': False, 'description': 'Transfer ethanol'},
+            6:{'Execute': False, 'description': 'Transfer elution'}
             }
 
     #Folder and file_path for log time
@@ -102,7 +101,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_reservoir_volume =  (NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE, #70000, #51648
                     num_wells = 1,
                     h_cono = 1.95,
-                    v_fondo = 750) #1.95 * multi_well_rack_area / 2, #Prismatic
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Ethanol = Reagent(name = 'Ethanol',
                     flow_rate_aspirate = 5,
@@ -118,7 +117,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_reservoir_volume = (NUM_SAMPLES + 5) * ETHANOL_VOLUME_PER_SAMPLE,
                     num_wells = 1, 
                     h_cono = 1.95,
-                    v_fondo = 750) #1.95 * multi_well_rack_area / 2, #Prismatic
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Lysis = Reagent(name = 'Lysis',
                     flow_rate_aspirate = 1,
@@ -134,14 +133,14 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_reservoir_volume =  (NUM_SAMPLES + 5) * LYSIS_VOLUME_PER_SAMPLE, 
                     num_wells = math.ceil((NUM_SAMPLES + 5) * LYSIS_VOLUME_PER_SAMPLE / 10500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
                     h_cono = 1.95,
-                    v_fondo = 750, #1.95 * multi_well_rack_area / 2, #Prismatic
+                    v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
                     tip_recycling = 'A1')
 
     Beads = Reagent(name = 'Magnetic beads',
-                    flow_rate_aspirate = 0.5,
-                    flow_rate_dispense = 0.5,
-                    flow_rate_aspirate_mix = 0.5,
-                    flow_rate_dispense_mix = 0.5,
+                    flow_rate_aspirate = 3,
+                    flow_rate_dispense = 3,
+                    flow_rate_aspirate_mix = 15,
+                    flow_rate_dispense_mix = 20,
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
@@ -151,7 +150,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_reservoir_volume = (NUM_SAMPLES + 4) * BEADS_VOLUME_PER_SAMPLE,
                     num_wells = math.ceil((NUM_SAMPLES + 4) * BEADS_VOLUME_PER_SAMPLE / 10500),
                     h_cono = 1.95,
-                    v_fondo = 750) #1.95 * multi_well_rack_area / 2, #Prismatic
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Elution = Reagent(name = 'Elution',
                     flow_rate_aspirate = 3, # Original 0.5
@@ -167,7 +166,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_reservoir_volume = (NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE,
                     num_wells = math.ceil((NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE / 13000),
                     h_cono = 1.95,
-                    v_fondo = 750) #1.95 * multi_well_rack_area / 2, #Prismatic
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Sample = Reagent(name = 'Sample',
                     flow_rate_aspirate = 3, # Original 0.5
@@ -223,7 +222,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if wait_time != 0:
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
 
-    def calc_height(reagent, cross_section_area, aspirate_volume):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -239,15 +238,15 @@ def run(ctx: protocol_api.ProtocolContext):
                     #- reagent.h_cono
             reagent.vol_well = reagent.vol_well - aspirate_volume
             ctx.comment('Remaining volume:' + str(reagent.vol_well))
-            if height < 5:
-                height = 1
+            if height < min_height:
+                height = min_height
             col_change = True
         else:
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - aspirate_volume
             ctx.comment('Calculated height is ' + str(height))
-            if height < 5:
-                height = 1
+            if height < min_height:
+                height = min_height
             ctx.comment('Used height is ' + str(height))
             col_change = False
         return height, col_change
@@ -402,7 +401,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False, drop_height = 1)
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
