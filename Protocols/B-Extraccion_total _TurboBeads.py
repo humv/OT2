@@ -56,22 +56,23 @@ def run(ctx: protocol_api.ProtocolContext):
             1:{'Execute': True, 'description': 'Transfer LYSIS'},#
             2:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
             3:{'Execute': True, 'description': 'Transfer BEADS'},#
-            4:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 600}, #
-            5:{'Execute': True, 'description': 'Remove supernatant'},#
-            6:{'Execute': True, 'description': 'Switch off magnet'},#
-            7:{'Execute': True, 'description': 'Add WASH'},#
-            8:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
-            9:{'Execute': True, 'description': 'Remove supernatant'},#
-            10:{'Execute': True, 'description': 'Switch off magnet'},#
-            11:{'Execute': True, 'description': 'Add WASH'},#
-            12:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
-            13:{'Execute': True, 'description': 'Remove supernatant'},#
-            14:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 600},
-            15:{'Execute': True, 'description': 'Switch off magnet'},#
-            16:{'Execute': True, 'description': 'Add ELUTION'},#
-            17:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
-            18:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
-            19:{'Execute': True, 'description': 'Transfer to final elution plate'},
+            4:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
+            5:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 600}, #
+            6:{'Execute': True, 'description': 'Remove supernatant'},#
+            7:{'Execute': True, 'description': 'Switch off magnet'},#
+            8:{'Execute': True, 'description': 'Add WASH'},#
+            9:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
+            10:{'Execute': True, 'description': 'Remove supernatant'},#
+            11:{'Execute': True, 'description': 'Switch off magnet'},#
+            12:{'Execute': True, 'description': 'Add WASH'},#
+            13:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
+            14:{'Execute': True, 'description': 'Remove supernatant'},#
+            15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 600},
+            16:{'Execute': True, 'description': 'Switch off magnet'},#
+            17:{'Execute': True, 'description': 'Add ELUTION'},#
+            18:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
+            19:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
+            20:{'Execute': True, 'description': 'Transfer to final elution plate'},
             }
 
     #Folder and file_path for log time
@@ -314,6 +315,7 @@ def run(ctx: protocol_api.ProtocolContext):
             resuming.')
             pip.reset_tipracks()
             tip_track['counts'][pip] = 0
+            tip_track['num_refills'][pip] += 1
         pip.pick_up_tip()
 
     ##########
@@ -379,7 +381,8 @@ def run(ctx: protocol_api.ProtocolContext):
     #### used tip counter and set maximum tips available
     tip_track = {
         'counts': {m300: 0},
-        'maxes': {m300: 96 * len(m300.tip_racks)} #96 tips per tiprack * number or tipracks in the layout
+        'maxes': {m300: 96 * len(m300.tip_racks)}, #96 tips per tiprack * number or tipracks in the layout
+        'num_refills' : {m300 : 0}
         }
 
 ###############################################################################
@@ -417,7 +420,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False, drop_height = 1)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
@@ -532,7 +535,32 @@ def run(ctx: protocol_api.ProtocolContext):
         ########
 
     ###############################################################################
-    # STEP 4 INCUBATE WAIT WITH MAGNET ON
+    # STEP 4 WAIT REST
+    ########
+    STEP += 1
+    if STEPS[STEP]['Execute']==True:
+        start = datetime.now()
+        ctx.comment(' ')
+        ctx.comment('###############################################')
+        ctx.comment('Step '+str(STEP)+': '+STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+        ctx.comment(' ')
+
+        ctx.comment(' ')
+        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Rest for ' + format(STEPS[STEP]['wait_time']) + ' seconds.')
+        ctx.comment(' ')
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:']=str(time_taken)
+        ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
+        ###############################################################################
+        # STEP 4 WAIT REST
+        ########
+
+    ###############################################################################
+    # STEP 5 INCUBATE WAIT WITH MAGNET ON
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -554,11 +582,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 4 INCUBATE WAIT WITH MAGNET ON
+        # STEP 5 INCUBATE WAIT WITH MAGNET ON
         ########
 
     ###############################################################################
-    # STEP 5 REMOVE SUPERNATANT
+    # STEP 6 REMOVE SUPERNATANT
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -601,11 +629,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 5 REMOVE SUPERNATANT
+        # STEP 6 REMOVE SUPERNATANT
         ########
 
     ###############################################################################
-    # STEP 6 MAGNET OFF
+    # STEP 7 MAGNET OFF
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -625,11 +653,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 6 MAGNET OFF
+        # STEP 7 MAGNET OFF
         ########
 
     ###############################################################################
-    # STEP 7 ADD WASH
+    # STEP 8 ADD WASH
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -676,11 +704,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 7 ADD WASH
+        # STEP 8 ADD WASH
         ########
 
     ###############################################################################
-    # STEP 8 INCUBATE WAIT WITH MAGNET ON
+    # STEP 9 INCUBATE WAIT WITH MAGNET ON
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -701,11 +729,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ####################################################################
-        # STEP 8 INCUBATE WAIT WITH MAGNET ON
+        # STEP 9 INCUBATE WAIT WITH MAGNET ON
         ########
 
     ###############################################################################
-    # STEP 9 REMOVE SUPERNATANT
+    # STEP 10 REMOVE SUPERNATANT
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -748,11 +776,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 9 REMOVE SUPERNATANT
+        # STEP 10 REMOVE SUPERNATANT
         ########
 
     ###############################################################################
-    # STEP 10 MAGNET OFF
+    # STEP 11 MAGNET OFF
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -772,11 +800,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 10 MAGNET OFF
+        # STEP 11 MAGNET OFF
         ########
 
     ###############################################################################
-    # STEP 11 ADD WASH
+    # STEP 12 ADD WASH
     ########
         STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -823,11 +851,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 11 ADD WASH
+        # STEP 12 ADD WASH
         ########
 
     ###############################################################################
-    # STEP 12 INCUBATE WAIT WITH MAGNET ON
+    # STEP 13 INCUBATE WAIT WITH MAGNET ON
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -848,11 +876,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+str(tip_track['counts'][m300]))
         ####################################################################
-        # STEP 12 INCUBATE WAIT WITH MAGNET ON
+        # STEP 13 INCUBATE WAIT WITH MAGNET ON
         ########
 
     ###############################################################################
-    # STEP 13 REMOVE SUPERNATANT
+    # STEP 14 REMOVE SUPERNATANT
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -895,11 +923,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 13 REMOVE SUPERNATANT
+        # STEP 14 REMOVE SUPERNATANT
         ########
 
     ###############################################################################
-    # STEP 14 ALLOW DRY
+    # STEP 15 ALLOW DRY
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -919,12 +947,12 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
         ctx.comment('Used tips in total: ' + str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 14 ALLOW DRY
+        # STEP 15 ALLOW DRY
         ########
 
 
     ###############################################################################
-    # STEP 15 MAGNET OFF
+    # STEP 16 MAGNET OFF
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -944,11 +972,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 15 MAGNET OFF
+        # STEP 16 MAGNET OFF
         ########
     
     ###############################################################################
-    # STEP 16 ADD ELUTION
+    # STEP 17 ADD ELUTION
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -999,11 +1027,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 16 ADD ELUTION
+        # STEP 17 ADD ELUTION
         ########
 
     ###############################################################################
-    # STEP 17 WAIT
+    # STEP 18 WAIT
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -1022,11 +1050,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+str(tip_track['counts'][m300]))
         ####################################################################
-        # STEP 17 WAIT
+        # STEP 18 WAIT
         ########
 
     ###############################################################################
-    # STEP 18 INCUBATE WAIT WITH MAGNET ON
+    # STEP 19 INCUBATE WAIT WITH MAGNET ON
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -1047,11 +1075,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+str(tip_track['counts'][m300]))
         ####################################################################
-        # STEP 18 INCUBATE WAIT WITH MAGNET ON
+        # STEP 19 INCUBATE WAIT WITH MAGNET ON
         ########
 
     ###############################################################################
-    # STEP 19 TRANSFER TO ELUTION PLATE
+    # STEP 20 TRANSFER TO ELUTION PLATE
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -1094,7 +1122,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 19 TRANSFER TO ELUTION PLATE
+        # STEP 20 TRANSFER TO ELUTION PLATE
         ########
 
     '''if not ctx.is_simulating():
@@ -1131,6 +1159,7 @@ def run(ctx: protocol_api.ProtocolContext):
         time.sleep(0.3)
     ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
     ctx.comment('Finished! \nMove deepwell plate (slot 5) to Station C for MMIX addition and PCR preparation.')
-    ctx.comment('Used tips in total: '+str(tip_track['counts'][m300]))
-    ctx.comment('Used racks in total: '+str(tip_track['counts'][m300]/96))
+    used_tips = tip_track['num_refills'][m300] * 96 * len(m300.tip_racks) + tip_track['counts'][m300]
+    ctx.comment('Used tips in total: '+str(used_tips))
+    ctx.comment('Used racks in total: '+str(used_tips/96))
     ctx.comment('Available tips: '+str(tip_track['maxes'][m300]))
