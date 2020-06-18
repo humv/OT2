@@ -67,7 +67,7 @@ def run(ctx: protocol_api.ProtocolContext):
             12:{'Execute': True, 'description': 'Add WASH'},#
             13:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
             14:{'Execute': True, 'description': 'Remove supernatant'},#
-            15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 600},
+            15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 900},
             16:{'Execute': True, 'description': 'Switch off magnet'},#
             17:{'Execute': True, 'description': 'Add ELUTION'},#
             18:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
@@ -153,8 +153,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True,
                     max_volume_allowed = 180,
                     reagent_volume = WASH_VOLUME_PER_SAMPLE,
-                    reagent_reservoir_volume = (NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE,
-                    num_wells = math.ceil((NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE / 13000), 
+                    reagent_reservoir_volume = (2 * NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE,
+                    num_wells = math.ceil((2 * NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE / 13000), 
                     h_cono = 1.95,
                     v_fondo = 750, #1.95 * multi_well_rack_area / 2, #Prismatic
                     tip_recycling = 'A1')
@@ -218,8 +218,11 @@ def run(ctx: protocol_api.ProtocolContext):
         if mix_height == 0:
             mix_height = 1
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-        for _ in range(rounds):
-            pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
+        for i in range(rounds):
+            if(i < 2 and reagent.name == 'Beads'):
+                pipet.aspirate(vol, location = location.bottom(z = 1), rate = reagent.flow_rate_aspirate_mix)
+            else:
+                pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
             pipet.dispense(vol, location = location.top(z = -5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
         pipet.dispense(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_dispense_mix)
         if blow_out == True:
