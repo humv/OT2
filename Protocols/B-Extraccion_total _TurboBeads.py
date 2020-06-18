@@ -366,12 +366,12 @@ def run(ctx: protocol_api.ProtocolContext):
 
 ###############################################################################
     #Declare which reagents are in each reservoir as well as deepwell and elution plate
-    Lysis.reagent_reservoir = reagent_res.rows()[0][1:4]
-    Beads.reagent_reservoir = reagent_res.rows()[0][5:9]
-    Elution.reagent_reservoir = reagent_res.rows()[0][10:11]
-    Wash.reagent_reservoir   = res_1
-    work_destinations       = deepwell_plate.rows()[0][:Sample.num_wells]
-    final_destinations      = elution_plate.rows()[0][:Sample.num_wells]
+    Lysis.reagent_reservoir     = reagent_res.rows()[0][1:4]
+    Beads.reagent_reservoir     = reagent_res.rows()[0][5:9]
+    Elution.reagent_reservoir   = reagent_res.rows()[0][10:11]
+    Wash.reagent_reservoir      = res_1
+    work_destinations           = deepwell_plate.rows()[0][:Sample.num_wells]
+    final_destinations          = elution_plate.rows()[0][:Sample.num_wells]
 
     # pipettes.
     m300 = ctx.load_instrument('p300_multi_gen2', 'right', tip_racks = tips300) # Load multi pipette
@@ -417,7 +417,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False, drop_height = 1)
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
