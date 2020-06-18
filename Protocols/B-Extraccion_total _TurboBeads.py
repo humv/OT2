@@ -168,7 +168,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     disposal_volume = 1,
                     rinse = False,
                     max_volume_allowed = 180,
-                    reagent_volume = 50,
+                    reagent_volume = ELUTION_VOLUME_PER_SAMPLE,
                     reagent_reservoir_volume = (NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE,
                     num_wells = 1, #math.ceil((NUM_SAMPLES + 5) * 50 / 13000), #num_Wells max is 1
                     h_cono = 1.95,
