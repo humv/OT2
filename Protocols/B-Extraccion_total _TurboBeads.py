@@ -443,7 +443,32 @@ def run(ctx: protocol_api.ProtocolContext):
         ########
 
     ###############################################################################
-    # STEP 2 TRANSFER BEADS
+    # STEP 2 WAIT REST
+    ########
+    STEP += 1
+    if STEPS[STEP]['Execute']==True:
+        start = datetime.now()
+        ctx.comment(' ')
+        ctx.comment('###############################################')
+        ctx.comment('Step '+str(STEP)+': '+STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+        ctx.comment(' ')
+
+        ctx.comment(' ')
+        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Rest for ' + format(STEPS[STEP]['wait_time']) + ' seconds.')
+        ctx.comment(' ')
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:']=str(time_taken)
+        ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
+        ###############################################################################
+        # STEP 2 WAIT REST
+        ########
+
+    ###############################################################################
+    # STEP 3 TRANSFER BEADS
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -506,33 +531,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 2 TRANSFER BEADS
-        ########
-
-
-    ###############################################################################
-    # STEP 3 WAIT REST
-    ########
-    STEP += 1
-    if STEPS[STEP]['Execute']==True:
-        start = datetime.now()
-        ctx.comment(' ')
-        ctx.comment('###############################################')
-        ctx.comment('Step '+str(STEP)+': '+STEPS[STEP]['description'])
-        ctx.comment('###############################################')
-        ctx.comment(' ')
-
-        ctx.comment(' ')
-        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Rest for ' + format(STEPS[STEP]['wait_time']) + ' seconds.')
-        ctx.comment(' ')
-
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] + ' took ' + str(time_taken))
-        STEPS[STEP]['Time:']=str(time_taken)
-        ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
-        ###############################################################################
-        # STEP 3 WAIT REST
+        # STEP 3 TRANSFER BEADS
         ########
 
     ###############################################################################
