@@ -512,7 +512,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
+                        pickup_height = 0.3, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
