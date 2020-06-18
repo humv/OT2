@@ -21,14 +21,15 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                 = 96
-LYSIS_VOLUME_PER_SAMPLE     = 300
-BEADS_VOLUME_PER_SAMPLE     = 420
-WASH_VOLUME_PER_SAMPLE      = 300
-ELUTION_VOLUME_PER_SAMPLE   = 40
-VOLUME_SAMPLE               = 200   # Sample volume received in station A
-SET_TEMP_ON                 = True  # Do you want to start temperature module?
-TEMPERATURE                 = 4     # Set temperature. It will be uesed if set_temp_on is set to True
+NUM_SAMPLES                         = 96
+LYSIS_VOLUME_PER_SAMPLE             = 300
+BEADS_VOLUME_PER_SAMPLE             = 420
+WASH_VOLUME_PER_SAMPLE              = 300
+ELUTION_VOLUME_PER_SAMPLE           = 75
+ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50
+VOLUME_SAMPLE                       = 200   # Sample volume received in station A
+SET_TEMP_ON                         = True  # Do you want to start temperature module?
+TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
 ################################################
 
 RECYCLE_TIP                 = False # Do you want to recycle tips? It shoud only be set True for testing
@@ -218,11 +219,8 @@ def run(ctx: protocol_api.ProtocolContext):
         if mix_height == 0:
             mix_height = 1
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-        for i in range(rounds):
-            if(i < 2 and reagent.name == 'Beads'):
-                pipet.aspirate(vol, location = location.bottom(z = 1), rate = reagent.flow_rate_aspirate_mix)
-            else:
-                pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
+        for _ in range(rounds):
+            pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
             pipet.dispense(vol, location = location.top(z = -5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
         pipet.dispense(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_dispense_mix)
         if blow_out == True:
@@ -273,7 +271,7 @@ def run(ctx: protocol_api.ProtocolContext):
             #pipet.aspirate(reagent.air_gap_vol_top, source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
 
         s = source.bottom(pickup_height).move(Point(x = x_offset_source))
-        pipet.aspirate(vol, s) # aspirate liquid
+        pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate) # aspirate liquid
 
         if reagent.air_gap_vol_bottom != 0: #If there is air_gap_vol, switch pipette to slow speed
             pipet.move_to(source.top(z = 0))
@@ -503,19 +501,19 @@ def run(ctx: protocol_api.ProtocolContext):
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mixing new reservoir column: ' + str(Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 0.4, offset = 0)
+                            vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 1, offset = 0)
                     first_mix_done = True
                 else:
                     ctx.comment('Mixing reservoir column: ' + str(Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 0.4, offset = 0)
+                            vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 1, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 #if j!=0:
                 #    rinse = False
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = 0.4, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
@@ -1093,14 +1091,14 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
-        elution_trips = math.ceil(Elution.reagent_volume / Elution.max_volume_allowed)
-        elution_volume = Elution.reagent_volume / elution_trips
+        elution_trips = math.ceil(ELUTION_FINAL_VOLUME_PER_SAMPLE / Elution.max_volume_allowed)
+        elution_volume = ELUTION_FINAL_VOLUME_PER_SAMPLE / elution_trips
         elution_vol = []
         for i in range(elution_trips):
             elution_vol.append(elution_volume + Elution.disposal_volume)
         x_offset_rs = 2
         for i in range(num_cols):
-            x_offset_source = 0
+            x_offset_source = find_side(i) * x_offset_rs
             x_offset_dest   = 0
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
