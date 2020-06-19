@@ -257,7 +257,7 @@ def run(ctx: protocol_api.ProtocolContext):
             col_change = False
         return height, col_change
 
-    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, drop_height = -5):
+    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, touch_tip_v_offset = -10, drop_height = -5):
         # Rinse before aspirating
         if rinse == True:
             #pipet.aspirate(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
@@ -299,7 +299,7 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.blow_out(dest.top(z = -5))
 
         if touch_tip == True:
-            pipet.touch_tip(speed = 20, v_offset = -10, radius=0.7)
+            pipet.touch_tip(speed = 20, v_offset = touch_tip_v_offset, radius=0.7)
 
         #if reagent.air_gap_vol_bottom != 0:
             #pipet.move_to(dest.top(z = 0))
