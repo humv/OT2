@@ -139,8 +139,8 @@ def run(ctx: protocol_api.ProtocolContext):
     Beads = Reagent(name = 'Beads',
                     flow_rate_aspirate = 3,
                     flow_rate_dispense = 3,
-                    flow_rate_aspirate_mix = 15,
-                    flow_rate_dispense_mix = 20,
+                    flow_rate_aspirate_mix = 20,
+                    flow_rate_dispense_mix = 25,
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
@@ -286,9 +286,6 @@ def run(ctx: protocol_api.ProtocolContext):
         d = dest.top(z = drop_height).move(Point(x = x_offset_dest))
         pipet.dispense(vol - reagent.disposal_volume + reagent.air_gap_vol_bottom, d, rate = reagent.flow_rate_dispense)
 
-        if wait_time != 0:
-            ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
-
         if reagent.air_gap_vol_top != 0:
             pipet.dispense(reagent.air_gap_vol_top, dest.top(z = 0), rate = reagent.flow_rate_dispense)
 
@@ -297,6 +294,9 @@ def run(ctx: protocol_api.ProtocolContext):
 
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10, radius=0.7)
+
+        if wait_time != 0:
+            ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
 
         #if reagent.air_gap_vol_bottom != 0:
             #pipet.move_to(dest.top(z = 0))
@@ -481,19 +481,12 @@ def run(ctx: protocol_api.ProtocolContext):
             for j,transfer_vol in enumerate(beads_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)
-                if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
-                    ctx.comment('Mixing new reservoir column: ' + str(Beads.col))
-                    custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 1.5, offset = 0)
-                    first_mix_done = True
-                else:
-                    ctx.comment('Mixing reservoir column: ' + str(Beads.col))
-                    custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 1.5, offset = 0)
+                ctx.comment('Mixing reservoir column: ' + str(Beads.col))
+                custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
+                        vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 1.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
-                #if j!=0:
-                #    rinse = False
+
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True, drop_height = -1)
