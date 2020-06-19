@@ -20,7 +20,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                 = 96    # Must be multiple of 8
+NUM_SAMPLES                 = 32    # Must be multiple of 8
 LYSIS_VOLUME_PER_SAMPLE     = 300
 BEADS_VOLUME_PER_SAMPLE     = 420
 WASH_VOLUME_PER_SAMPLE      = 300
@@ -191,13 +191,17 @@ def run(ctx: protocol_api.ProtocolContext):
     Elution.vol_well            = Elution.vol_well_original
     Sample.vol_well             = 350 # Arbitrary value
 
+    #########
+    def str_rounded(num):
+        return str(int(num + 0.5))
+
     ctx.comment(' ')
     ctx.comment('###############################################')
     ctx.comment('VOLUMES FOR ' + str(NUM_SAMPLES) + ' SAMPLES')
     ctx.comment(' ')
-    ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 2 in 12 well reservoir with volume ' + str(Lysis.vol_well_original) + ' uL each one')
-    ctx.comment('Beads: ' + str(Beads.num_wells) + ' wells from well 6 in 12 well reservoir with volume ' + str(Beads.vol_well_original) + ' uL each one')
-    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 11 in 12 well reservoir with volume ' + str(Elution.vol_well_original) + ' uL each one')
+    ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 2 in 12 well reservoir with volume ' + str_rounded(Lysis.vol_well_original) + ' uL each one')
+    ctx.comment('Beads: ' + str(Beads.num_wells) + ' wells from well 6 in 12 well reservoir with volume ' + str_rounded(Beads.vol_well_original) + ' uL each one')
+    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 11 in 12 well reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
     ctx.comment('Wash: in reservoir 1 with volume ' + str(Wash.vol_well_original) + ' uL')
     ctx.comment('Etanol: in reservoir 2 with volume ' + str(Ethanol.vol_well_original) + ' uL')
     ctx.comment('###############################################')

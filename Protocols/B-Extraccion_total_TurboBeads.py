@@ -136,7 +136,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True,
                     max_volume_allowed = 180,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE, # reagent volume needed per sample
-                    reagent_reservoir_volume =  NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1, 
+                    reagent_reservoir_volume =  math.ceil(NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1), 
                     num_wells = math.ceil(NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
                     h_cono = 1.95,
                     v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
@@ -197,13 +197,17 @@ def run(ctx: protocol_api.ProtocolContext):
     Elution.vol_well    = Elution.vol_well_original
     Sample.vol_well     = 350 # Arbitrary value
 
+    #########
+    def str_rounded(num):
+        return str(int(num + 0.5))
+
     ctx.comment(' ')
     ctx.comment('###############################################')
     ctx.comment('VOLUMES FOR ' + str(NUM_SAMPLES) + ' SAMPLES')
     ctx.comment(' ')
-    ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 2 in 12 well reservoir with volume ' + str(Lysis.vol_well_original) + ' uL each one')
-    ctx.comment('Beads: ' + str(Beads.num_wells) + ' wells from well 6 in 12 well reservoir with volume ' + str(Beads.vol_well_original) + ' uL each one')
-    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 11 in 12 well reservoir with volume ' + str(Elution.vol_well_original) + ' uL each one')
+    ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 2 in 12 well reservoir with volume ' + str_rounded(Lysis.vol_well_original) + ' uL each one')
+    ctx.comment('Beads: ' + str(Beads.num_wells) + ' wells from well 6 in 12 well reservoir with volume ' + str_rounded(Beads.vol_well_original) + ' uL each one')
+    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 11 in 12 well reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
     ctx.comment('Wash: in 195 mL reservoir 1 with volume ' + str(Wash.vol_well_original) + ' uL')
     ctx.comment('###############################################')
     ctx.comment(' ')
