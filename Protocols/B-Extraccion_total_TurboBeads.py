@@ -311,6 +311,14 @@ def run(ctx: protocol_api.ProtocolContext):
         nonlocal tip_track
         #if not ctx.is_simulating():
         if tip_track['counts'][pip] >= tip_track['maxes'][pip]:
+            for i in range(3):
+                ctx._hw_manager.hardware.set_lights(rails=False)
+                ctx._hw_manager.hardware.set_lights(button=(1, 0 ,0))
+                time.sleep(0.3)
+                ctx._hw_manager.hardware.set_lights(rails=True)
+                ctx._hw_manager.hardware.set_lights(button=(0, 0 ,1))
+                time.sleep(0.3)
+            ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
             ctx.pause('Replace ' + str(pip.max_volume) + 'µl tipracks before \
             resuming.')
             pip.reset_tipracks()
