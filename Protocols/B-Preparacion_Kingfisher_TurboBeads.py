@@ -500,7 +500,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
-                    rounds = 10, blow_out = False, mix_height = 0.5, offset = 0, wait_time = 2)
+                    rounds = 20, blow_out = False, mix_height = 0.5, offset = 0, wait_time = 2)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Beads.air_gap_vol_bottom) #air gap
             if recycle_tip == True:

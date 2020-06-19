@@ -517,7 +517,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
-                    rounds = 10, blow_out = False, mix_height = 0, offset = 0)
+                    rounds = 20, blow_out = False, mix_height = 0, offset = 0)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Beads.air_gap_vol_bottom) #air gap
             if RECYCLE_TIP == True:
@@ -1104,13 +1104,13 @@ def run(ctx: protocol_api.ProtocolContext):
                 pick_up(m300)
             for transfer_vol in elution_vol:
                 #Pickup_height is fixed here
-                pickup_height = 0.5
+                pickup_height = 1
                 ctx.comment('Aspirate from deep well column: ' + str(i+1))
                 ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False)
+                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True)
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
