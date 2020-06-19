@@ -20,7 +20,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                 = 96
+NUM_SAMPLES                 = 96    # Must be multiple of 8
 LYSIS_VOLUME_PER_SAMPLE     = 300
 BEADS_VOLUME_PER_SAMPLE     = 420
 WASH_VOLUME_PER_SAMPLE      = 300

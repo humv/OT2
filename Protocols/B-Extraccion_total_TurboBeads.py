@@ -21,12 +21,12 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                         = 96
+NUM_SAMPLES                         = 96    # Must be multiple of 8
 LYSIS_VOLUME_PER_SAMPLE             = 300
 BEADS_VOLUME_PER_SAMPLE             = 420
-WASH_VOLUME_PER_SAMPLE              = 300
+WASH_VOLUME_PER_SAMPLE              = 300   # For each wash cycle
 ELUTION_VOLUME_PER_SAMPLE           = 75
-ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50
+ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final elution plate
 VOLUME_SAMPLE                       = 200   # Sample volume received in station A
 SET_TEMP_ON                         = True  # Do you want to start temperature module?
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
