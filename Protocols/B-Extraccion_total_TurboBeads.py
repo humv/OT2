@@ -72,7 +72,7 @@ def run(ctx: protocol_api.ProtocolContext):
             16:{'Execute': True, 'description': 'Switch off magnet'},#
             17:{'Execute': True, 'description': 'Add ELUTION'},#
             18:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
-            19:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
+            19:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 600},#
             20:{'Execute': True, 'description': 'Transfer to final elution plate'},
             }
 
@@ -121,10 +121,9 @@ def run(ctx: protocol_api.ProtocolContext):
                     max_volume_allowed = 180,
                     reagent_volume = LYSIS_VOLUME_PER_SAMPLE, # reagent volume needed per sample
                     reagent_reservoir_volume =  (NUM_SAMPLES + 5) * LYSIS_VOLUME_PER_SAMPLE, 
-                    num_wells = math.ceil((NUM_SAMPLES + 5) * LYSIS_VOLUME_PER_SAMPLE / 10500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
+                    num_wells = math.ceil((NUM_SAMPLES + 5) * LYSIS_VOLUME_PER_SAMPLE / 11500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
                     h_cono = 1.95,
-                    v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
-                    tip_recycling = 'A1')
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
             
     Beads = Reagent(name = 'Beads',
                     flow_rate_aspirate = 3, #
@@ -137,8 +136,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True,
                     max_volume_allowed = 180,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE, # reagent volume needed per sample
-                    reagent_reservoir_volume =  (NUM_SAMPLES + 4) * BEADS_VOLUME_PER_SAMPLE, 
-                    num_wells = math.ceil((NUM_SAMPLES + 4) * BEADS_VOLUME_PER_SAMPLE / 10500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
+                    reagent_reservoir_volume =  NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1, 
+                    num_wells = math.ceil(NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
                     h_cono = 1.95,
                     v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
                     tip_recycling = 'A1')
@@ -172,7 +171,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     max_volume_allowed = 180,
                     reagent_volume = ELUTION_VOLUME_PER_SAMPLE,
                     reagent_reservoir_volume = (NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE,
-                    num_wells = 1, #math.ceil((NUM_SAMPLES + 5) * 50 / 13000), #num_Wells max is 1
+                    num_wells = math.ceil((NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE / 11500), #num_Wells max is 1
                     h_cono = 1.95,
                     v_fondo = 695) #1.95*multi_well_rack_area/2) #Prismatic
 
@@ -1007,7 +1006,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample with Elution')
             custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = 10,
-                    blow_out = False, mix_height = 3, offset = x_offset_dest)
+                    blow_out = False, mix_height = 1, offset = x_offset_dest)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Elution.air_gap_vol_bottom) #air gap
             if RECYCLE_TIP == True:

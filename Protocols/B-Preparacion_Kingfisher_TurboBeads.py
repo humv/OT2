@@ -49,9 +49,9 @@ def run(ctx: protocol_api.ProtocolContext):
             1:{'Execute': True, 'description': 'Transfer lysis'},#
             2:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
             3:{'Execute': True, 'description': 'Transfer beads'},
-            4:{'Execute': False, 'description': 'Transfer wash'},
-            5:{'Execute': False, 'description': 'Transfer ethanol'},
-            6:{'Execute': False, 'description': 'Transfer elution'}
+            4:{'Execute': True, 'description': 'Transfer wash'},
+            5:{'Execute': True, 'description': 'Transfer ethanol'},
+            6:{'Execute': True, 'description': 'Transfer elution'}
             }
 
     #Folder and file_path for log time
@@ -65,7 +65,7 @@ def run(ctx: protocol_api.ProtocolContext):
     #Define Reagents as objects with their properties
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, flow_rate_aspirate_mix, flow_rate_dispense_mix,
-        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none'):
+        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none', dead_vol = 0):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -84,6 +84,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.h_cono = h_cono
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
+            self.dead_vol = dead_vol
             self.vol_well_original = reagent_reservoir_volume / num_wells
 
     #Reagents and their characteristics
@@ -131,10 +132,9 @@ def run(ctx: protocol_api.ProtocolContext):
                     max_volume_allowed = 180,
                     reagent_volume = LYSIS_VOLUME_PER_SAMPLE, # reagent volume needed per sample
                     reagent_reservoir_volume =  (NUM_SAMPLES + 5) * LYSIS_VOLUME_PER_SAMPLE, 
-                    num_wells = math.ceil((NUM_SAMPLES + 5) * LYSIS_VOLUME_PER_SAMPLE / 10500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
+                    num_wells = math.ceil((NUM_SAMPLES + 5) * LYSIS_VOLUME_PER_SAMPLE / 11500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
                     h_cono = 1.95,
-                    v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
-                    tip_recycling = 'A1')
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Beads = Reagent(name = 'Beads',
                     flow_rate_aspirate = 3,
@@ -147,8 +147,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True,
                     max_volume_allowed = 180,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
-                    reagent_reservoir_volume = (NUM_SAMPLES + 4) * BEADS_VOLUME_PER_SAMPLE,
-                    num_wells = math.ceil((NUM_SAMPLES + 4) * BEADS_VOLUME_PER_SAMPLE / 10500),
+                    reagent_reservoir_volume = NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1,
+                    num_wells = math.ceil(NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500),
                     h_cono = 1.95,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
@@ -164,7 +164,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     max_volume_allowed = 180,
                     reagent_volume = ELUTION_VOLUME_PER_SAMPLE,
                     reagent_reservoir_volume = (NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE,
-                    num_wells = math.ceil((NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE / 13000),
+                    num_wells = math.ceil((NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE / 11500),
                     h_cono = 1.95,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
@@ -229,7 +229,7 @@ def run(ctx: protocol_api.ProtocolContext):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
-        if reagent.vol_well < aspirate_volume:
+        if (reagent.vol_well - reagent.dead_vol) < aspirate_volume:
             ctx.comment('Next column should be picked')
             ctx.comment('Previous to change: ' + str(reagent.col))
             # column selector position; intialize to required number

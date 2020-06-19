@@ -27,6 +27,7 @@ metadata = {
 ##################
 NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
 NUM_REAL_SAMPLES        = 94   
+NUM_MIXES               = 2
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
 ##################
 
@@ -261,7 +262,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     pick_up(p1000)
 
                 # Mix the sample BEFORE dispensing
-                custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, rounds = 1, blow_out = True, mix_height = 15, x_offset = x_offset)
+                custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, rounds = NUM_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
                 move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                     vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
                     pickup_height = 5, rinse = Samples.rinse, disp_height = -10,
