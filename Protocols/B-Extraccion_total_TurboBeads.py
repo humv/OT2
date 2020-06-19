@@ -68,7 +68,7 @@ def run(ctx: protocol_api.ProtocolContext):
             12:{'Execute': True, 'description': 'Add WASH'},#
             13:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
             14:{'Execute': True, 'description': 'Remove supernatant'},#
-            15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 900},
+            15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 600},
             16:{'Execute': True, 'description': 'Switch off magnet'},#
             17:{'Execute': True, 'description': 'Add ELUTION'},#
             18:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
@@ -932,7 +932,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
 
         ctx.comment(' ')
-        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Dry for ' + format(STEPS[STEP]['wait_time']) + ' seconds.') # minutes=2
+        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Dry for ' + format(STEPS[STEP]['wait_time']) + ' seconds.') # 
         ctx.comment(' ')
 
         end = datetime.now()
@@ -1006,7 +1006,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 0, blow_out = False)
             ctx.comment(' ')
             ctx.comment('Mixing sample with Elution')
-            custom_mix(m300, Elution, work_destinations[i], vol = 40, rounds = 10,
+            custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = 10,
                     blow_out = False, mix_height = 3, offset = x_offset_dest)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Elution.air_gap_vol_bottom) #air gap
