@@ -811,7 +811,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ###############################################################################
     # STEP 12 ADD WASH
     ########
-        STEP += 1
+    STEP += 1
     if STEPS[STEP]['Execute']==True:
         start = datetime.now()
         ctx.comment(' ')
@@ -1108,7 +1108,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 pick_up(m300)
             for transfer_vol in elution_vol:
                 #Pickup_height is fixed here
-                pickup_height = 1
+                pickup_height = 0.75
                 ctx.comment('Aspirate from deep well column: ' + str(i+1))
                 ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
 
