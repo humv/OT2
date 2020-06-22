@@ -25,8 +25,8 @@ NUM_SAMPLES                         = 96    # Must be multiple of 8
 LYSIS_VOLUME_PER_SAMPLE             = 300
 BEADS_VOLUME_PER_SAMPLE             = 420
 WASH_VOLUME_PER_SAMPLE              = 300   # For each wash cycle
-ELUTION_VOLUME_PER_SAMPLE           = 75
-ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final elution plate
+ELUTION_VOLUME_PER_SAMPLE           = 50
+ELUTION_FINAL_VOLUME_PER_SAMPLE     = 45    # Volume transfered to final elution plate
 VOLUME_SAMPLE                       = 200   # Sample volume received in station A
 SET_TEMP_ON                         = True  # Do you want to start temperature module?
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
@@ -55,7 +55,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
             1:{'Execute': True, 'description': 'Transfer LYSIS'},#
-            2:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
+            2:{'Execute': False, 'description': 'Wait rest', 'wait_time': 300},#
             3:{'Execute': True, 'description': 'Transfer BEADS'},#
             4:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
             5:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 600}, #
@@ -68,11 +68,11 @@ def run(ctx: protocol_api.ProtocolContext):
             12:{'Execute': True, 'description': 'Add WASH'},#
             13:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
             14:{'Execute': True, 'description': 'Remove supernatant'},#
-            15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 600},
+            15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 900},
             16:{'Execute': True, 'description': 'Switch off magnet'},#
             17:{'Execute': True, 'description': 'Add ELUTION'},#
             18:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
-            19:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 600},#
+            19:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
             20:{'Execute': True, 'description': 'Transfer to final elution plate'},
             }
 
@@ -160,10 +160,10 @@ def run(ctx: protocol_api.ProtocolContext):
                     tip_recycling = 'A1')
 
     Elution = Reagent(name = 'Elution',
-                    flow_rate_aspirate = 1,
-                    flow_rate_dispense = 1,
-                    flow_rate_aspirate_mix = 0.5,
-                    flow_rate_dispense_mix = 0.5,
+                    flow_rate_aspirate = 3,
+                    flow_rate_dispense = 3,
+                    flow_rate_aspirate_mix = 15,
+                    flow_rate_dispense_mix = 20,
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
@@ -224,7 +224,7 @@ def run(ctx: protocol_api.ProtocolContext):
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
         for _ in range(rounds):
             pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-            pipet.dispense(vol, location = location.top(z = -5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
+            pipet.dispense(vol, location = location.top(z = -1).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
         pipet.dispense(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_dispense_mix)
         if blow_out == True:
             pipet.blow_out(location.top(z = -2)) # Blow out
@@ -500,7 +500,6 @@ def run(ctx: protocol_api.ProtocolContext):
         x_offset_source = 0
         x_offset_dest   = 0
         rinse = False # Original: True 
-        first_mix_done = False
 
         for i in range(num_cols):
             ctx.comment("Column: " + str(i))
@@ -693,7 +692,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False)
             
             custom_mix(m300, Wash, location = work_destinations[i], vol = 180,
-                    rounds = 10, blow_out = False, mix_height = 3, offset = x_offset_dest - 1)
+                    rounds = 20, blow_out = False, mix_height = 3, offset = x_offset_dest)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
@@ -840,7 +839,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False)
             
             custom_mix(m300, Wash, location = work_destinations[i], vol = 180,
-                    rounds = 10, blow_out = False, mix_height = 3, offset = x_offset_dest - 1)
+                    rounds = 20, blow_out = False, mix_height = 3, offset = x_offset_dest)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
@@ -1017,7 +1016,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 0, blow_out = False)
             ctx.comment(' ')
             ctx.comment('Mixing sample with Elution')
-            custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = 10,
+            custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = 20,
                     blow_out = False, mix_height = 1, offset = x_offset_dest)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Elution.air_gap_vol_bottom) #air gap
