@@ -1152,6 +1152,7 @@ def run(ctx: protocol_api.ProtocolContext):
         with open(file_path,'w') as outfile:
             json.dump(STEPS, outfile)'''
 
+    magdeck.disengage()
     ctx.comment(' ')
     ctx.comment('###############################################')
     ctx.comment('Homing robot')
