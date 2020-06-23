@@ -1137,7 +1137,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True,)
+                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True)
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
