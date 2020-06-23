@@ -149,8 +149,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True,
                     max_volume_allowed = 180,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
-                    reagent_reservoir_volume = NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1,
-                    num_wells = math.ceil(NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500),
+                    reagent_reservoir_volume = NUM_SAMPLES * (BEADS_VOLUME_PER_SAMPLE + 100) * 1.1, # 100 uL extra ispr per sample
+                    num_wells = math.ceil(NUM_SAMPLES * (BEADS_VOLUME_PER_SAMPLE + 100) * 1.1 / 11500),
                     h_cono = 1.95,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 

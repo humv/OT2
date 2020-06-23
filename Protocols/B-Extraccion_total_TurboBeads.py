@@ -110,6 +110,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.h_cono = h_cono
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
+            self.dead_vol = dead_vol
             self.vol_well_original = (reagent_reservoir_volume / num_wells) + 700 if num_wells > 0 else 0
 
     #Reagents and their characteristics
@@ -140,8 +141,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True,
                     max_volume_allowed = 180,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE, # reagent volume needed per sample
-                    reagent_reservoir_volume =  math.ceil(NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1), 
-                    num_wells = math.ceil(NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
+                    reagent_reservoir_volume =  math.ceil(NUM_SAMPLES * (BEADS_VOLUME_PER_SAMPLE + 100) * 1.1),  # 100 uL extra ispr per sample
+                    num_wells = math.ceil(NUM_SAMPLES * (BEADS_VOLUME_PER_SAMPLE + 100) * 1.1 / 11500), #num_Wells max is 4, 13000 is the reservoir max volume (eventhough reservoir allows 15000)
                     h_cono = 1.95,
                     v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
                     tip_recycling = 'A1')
