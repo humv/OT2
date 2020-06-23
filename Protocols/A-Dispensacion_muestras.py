@@ -264,7 +264,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, rounds = NUM_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
-                pickup_height = 3, rinse = Samples.rinse, disp_height = -10,
+                pickup_height = 0.5, rinse = Samples.rinse, disp_height = -10,
                 blow_out = True, touch_tip = True)
 
             p1000.drop_tip(home_after = False)
