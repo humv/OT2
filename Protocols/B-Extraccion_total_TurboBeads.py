@@ -22,11 +22,15 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_SAMPLES                         = 96    # Must be multiple of 8
-LYSIS_VOLUME_PER_SAMPLE             = 300
+LYSIS_VOLUME_PER_SAMPLE             = 0     # Original: 300
 BEADS_VOLUME_PER_SAMPLE             = 420
 WASH_VOLUME_PER_SAMPLE              = 300   # For each wash cycle
 ELUTION_VOLUME_PER_SAMPLE           = 50
 ELUTION_FINAL_VOLUME_PER_SAMPLE     = 45    # Volume transfered to final elution plate
+BEADS_WELL_NUM_MIXES                = 20
+BEADS_NUM_MIXES                     = 20
+WASH_NUM_MIXES                      = 20
+ELUTION_NUM_MIXES                   = 20
 VOLUME_SAMPLE                       = 200   # Sample volume received in station A
 SET_TEMP_ON                         = True  # Do you want to start temperature module?
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
@@ -54,7 +58,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: '+str(num_cols))
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': True, 'description': 'Transfer LYSIS'},#
+            1:{'Execute': False, 'description': 'Transfer LYSIS'},#
             2:{'Execute': False, 'description': 'Wait rest', 'wait_time': 300},#
             3:{'Execute': True, 'description': 'Transfer BEADS'},#
             4:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
@@ -510,7 +514,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)
                 ctx.comment('Mixing reservoir column: ' + str(Beads.col))
                 custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                        vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 1.5, offset = 0)
+                        vol = Beads.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, 
+                        blow_out = False, mix_height = 1.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
 
@@ -520,7 +525,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
-                    rounds = 20, blow_out = False, mix_height = 0, offset = 0)
+                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Beads.air_gap_vol_bottom) #air gap
             if RECYCLE_TIP == True:
@@ -692,7 +697,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False)
             
             custom_mix(m300, Wash, location = work_destinations[i], vol = 180,
-                    rounds = 20, blow_out = False, mix_height = 3, offset = x_offset_dest)
+                    rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 3, offset = x_offset_dest)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
@@ -839,7 +844,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False)
             
             custom_mix(m300, Wash, location = work_destinations[i], vol = 180,
-                    rounds = 20, blow_out = False, mix_height = 3, offset = x_offset_dest)
+                    rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 3, offset = x_offset_dest)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
@@ -1016,7 +1021,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 0, blow_out = False)
             ctx.comment(' ')
             ctx.comment('Mixing sample with Elution')
-            custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = 20,
+            custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = ELUTION_NUM_MIXES,
                     blow_out = False, mix_height = 1, offset = x_offset_dest)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Elution.air_gap_vol_bottom) #air gap
