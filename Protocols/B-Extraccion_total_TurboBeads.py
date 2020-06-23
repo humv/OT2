@@ -110,7 +110,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.h_cono = h_cono
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
-            self.vol_well_original = reagent_reservoir_volume / num_wells
+            self.vol_well_original = reagent_reservoir_volume / num_wells if num_wells > 0 else 0
 
     #Reagents and their characteristics
     Lysis = Reagent(name = 'Lysis',
@@ -264,7 +264,7 @@ def run(ctx: protocol_api.ProtocolContext):
             col_change = False
         return height, col_change
 
-    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, touch_tip_v_offset = -10, drop_height = -5):
+    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, touch_tip_v_offset = -10, drop_height = -5, , aspirate_with_x_scroll = False):
         # Rinse before aspirating
         if rinse == True:
             #pipet.aspirate(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
@@ -277,8 +277,11 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.air_gap(reagent.air_gap_vol_top) #air gap
             #pipet.aspirate(reagent.air_gap_vol_top, source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
 
-        s = source.bottom(pickup_height).move(Point(x = x_offset_source))
-        pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate) # aspirate liquid
+        if aspirate_with_x_scroll:
+            aspirate_with_x_scrolling(pip = pipet, volume = vol, src = source, pickup_height, rate = reagent.flow_rate_aspirate, start_x_offset_src = 0, stop_x_offset_src = x_offset_src)
+        else:    
+            s = source.bottom(pickup_height).move(Point(x = x_offset_source))
+            pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate) # aspirate liquid
 
         if reagent.air_gap_vol_bottom != 0: #If there is air_gap_vol, switch pipette to slow speed
             pipet.move_to(source.top(z = 0))
@@ -312,6 +315,15 @@ def run(ctx: protocol_api.ProtocolContext):
             #pipet.move_to(dest.top(z = 0))
             #pipet.air_gap(reagent.air_gap_vol_bottom) #air gap
             #pipet.aspirate(air_gap_vol_bottom, dest.top(z = 0),rate = reagent.flow_rate_aspirate) #air gap
+
+    def aspirate_with_x_scrolling(pip, volume, src, pickup_height = 0, rate = 1, start_x_offset_src = 0, stop_x_offset_src = 0):
+
+        max_asp = volume/pip.min_volume
+        inc_step = (start_x_offset_src - stop_x_offset_src) / max_asp
+
+        for x in reversed(np.arange(stop_x_offset_src, start_x_offset_src, inc_step)):
+            s = src.bottom(pickup_height).move(Point(x = x_offset_src))
+            pip.aspirate(volume = pip.min_volume, location = s, rate = rate)
 
     ##########
     # pick up tip and if there is none left, prompt user for a new rack
@@ -1118,7 +1130,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True)
+                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True, aspirate_with_x_scroll = True)
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
