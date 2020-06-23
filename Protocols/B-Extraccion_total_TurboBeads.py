@@ -1126,7 +1126,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 pick_up(m300)
             for transfer_vol in elution_vol:
                 #Pickup_height is fixed here
-                pickup_height = 0.75
+                pickup_height = 1
                 ctx.comment('Aspirate from deep well column: ' + str(i+1))
                 ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
 
