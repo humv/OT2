@@ -26,6 +26,7 @@ BEADS_VOLUME_PER_SAMPLE     = 420
 WASH_VOLUME_PER_SAMPLE      = 300
 ETHANOL_VOLUME_PER_SAMPLE   = 300
 ELUTION_VOLUME_PER_SAMPLE   = 50
+LYSIS_NUM_MIXES             = 5
 BEADS_WELL_NUM_MIXES        = 20
 BEADS_NUM_MIXES             = 20
 ################################################
@@ -48,7 +49,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: '+str(num_cols))
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': False, 'description': 'Transfer lysis'},#
+            1:{'Execute': True, 'description': 'Transfer lysis'},#
             2:{'Execute': False, 'description': 'Wait rest', 'wait_time': 300},#
             3:{'Execute': True, 'description': 'Transfer beads'},
             4:{'Execute': True, 'description': 'Transfer wash'},
@@ -411,7 +412,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
-                    rounds = 5, blow_out = False, mix_height = 0, offset = 0)
+                    rounds = LYSIS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Lysis.air_gap_vol_bottom) #air gap
             if recycle_tip == True:

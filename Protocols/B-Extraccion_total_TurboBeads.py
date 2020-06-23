@@ -22,11 +22,12 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_SAMPLES                         = 96    # Must be multiple of 8
-LYSIS_VOLUME_PER_SAMPLE             = 0     # Original: 300
+LYSIS_VOLUME_PER_SAMPLE             = 300     # Original: 300
 BEADS_VOLUME_PER_SAMPLE             = 420
 WASH_VOLUME_PER_SAMPLE              = 300   # For each wash cycle
 ELUTION_VOLUME_PER_SAMPLE           = 50
 ELUTION_FINAL_VOLUME_PER_SAMPLE     = 45    # Volume transfered to final elution plate
+LYSIS_NUM_MIXES                     = 5
 BEADS_WELL_NUM_MIXES                = 20
 BEADS_NUM_MIXES                     = 20
 WASH_NUM_MIXES                      = 20
@@ -41,7 +42,7 @@ RECYCLE_TIP                 = False # Do you want to recycle tips? It shoud onl
 run_id                      = 'B_Extraccion_total_TurboBeads'
 
 #mag_height = 11 # Height needed for NUNC deepwell in magnetic deck
-mag_height                  = 7 # Height needed for NEST deepwell in magnetic deck
+mag_height                  = 6.5 # Height needed for NEST deepwell in magnetic deck
 
 L_deepwell                  = 8 # Deepwell lenght (NEST deepwell)
 #D_deepwell = 8.35 # Deepwell diameter (NUNC deepwell)
@@ -58,7 +59,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: '+str(num_cols))
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': False, 'description': 'Transfer LYSIS'},#
+            1:{'Execute': True, 'description': 'Transfer LYSIS'},#
             2:{'Execute': False, 'description': 'Wait rest', 'wait_time': 300},#
             3:{'Execute': True, 'description': 'Transfer BEADS'},#
             4:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
@@ -453,7 +454,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
-                    rounds = 5, blow_out = False, mix_height = 0, offset = 0)
+                    rounds = LYSIS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Lysis.air_gap_vol_bottom) #air gap
             if RECYCLE_TIP == True:
