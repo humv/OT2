@@ -20,12 +20,14 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                 = 32    # Must be multiple of 8
+NUM_SAMPLES                 = 96    # Must be multiple of 8
 LYSIS_VOLUME_PER_SAMPLE     = 300
 BEADS_VOLUME_PER_SAMPLE     = 420
 WASH_VOLUME_PER_SAMPLE      = 300
 ETHANOL_VOLUME_PER_SAMPLE   = 300
 ELUTION_VOLUME_PER_SAMPLE   = 50
+BEADS_WELL_NUM_MIXES        = 20
+BEADS_NUM_MIXES             = 20
 ################################################
 
 run_id                      = 'B_Extraccion_total'
@@ -46,8 +48,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: '+str(num_cols))
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': True, 'description': 'Transfer lysis'},#
-            2:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
+            1:{'Execute': False, 'description': 'Transfer lysis'},#
+            2:{'Execute': False, 'description': 'Wait rest', 'wait_time': 300},#
             3:{'Execute': True, 'description': 'Transfer beads'},
             4:{'Execute': True, 'description': 'Transfer wash'},
             5:{'Execute': True, 'description': 'Transfer ethanol'},
@@ -65,7 +67,7 @@ def run(ctx: protocol_api.ProtocolContext):
     #Define Reagents as objects with their properties
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, flow_rate_aspirate_mix, flow_rate_dispense_mix,
-        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none', dead_vol = 0):
+        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none', dead_vol = 700):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -85,7 +87,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
             self.dead_vol = dead_vol
-            self.vol_well_original = reagent_reservoir_volume / num_wells
+            self.vol_well_original = (reagent_reservoir_volume / num_wells) + 700
 
     #Reagents and their characteristics
     Wash = Reagent(name = 'Wash',
@@ -217,19 +219,16 @@ def run(ctx: protocol_api.ProtocolContext):
         if mix_height == 0:
             mix_height = 1
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-        for i in range(rounds):
-            if(i < 2 and reagent.name == 'Beads'):
-                pipet.aspirate(vol, location = location.bottom(z = 1), rate = reagent.flow_rate_aspirate_mix)
-            else:
-                pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-            pipet.dispense(vol, location = location.top(z = -5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
+        for _ in range(rounds):
+            pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
+            pipet.dispense(vol, location = location.top(z = -1).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
         pipet.dispense(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_dispense_mix)
         if blow_out == True:
             pipet.blow_out(location.top(z = -2)) # Blow out
         if wait_time != 0:
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -487,7 +486,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)
                 ctx.comment('Mixing reservoir column: ' + str(Beads.col))
                 custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                        vol = Beads.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 1.5, offset = 0)
+                        vol = Beads.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
 
@@ -497,7 +496,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
-                    rounds = 20, blow_out = False, mix_height = 0.5, offset = 0, wait_time = 2)
+                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0, wait_time = 2)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Beads.air_gap_vol_bottom) #air gap
             if recycle_tip == True:

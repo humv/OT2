@@ -91,7 +91,7 @@ def run(ctx: protocol_api.ProtocolContext):
     #Define Reagents as objects with their properties
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, flow_rate_aspirate_mix, flow_rate_dispense_mix,
-        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none'):
+        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none', dead_vol = 700):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -110,7 +110,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.h_cono = h_cono
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
-            self.vol_well_original = reagent_reservoir_volume / num_wells if num_wells > 0 else 0
+            self.vol_well_original = (reagent_reservoir_volume / num_wells) + 700 if num_wells > 0 else 0
 
     #Reagents and their characteristics
     Lysis = Reagent(name = 'Lysis',
@@ -239,7 +239,7 @@ def run(ctx: protocol_api.ProtocolContext):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
-        if reagent.vol_well < aspirate_volume:
+        if (reagent.vol_well - reagent.dead_vol) < aspirate_volume:
             ctx.comment('Next column should be picked')
             ctx.comment('Previous to change: ' + str(reagent.col))
             # column selector position; intialize to required number
@@ -264,7 +264,7 @@ def run(ctx: protocol_api.ProtocolContext):
             col_change = False
         return height, col_change
 
-    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, touch_tip_v_offset = -10, drop_height = -5, , aspirate_with_x_scroll = False):
+    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, touch_tip_v_offset = -10, drop_height = -5, aspirate_with_x_scroll = False):
         # Rinse before aspirating
         if rinse == True:
             #pipet.aspirate(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
@@ -278,7 +278,7 @@ def run(ctx: protocol_api.ProtocolContext):
             #pipet.aspirate(reagent.air_gap_vol_top, source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
 
         if aspirate_with_x_scroll:
-            aspirate_with_x_scrolling(pip = pipet, volume = vol, src = source, pickup_height, rate = reagent.flow_rate_aspirate, start_x_offset_src = 0, stop_x_offset_src = x_offset_src)
+            aspirate_with_x_scrolling(pip = pipet, volume = vol, src = source, pickup_height = pickup_height, rate = reagent.flow_rate_aspirate, start_x_offset_src = 0, stop_x_offset_src = x_offset_source)
         else:    
             s = source.bottom(pickup_height).move(Point(x = x_offset_source))
             pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate) # aspirate liquid
@@ -322,7 +322,7 @@ def run(ctx: protocol_api.ProtocolContext):
         inc_step = (start_x_offset_src - stop_x_offset_src) / max_asp
 
         for x in reversed(np.arange(stop_x_offset_src, start_x_offset_src, inc_step)):
-            s = src.bottom(pickup_height).move(Point(x = x_offset_src))
+            s = src.bottom(pickup_height).move(Point(x = x))
             pip.aspirate(volume = pip.min_volume, location = s, rate = rate)
 
     ##########
@@ -537,7 +537,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
-                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0)
+                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0, wait_time = 2)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Beads.air_gap_vol_bottom) #air gap
             if RECYCLE_TIP == True:
@@ -1130,7 +1130,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True, aspirate_with_x_scroll = True)
+                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True)
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
