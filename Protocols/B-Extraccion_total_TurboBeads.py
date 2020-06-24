@@ -134,8 +134,8 @@ def run(ctx: protocol_api.ProtocolContext):
     Beads = Reagent(name = 'Beads',
                     flow_rate_aspirate = 3, #
                     flow_rate_dispense = 3, #
-                    flow_rate_aspirate_mix = 20, #
-                    flow_rate_dispense_mix = 25, #
+                    flow_rate_aspirate_mix = 25, #
+                    flow_rate_dispense_mix = 50, #
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
@@ -151,8 +151,8 @@ def run(ctx: protocol_api.ProtocolContext):
     Wash = Reagent(name = 'WASH',
                     flow_rate_aspirate = 3,
                     flow_rate_dispense = 3,
-                    flow_rate_aspirate_mix = 15,
-                    flow_rate_dispense_mix = 25,
+                    flow_rate_aspirate_mix = 25,
+                    flow_rate_dispense_mix = 100,
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
@@ -168,8 +168,8 @@ def run(ctx: protocol_api.ProtocolContext):
     Elution = Reagent(name = 'Elution',
                     flow_rate_aspirate = 3,
                     flow_rate_dispense = 3,
-                    flow_rate_aspirate_mix = 15,
-                    flow_rate_dispense_mix = 20,
+                    flow_rate_aspirate_mix = 25,
+                    flow_rate_dispense_mix = 40,
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
@@ -629,20 +629,25 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
         x_offset_rs = 2
-
+        #Pickup_height is fixed here
+        pickup_height = 0.5 # Original 0.5
         for i in range(num_cols):
             x_offset_source = find_side(i) * x_offset_rs
             x_offset_dest   = 0
+            first_transfer = True
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
             for transfer_vol in supernatant_transfer_vol:
-                #Pickup_height is fixed here
-                pickup_height = 0.5 # Original 0.5
                 ctx.comment('Aspirate from deep well column: ' + str(i+1))
                 ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
+                if not first_transfer:
+                    m300.dispense(Sample.air_gap_vol_bottom)
+                else:
+                    first_transfer = False
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True)
+                m300.air_gap(Sample.air_gap_vol_bottom)
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
