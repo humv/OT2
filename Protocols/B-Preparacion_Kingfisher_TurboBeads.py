@@ -217,7 +217,7 @@ def run(ctx: protocol_api.ProtocolContext):
         Function for mix in the same location a certain number of rounds. Blow out optional. Offset
         can set to 0 or a higher/lower value which indicates the lateral movement
         '''
-        if mix_height == 0:
+        if mix_height <= 0:
             mix_height = 1
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
         for _ in range(rounds):

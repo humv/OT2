@@ -192,7 +192,7 @@ def run(ctx: protocol_api.ProtocolContext):
         source_height: height from bottom to aspirate
         mix_height: height from bottom to dispense
         '''
-        if mix_height == 0:
+        if mix_height <= 0:
             mix_height = 3
         pipet.aspirate(1, location=location.bottom(
             z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)

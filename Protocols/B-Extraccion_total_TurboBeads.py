@@ -22,7 +22,7 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_SAMPLES                         = 96    # Must be multiple of 8
-LYSIS_VOLUME_PER_SAMPLE             = 300     # Original: 300
+LYSIS_VOLUME_PER_SAMPLE             = 300   # Original: 300
 BEADS_VOLUME_PER_SAMPLE             = 420
 WASH_VOLUME_PER_SAMPLE              = 300   # For each wash cycle
 ELUTION_VOLUME_PER_SAMPLE           = 90
@@ -37,17 +37,12 @@ SET_TEMP_ON                         = True  # Do you want to start temperature m
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
 ################################################
 
-RECYCLE_TIP                 = False # Do you want to recycle tips? It shoud only be set True for testing
 
 run_id                      = 'B_Extraccion_total_TurboBeads'
 
-#mag_height = 11 # Height needed for NUNC deepwell in magnetic deck
+recycle_tip                 = False # Do you want to recycle tips? It shoud only be set True for testing
 mag_height                  = 7 # Height needed for NEST deepwell in magnetic deck
-
-L_deepwell                  = 8 # Deepwell lenght (NEST deepwell)
-#D_deepwell = 8.35 # Deepwell diameter (NUNC deepwell)
 multi_well_rack_area        = 8 * 71 #Cross section of the 12 well reservoir
-deepwell_cross_section_area = L_deepwell ** 2 # deepwell square cross secion area
 
 num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
 
@@ -59,25 +54,25 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: '+str(num_cols))
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': True, 'description': 'Transfer LYSIS'},#
-            2:{'Execute': False, 'description': 'Wait rest', 'wait_time': 300},#
-            3:{'Execute': True, 'description': 'Transfer BEADS'},#
-            4:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
-            5:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 600}, #
-            6:{'Execute': True, 'description': 'Remove supernatant'},#
-            7:{'Execute': True, 'description': 'Switch off magnet'},#
-            8:{'Execute': True, 'description': 'Add WASH'},#
-            9:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
-            10:{'Execute': True, 'description': 'Remove supernatant'},#
-            11:{'Execute': True, 'description': 'Switch off magnet'},#
-            12:{'Execute': True, 'description': 'Add WASH'},#
-            13:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
-            14:{'Execute': True, 'description': 'Remove supernatant'},#
+            1:{'Execute': True, 'description': 'Transfer LYSIS'},   # Change the num of this step may affect remove supernatant step
+            2:{'Execute': False, 'description': 'Wait rest', 'wait_time': 300},
+            3:{'Execute': True, 'description': 'Transfer BEADS'},
+            4:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},
+            5:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 600}, 
+            6:{'Execute': True, 'description': 'Remove supernatant'},
+            7:{'Execute': True, 'description': 'Switch off magnet'},
+            8:{'Execute': True, 'description': 'Add WASH'},
+            9:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},
+            10:{'Execute': True, 'description': 'Remove supernatant'},
+            11:{'Execute': True, 'description': 'Switch off magnet'},
+            12:{'Execute': True, 'description': 'Add WASH'},
+            13:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},
+            14:{'Execute': True, 'description': 'Remove supernatant'},
             15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 1200},
-            16:{'Execute': True, 'description': 'Switch off magnet'},#
-            17:{'Execute': True, 'description': 'Add ELUTION'},#
-            18:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},#
-            19:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
+            16:{'Execute': True, 'description': 'Switch off magnet'},
+            17:{'Execute': True, 'description': 'Add ELUTION'},
+            18:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},
+            19:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},
             20:{'Execute': True, 'description': 'Transfer to final elution plate'},
             }
 
@@ -225,7 +220,7 @@ def run(ctx: protocol_api.ProtocolContext):
         Function for mix in the same location a certain number of rounds. Blow out optional. Offset
         can set to 0 or a higher/lower value which indicates the lateral movement
         '''
-        if mix_height == 0:
+        if mix_height <= 0:
             mix_height = 1
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
         for i in range(rounds):
@@ -380,7 +375,7 @@ def run(ctx: protocol_api.ProtocolContext):
     #elution_plate = tempdeck.load_labware(
      #   'biorad_96_alum',
       #  'cooled elution plate')
-    elution_plate = tempdeck.load_labware( 'kingfisher_96_aluminumblock_200ul', 
+    elution_plate = tempdeck.load_labware('kingfisher_96_aluminumblock_200ul', 
         'Kingfisher 96 Aluminum Block 200 uL')
 
 ############################################
@@ -465,7 +460,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Lysis.air_gap_vol_bottom) #air gap
             
-            if RECYCLE_TIP == True:
+            if recycle_tip == True:
                 m300.return_tip()
             else:
                 m300.drop_tip(home_after = False)
@@ -554,7 +549,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Beads.air_gap_vol_bottom) #air gap
 
-            if RECYCLE_TIP == True:
+            if recycle_tip == True:
                 m300.return_tip()
             else:
                 m300.drop_tip(home_after = False)
@@ -632,7 +627,10 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
-        supernatant_trips = math.ceil((Lysis.reagent_volume + Beads.reagent_volume + VOLUME_SAMPLE) / Lysis.max_volume_allowed)
+        actual_vol_well = Beads.reagent_volume + VOLUME_SAMPLE
+        if STEPS[1]['Execute'] == True:             # Step 1 is lysis transfer
+            actual_vol_well += Lysis.reagent_volume
+        supernatant_trips = math.ceil((actual_vol_well) / Lysis.max_volume_allowed)
         supernatant_volume = Lysis.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
         supernatant_transfer_vol = []
         for i in range(supernatant_trips):
@@ -653,11 +651,13 @@ def run(ctx: protocol_api.ProtocolContext):
                     m300.dispense(Sample.air_gap_vol_bottom)
                 else:
                     first_transfer = False
+
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True)
                 m300.air_gap(Sample.air_gap_vol_bottom)
-            if RECYCLE_TIP == True:
+
+            if recycle_tip == True:
                 m300.return_tip()
             else:
                 m300.drop_tip(home_after = False)
@@ -729,13 +729,13 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False)
             
             if WASH_NUM_MIXES > 0:
-                custom_mix(m300, Wash, location = work_destinations[i], vol = 180, half_mix_bottom = True,
+                custom_mix(m300, Wash, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
                         rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 3, offset = x_offset_dest)
             
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
-            if RECYCLE_TIP == True:
+            if recycle_tip == True:
                 m300.return_tip()
             else:
                 m300.drop_tip(home_after = False)
@@ -807,7 +807,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                     dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                     pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False)
-            if RECYCLE_TIP == True:
+
+            if recycle_tip == True:
                 m300.return_tip()
             else:
                 m300.drop_tip(home_after = False)
@@ -879,13 +880,13 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False)
             
             if WASH_NUM_MIXES > 0:
-                custom_mix(m300, Wash, location = work_destinations[i], vol = 180, half_mix_bottom = True,
+                custom_mix(m300, Wash, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
                     rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 3, offset = x_offset_dest)
             
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
-            if RECYCLE_TIP == True:
+            if recycle_tip == True:
                 m300.return_tip()
             else:
                 m300.drop_tip(home_after = False)
@@ -957,7 +958,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                     dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                     pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False)
-            if RECYCLE_TIP == True:
+
+            if recycle_tip == True:
                 m300.return_tip()
             else:
                 m300.drop_tip(home_after = False)
@@ -1066,7 +1068,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Elution.air_gap_vol_bottom) #air gap
             
-            if RECYCLE_TIP == True:
+            if recycle_tip == True:
                 m300.return_tip()
             else:
                 m300.drop_tip(home_after = False)
@@ -1161,7 +1163,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True)
             
-            if RECYCLE_TIP == True:
+            if recycle_tip == True:
                 m300.return_tip()
             else:
                 m300.drop_tip(home_after = False)

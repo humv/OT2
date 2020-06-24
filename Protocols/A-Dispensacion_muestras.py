@@ -4,9 +4,7 @@ from opentrons import protocol_api
 import time
 import os
 from timeit import default_timer as timer
-import json
 from datetime import datetime
-import csv
 import subprocess
 
 # metadata
@@ -59,11 +57,11 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define Reagents as objects with their properties
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse, delay):
-            self.name = name
+            self.name               = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
-            self.rinse = bool(rinse)
-            self.delay = delay
+            self.rinse              = bool(rinse)
+            self.delay              = delay 
 
     # Reagents and their characteristics
     Samples = Reagent(name                  = 'Samples',
@@ -108,6 +106,7 @@ def run(ctx: protocol_api.ProtocolContext):
         drop = dest.top(z = disp_height).move(Point(x = x_offset[1]))
         pipet.dispense(vol + air_gap_vol, drop,
                        rate = reagent.flow_rate_dispense)  # dispense all
+
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
         if blow_out == True:
@@ -124,23 +123,23 @@ def run(ctx: protocol_api.ProtocolContext):
         source_height: height from bottom to aspirate
         mix_height: height from bottom to dispense
         '''
-        if mix_height == 0:
+        if mix_height <= 0:
             mix_height = 3
 
-        pipet.aspirate(1, location=location.bottom(
-            z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)
+        pipet.aspirate(1, location = location.bottom(
+                        z = source_height).move(Point(x = x_offset[0])), rate = reagent.flow_rate_aspirate)
 
         for _ in range(rounds):
-            pipet.aspirate(vol, location=location.bottom(
-                z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)
-            pipet.dispense(vol, location=location.bottom(
-                z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
+            pipet.aspirate(vol, location = location.bottom(
+                z = source_height).move(Point(x = x_offset[0])), rate = reagent.flow_rate_aspirate)
+            pipet.dispense(vol, location = location.bottom(
+                z = mix_height).move(Point(x = x_offset[1])), rate = reagent.flow_rate_dispense)
 
-        pipet.dispense(1, location=location.bottom(
-            z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
-            
+        pipet.dispense(1, location = location.bottom(
+            z = mix_height).move(Point(x = x_offset[1])), rate = reagent.flow_rate_dispense)
+
         if blow_out == True:
-            pipet.blow_out(location.top(z=-2))  # Blow out
+            pipet.blow_out(location.top(z = -2))  # Blow out
 
     def generate_source_table(source):
         '''
@@ -191,21 +190,24 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ####################################
     # Load tip_racks
-    tips1000 = [ctx.load_labware('opentrons_96_filtertiprack_1000ul', slot, '1000µl filter tiprack')
-        for slot in ['7']]
+    tips1000 = [ctx.load_labware(
+        'opentrons_96_filtertiprack_1000ul', slot, 
+        '1000µl filter tiprack') for slot in ['7']]
 
     ################################################################################
     # setup samples and destinations
     sample_sources_full = generate_source_table(source_racks)
-    sample_sources = sample_sources_full[NUM_CONTROL_SPACES:num_samples]
-    destinations = dest_plate.wells()[NUM_CONTROL_SPACES:num_samples]
+    sample_sources      = sample_sources_full[NUM_CONTROL_SPACES:num_samples]
+    destinations        = dest_plate.wells()[NUM_CONTROL_SPACES:num_samples]
 
-    p1000 = ctx.load_instrument('p1000_single_gen2', 'right', tip_racks = tips1000) # load P1000 pipette
+    p1000 = ctx.load_instrument(
+        'p1000_single_gen2', 'right', 
+        tip_racks = tips1000) # load P1000 pipette
 
     # used tip counter and set maximum tips available
     tip_track = {
         'counts': {p1000: 0},
-        'maxes': {p1000: len(tips1000)*96}
+        'maxes': {p1000: len(tips1000) * 96}
     }
 
     ############################################################################
@@ -269,13 +271,13 @@ def run(ctx: protocol_api.ProtocolContext):
         else:
             ctx.comment(f"Sound file does not exist. Call the technician")
     for i in range(3):
-        ctx._hw_manager.hardware.set_lights(rails=False)
-        ctx._hw_manager.hardware.set_lights(button=(1, 0 ,0))
+        ctx._hw_manager.hardware.set_lights(rails = False)
+        ctx._hw_manager.hardware.set_lights(button = (1, 0 ,0))
         time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(rails=True)
-        ctx._hw_manager.hardware.set_lights(button=(0, 0 ,1))
+        ctx._hw_manager.hardware.set_lights(rails = True)
+        ctx._hw_manager.hardware.set_lights(button = (0, 0 ,1))
         time.sleep(0.3)
-    ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
+    ctx._hw_manager.hardware.set_lights(button = (0, 1 ,0))
     ctx.comment('Finished! \nMove deepwell plate (slot 1) to Station B for extraction protocol')
     ctx.comment('Used p1000 tips in total: ' + str(tip_track['counts'][p1000]))
     ctx.comment('Used p1000 racks in total: ' + str(tip_track['counts'][p1000] / 96))
