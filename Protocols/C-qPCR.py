@@ -47,10 +47,13 @@ size_transfer = math.floor(pipette_allowed_capacity / HYDR_VOL_PER_SAMPLE) # Num
 # Calculated variables
 area_section_screwcap = (np.pi * diameter_screwcap**2) / 4
 h_cone = (volume_cone * 3 / area_section_screwcap)
-num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
-    ctx.comment('Actual used columns: ' + str(num_cols))
+    ctx.comment(' ')
+    ctx.comment('###############################################')
+    ctx.comment('NUM SAMPLES: ' + str(NUM_SAMPLES) + '(First 2 are controls)') 
+    ctx.comment('###############################################')
+    ctx.comment(' ')
 
     # Define the STEPS of the protocol
     STEP = 0
@@ -106,14 +109,14 @@ def run(ctx: protocol_api.ProtocolContext):
                       )
 
     Samples = Reagent(name='Samples',
-                      rinse=False,
+                      rinse = False,
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 1,
-                      reagent_reservoir_volume=50,
-                      delay=0,
-                      num_wells=num_cols,  # num_cols comes from available columns
-                      h_cono=0,
-                      v_fondo=0
+                      reagent_reservoir_volume = 50,
+                      delay = 0,
+                      num_wells = NUM_SAMPLES,  # num_cols comes from available columns
+                      h_cono = 0,
+                      v_fondo = 0
                       )
 
     Hydr.vol_well = Hydr.vol_well_original

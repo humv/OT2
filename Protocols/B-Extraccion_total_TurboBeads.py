@@ -30,8 +30,8 @@ ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final elution
 LYSIS_NUM_MIXES                     = 5
 BEADS_WELL_NUM_MIXES                = 20
 BEADS_NUM_MIXES                     = 20
-WASH_NUM_MIXES                      = 20
-ELUTION_NUM_MIXES                   = 10
+WASH_NUM_MIXES                      = 30
+ELUTION_NUM_MIXES                   = 30
 VOLUME_SAMPLE                       = 200   # Sample volume received in station A
 SET_TEMP_ON                         = True  # Do you want to start temperature module?
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
@@ -220,7 +220,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ###################
     #Custom functions
-    def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height, offset, wait_time = 0, drop_height = -1, half_mix_bottom = False):
+    def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height, offset, wait_time = 0, drop_height = -1, two_thirds_mix_bottom = False):
         '''
         Function for mix in the same location a certain number of rounds. Blow out optional. Offset
         can set to 0 or a higher/lower value which indicates the lateral movement
@@ -230,7 +230,7 @@ def run(ctx: protocol_api.ProtocolContext):
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
         for i in range(rounds):
             pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-            if half_mix_bottom and i < (rounds / 2):
+            if two_thirds_mix_bottom and i < ((rounds / 3) * 2):
                 pipet.dispense(vol, location = location.bottom(z = 5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
             else:
                 pipet.dispense(vol, location = location.top(z = drop_height).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
@@ -455,12 +455,16 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False, drop_height = 1)
-            ctx.comment(' ')
-            ctx.comment('Mixing sample ')
-            custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
-                    rounds = LYSIS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0)
+            
+            if LYSIS_NUM_MIXES > 0:
+                ctx.comment(' ')
+                ctx.comment('Mixing sample ')
+                custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
+                        rounds = LYSIS_NUM_MIXES, blow_out = False, mix_height = 1, offset = 0)
+            
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Lysis.air_gap_vol_bottom) #air gap
+            
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
@@ -540,12 +544,16 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
-            ctx.comment(' ')
-            ctx.comment('Mixing sample ')
-            custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
-                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0, wait_time = 2)
+            
+            if BEADS_NUM_MIXES > 0:
+                ctx.comment(' ')
+                ctx.comment('Mixing sample ')
+                custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
+                        rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 1, offset = 0, wait_time = 2)
+            
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Beads.air_gap_vol_bottom) #air gap
+
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
@@ -720,8 +728,10 @@ def run(ctx: protocol_api.ProtocolContext):
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False)
             
-            custom_mix(m300, Wash, location = work_destinations[i], vol = 180, half_mix_bottom = True,
-                    rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 5, offset = x_offset_dest)
+            if WASH_NUM_MIXES > 0:
+                custom_mix(m300, Wash, location = work_destinations[i], vol = 180, half_mix_bottom = True,
+                        rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 3, offset = x_offset_dest)
+            
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
@@ -868,8 +878,10 @@ def run(ctx: protocol_api.ProtocolContext):
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False)
             
-            custom_mix(m300, Wash, location = work_destinations[i], vol = 180, half_mix_bottom = True,
-                    rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 5, offset = x_offset_dest)
+            if WASH_NUM_MIXES > 0:
+                custom_mix(m300, Wash, location = work_destinations[i], vol = 180, half_mix_bottom = True,
+                    rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 3, offset = x_offset_dest)
+            
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
@@ -1044,12 +1056,16 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Elution, source = Elution.reagent_reservoir[Elution.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 0, blow_out = False, drop_height = -35)
-            ctx.comment(' ')
-            ctx.comment('Mixing sample with Elution')
-            custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = ELUTION_NUM_MIXES,
+            
+            if ELUTION_NUM_MIXES > 0:
+                ctx.comment(' ')
+                ctx.comment('Mixing sample with Elution')
+                custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = ELUTION_NUM_MIXES,
                     blow_out = False, mix_height = 1, offset = x_offset_dest, drop_height = -35)
+            
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Elution.air_gap_vol_bottom) #air gap
+            
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
@@ -1144,6 +1160,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True)
+            
             if RECYCLE_TIP == True:
                 m300.return_tip()
             else:
