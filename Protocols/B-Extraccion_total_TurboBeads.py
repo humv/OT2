@@ -42,7 +42,7 @@ RECYCLE_TIP                 = False # Do you want to recycle tips? It shoud onl
 run_id                      = 'B_Extraccion_total_TurboBeads'
 
 #mag_height = 11 # Height needed for NUNC deepwell in magnetic deck
-mag_height                  = 6.5 # Height needed for NEST deepwell in magnetic deck
+mag_height                  = 7 # Height needed for NEST deepwell in magnetic deck
 
 L_deepwell                  = 8 # Deepwell lenght (NEST deepwell)
 #D_deepwell = 8.35 # Deepwell diameter (NUNC deepwell)
