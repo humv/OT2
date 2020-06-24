@@ -95,6 +95,12 @@ def run(ctx: protocol_api.ProtocolContext):
 
     Samples.vol_well = volume_original_sample
 
+    ctx.comment(' ')
+    ctx.comment('###############################################')
+    ctx.comment('CONTROL SPACES: ' + str(NUM_CONTROL_SPACES))  
+    ctx.comment('NUM SAMPLES: ' + str(NUM_REAL_SAMPLES)) 
+    ctx.comment('###############################################')
+    ctx.comment(' ')
     ##################
     # Custom functions
 

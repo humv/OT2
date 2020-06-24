@@ -88,7 +88,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
             self.dead_vol = dead_vol
-            self.vol_well_original = (reagent_reservoir_volume / num_wells) + 700
+            self.vol_well_original = (reagent_reservoir_volume / num_wells) + dead_vol
 
     #Reagents and their characteristics
     Wash = Reagent(name = 'Wash',
@@ -205,8 +205,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 2 in 12 well reservoir with volume ' + str_rounded(Lysis.vol_well_original) + ' uL each one')
     ctx.comment('Beads: ' + str(Beads.num_wells) + ' wells from well 6 in 12 well reservoir with volume ' + str_rounded(Beads.vol_well_original) + ' uL each one')
     ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 11 in 12 well reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
-    ctx.comment('Wash: in reservoir 1 with volume ' + str(Wash.vol_well_original) + ' uL')
-    ctx.comment('Etanol: in reservoir 2 with volume ' + str(Ethanol.vol_well_original) + ' uL')
+    ctx.comment('Wash: in reservoir 1 with volume ' + str(Wash.vol_well_original) + ' uL (+ dead volume)')
+    ctx.comment('Etanol: in reservoir 2 with volume ' + str(Ethanol.vol_well_original) + ' uL (+ dead volume)')
     ctx.comment('###############################################')
     ctx.comment(' ')
 

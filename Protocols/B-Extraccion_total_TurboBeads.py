@@ -112,7 +112,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
             self.dead_vol = dead_vol
-            self.vol_well_original = (reagent_reservoir_volume / num_wells) + 700 if num_wells > 0 else 0
+            self.vol_well_original = (reagent_reservoir_volume / num_wells) + dead_vol if num_wells > 0 else 0
 
     #Reagents and their characteristics
     Lysis = Reagent(name = 'Lysis',
@@ -214,7 +214,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 2 in 12 well reservoir with volume ' + str_rounded(Lysis.vol_well_original) + ' uL each one')
     ctx.comment('Beads: ' + str(Beads.num_wells) + ' wells from well 6 in 12 well reservoir with volume ' + str_rounded(Beads.vol_well_original) + ' uL each one')
     ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 11 in 12 well reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
-    ctx.comment('Wash: in 195 mL reservoir 1 with volume ' + str(Wash.vol_well_original) + ' uL')
+    ctx.comment('Wash: in 195 mL reservoir 1 with volume ' + str(Wash.vol_well_original) + ' uL (+ dead volume)' )
     ctx.comment('###############################################')
     ctx.comment(' ')
 
@@ -384,9 +384,10 @@ def run(ctx: protocol_api.ProtocolContext):
         'Kingfisher 96 Aluminum Block 200 uL')
 
 ############################################
-    ######## Elution plate - comes from A
+    ######## Deepwell - comes from A
     magdeck = ctx.load_module('Magnetic Module Gen2', '4')
-    deepwell_plate = magdeck.load_labware('nest_96_wellplate_2ml_deep', 'NEST 96 Deepwell Plate 2mL') # Change to NEST deepwell plate.
+    #deepwell_plate = magdeck.load_labware('nest_96_wellplate_2ml_deep', 'NEST 96 Deepwell Plate 2mL') # Change to NEST deepwell plate.
+    deepwell_plate = magdeck.load_labware('kingfisher_96_wellplate_2000ul', 'KingFisher 96 Well Plate 2mL') # Change to NEST deepwell plate.
     magdeck.disengage()
 
 ####################################
