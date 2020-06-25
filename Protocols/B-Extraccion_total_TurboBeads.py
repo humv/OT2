@@ -264,18 +264,20 @@ def run(ctx: protocol_api.ProtocolContext):
             col_change = False
         return height, col_change
 
-    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, touch_tip_v_offset = -10, drop_height = -5, aspirate_with_x_scroll = False):
+    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, 
+        avoid_droplet, wait_time, blow_out, touch_tip = False, touch_tip_v_offset = -10, drop_height = -5, 
+        aspirate_with_x_scroll = False, dispense_bottom_air_gap_before = False):
         # Rinse before aspirating
         if rinse == True:
-            #pipet.aspirate(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
             custom_mix(pipet, reagent, location = source, vol = vol, rounds = 20, blow_out = False, mix_height = 3, offset = 0)
-            #pipet.dispense(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_dispense)
+
+        if dispense_bottom_air_gap_before and reagent.air_gap_vol_bottom:
+            pipet.dispense(reagent.air_gap_vol_bottom, dest.top(z = 0), rate = reagent.flow_rate_dispense)
 
         # SOURCE
         if reagent.air_gap_vol_top != 0: #If there is air_gap_vol, switch pipette to slow speed
             pipet.move_to(source.top(z = 0))
             pipet.air_gap(reagent.air_gap_vol_top) #air gap
-            #pipet.aspirate(reagent.air_gap_vol_top, source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
 
         if aspirate_with_x_scroll:
             aspirate_with_x_scrolling(pip = pipet, volume = vol, src = source, pickup_height = pickup_height, rate = reagent.flow_rate_aspirate, start_x_offset_src = 0, stop_x_offset_src = x_offset_source)
@@ -286,7 +288,6 @@ def run(ctx: protocol_api.ProtocolContext):
         if reagent.air_gap_vol_bottom != 0: #If there is air_gap_vol, switch pipette to slow speed
             pipet.move_to(source.top(z = 0))
             pipet.air_gap(reagent.air_gap_vol_bottom) #air gap
-            #pipet.aspirate(air_gap_vol_bottom, source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
 
         if wait_time != 0:
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
@@ -641,21 +642,20 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(num_cols):
             x_offset_source = find_side(i) * x_offset_rs
             x_offset_dest   = 0
-            first_transfer = True
+            not_first_transfer = False
+
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
             for transfer_vol in supernatant_transfer_vol:
                 ctx.comment('Aspirate from deep well column: ' + str(i+1))
                 ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
-                if not first_transfer:
-                    m300.dispense(Sample.air_gap_vol_bottom)
-                else:
-                    first_transfer = False
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True)
+                        pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = True,
+                        dispense_bottom_air_gap_before = not_first_transfer)
                 m300.air_gap(Sample.air_gap_vol_bottom)
+                not_first_transfer = True
 
             if recycle_tip == True:
                 m300.return_tip()
@@ -797,6 +797,8 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(num_cols):
             x_offset_source = find_side(i) * x_offset_rs
             x_offset_dest   = 0
+            not_first_transfer = False
+
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
             for transfer_vol in supernatant_transfer_vol:
@@ -806,7 +808,10 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                     dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                    pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False)
+                    pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False,
+                    dispense_bottom_air_gap_before = not_first_transfer)
+                m300.air_gap(Sample.air_gap_vol_bottom)
+                not_first_transfer = True
 
             if recycle_tip == True:
                 m300.return_tip()
@@ -948,6 +953,8 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(num_cols):
             x_offset_source = find_side(i) * x_offset_rs
             x_offset_dest   = 0
+            not_first_transfer = False
+
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
             for transfer_vol in supernatant_transfer_vol:
@@ -957,7 +964,10 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                     dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                    pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False)
+                    pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False,
+                    dispense_bottom_air_gap_before = not_first_transfer)
+                m300.air_gap(Sample.air_gap_vol_bottom)
+                not_first_transfer = True
 
             if recycle_tip == True:
                 m300.return_tip()
