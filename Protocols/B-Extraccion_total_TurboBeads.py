@@ -28,6 +28,7 @@ WASH_VOLUME_PER_SAMPLE              = 300   # For each wash cycle
 ELUTION_VOLUME_PER_SAMPLE           = 90
 ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final elution plate
 LYSIS_NUM_MIXES                     = 5
+BEADS_WELL_FIRST_TIME_NUM_MIXES     = 20
 BEADS_WELL_NUM_MIXES                = 20
 BEADS_NUM_MIXES                     = 20
 WASH_NUM_MIXES                      = 20
@@ -522,6 +523,7 @@ def run(ctx: protocol_api.ProtocolContext):
         x_offset_source = 0
         x_offset_dest   = 0
         rinse = False # Original: True 
+        first_mix_done = False
 
         for i in range(num_cols):
             ctx.comment("Column: " + str(i))
@@ -530,13 +532,20 @@ def run(ctx: protocol_api.ProtocolContext):
             for j,transfer_vol in enumerate(beads_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)
-                ctx.comment('Mixing reservoir column: ' + str(Beads.col))
-                custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
+                if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
+                    ctx.comment('Mixing new reservoir column: ' + str(Beads.col))
+                    custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
+                        vol = Beads.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, 
+                        blow_out = False, mix_height = 1.5, offset = 0)
+                    first_mix_done = True
+                else:
+                    ctx.comment('Mixing reservoir column: ' + str(Beads.col))
+                    custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
                         vol = Beads.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, 
                         blow_out = False, mix_height = 1.5, offset = 0)
+
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
-
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
