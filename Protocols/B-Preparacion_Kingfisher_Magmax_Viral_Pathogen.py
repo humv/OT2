@@ -20,12 +20,14 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES     = 96
-BEADS_VOLUME_PER_SAMPLE = 280
-WASH_VOLUME_PER_SAMPLE = 500
-ETHANOL_VOLUME_PER_SAMPLE = 500
-ELUTION_VOLUME_PER_SAMPLE = 50
-VOLUME_SAMPLE   = 200   # Sample volume received in station A
+NUM_SAMPLES                     = 96
+BEADS_VOLUME_PER_SAMPLE         = 280
+WASH_VOLUME_PER_SAMPLE          = 500
+ETHANOL_VOLUME_PER_SAMPLE       = 500
+ELUTION_VOLUME_PER_SAMPLE       = 50
+BEADS_WELL_FIRST_TIME_NUM_MIXES = 10
+BEADS_WELL_NUM_MIXES            = 3
+BEADS_NUM_MIXES                 = 10
 ################################################
 
 run_id                      = 'B_Extraccion_total'
@@ -63,7 +65,7 @@ def run(ctx: protocol_api.ProtocolContext):
     #Define Reagents as objects with their properties
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, flow_rate_aspirate_mix, flow_rate_dispense_mix,
-        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none'):
+        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none', dead_vol = 700):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -82,7 +84,8 @@ def run(ctx: protocol_api.ProtocolContext):
             self.h_cono = h_cono
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
-            self.vol_well_original = reagent_reservoir_volume / num_wells
+            self.dead_vol = dead_vol
+            self.vol_well_original = (reagent_reservoir_volume / num_wells) + dead_vol
 
     #Reagents and their characteristics
     Wash = Reagent(name = 'Wash',
@@ -99,7 +102,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_reservoir_volume =  (NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE, #70000, #51648
                     num_wells = 1,
                     h_cono = 1.95,
-                    v_fondo = 750) #1.95 * multi_well_rack_area / 2, #Prismatic
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Ethanol = Reagent(name = 'Ethanol',
                     flow_rate_aspirate = 5,
@@ -115,7 +118,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_reservoir_volume = (NUM_SAMPLES + 5) * ETHANOL_VOLUME_PER_SAMPLE,
                     num_wells = 1, 
                     h_cono = 1.95,
-                    v_fondo = 750) #1.95 * multi_well_rack_area / 2, #Prismatic
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Beads_PK_Binding = Reagent(name = 'Magnetic beads + PK + Binding',
                     flow_rate_aspirate = 0.5,
@@ -128,10 +131,10 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True,
                     max_volume_allowed = 180,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
-                    reagent_reservoir_volume = (NUM_SAMPLES + 3) * BEADS_VOLUME_PER_SAMPLE,
-                    num_wells = math.ceil((NUM_SAMPLES + 3) * BEADS_VOLUME_PER_SAMPLE / 7000),
+                    reagent_reservoir_volume = NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1,
+                    num_wells = math.ceil(NUM_SAMPLES  * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500),
                     h_cono = 1.95,
-                    v_fondo = 750) #1.95 * multi_well_rack_area / 2, #Prismatic
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Elution = Reagent(name = 'Elution',
                     flow_rate_aspirate = 3, # Original 0.5
@@ -147,7 +150,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_reservoir_volume = (NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE,
                     num_wells = math.ceil((NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE / 13000),
                     h_cono = 1.95,
-                    v_fondo = 750) #1.95 * multi_well_rack_area / 2, #Prismatic
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Sample = Reagent(name = 'Sample',
                     flow_rate_aspirate = 3, # Original 0.5
@@ -171,14 +174,17 @@ def run(ctx: protocol_api.ProtocolContext):
     Elution.vol_well            = Elution.vol_well_original
     Sample.vol_well             = 350 # Arbitrary value
 
+    def str_rounded(num):
+        return str(int(num + 0.5))
+
     ctx.comment(' ')
     ctx.comment('###############################################')
     ctx.comment('VOLUMES FOR ' + str(NUM_SAMPLES) + ' SAMPLES')
     ctx.comment(' ')
-    ctx.comment('Beads + PK + Binding: ' + str(Beads_PK_Binding.num_wells) + ' wells from well 2 in multi reservoir with volume ' + str(Beads_PK_Binding.vol_well_original) + ' uL each one')
-    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 7 in multi reservoir with volume ' + str(Elution.vol_well_original) + ' uL each one')
-    ctx.comment('Wash: in reservoir 1 with volume ' + str(Wash.vol_well_original) + ' uL')
-    ctx.comment('Etanol: in reservoir 2 with volume ' + str(Ethanol.vol_well_original) + ' uL')
+    ctx.comment('Beads + PK + Binding: ' + str(Beads_PK_Binding.num_wells) + ' wells from well 2 in multi reservoir with volume ' + str_rounded(Beads_PK_Binding.vol_well_original) + ' uL each one')
+    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 7 in multi reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
+    ctx.comment('Wash: in reservoir 1 with volume ' + str_rounded(Wash.vol_well_original) + ' uL')
+    ctx.comment('Etanol: in reservoir 2 with volume ' + str_rounded(Ethanol.vol_well_original) + ' uL')
     ctx.comment('###############################################')
     ctx.comment(' ')
 
@@ -189,7 +195,7 @@ def run(ctx: protocol_api.ProtocolContext):
         Function for mix in the same location a certain number of rounds. Blow out optional. Offset
         can set to 0 or a higher/lower value which indicates the lateral movement
         '''
-        if mix_height == 0:
+        if mix_height <= 0:
             mix_height = 1
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
         for _ in range(rounds):
@@ -201,11 +207,11 @@ def run(ctx: protocol_api.ProtocolContext):
         if wait_time != 0:
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
 
-    def calc_height(reagent, cross_section_area, aspirate_volume):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
-        if reagent.vol_well < aspirate_volume:
+        if (reagent.vol_well - reagent.dead_vol) < aspirate_volume:
             ctx.comment('Next column should be picked')
             ctx.comment('Previous to change: ' + str(reagent.col))
             # column selector position; intialize to required number
@@ -217,15 +223,15 @@ def run(ctx: protocol_api.ProtocolContext):
                     #- reagent.h_cono
             reagent.vol_well = reagent.vol_well - aspirate_volume
             ctx.comment('Remaining volume:' + str(reagent.vol_well))
-            if height < 5:
-                height = 1
+            if height < min_height:
+                height = min_height
             col_change = True
         else:
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - aspirate_volume
             ctx.comment('Calculated height is ' + str(height))
-            if height < 5:
-                height = 1
+            if height < min_height:
+                height = min_height
             ctx.comment('Used height is ' + str(height))
             col_change = False
         return height, col_change
@@ -379,12 +385,12 @@ def run(ctx: protocol_api.ProtocolContext):
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mixing new reservoir column: ' + str(Beads_PK_Binding.col))
                     custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
-                            vol = Beads_PK_Binding.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 3, offset = 0)
+                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0)
                     first_mix_done = True
                 else:
                     ctx.comment('Mixing reservoir column: ' + str(Beads_PK_Binding.col))
                     custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
-                            vol = Beads_PK_Binding.max_volume_allowed, rounds = 3, blow_out = False, mix_height = 1.5, offset = 0)
+                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads_PK_Binding.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 #if j!=0:
@@ -395,7 +401,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads_PK_Binding, location = work_destinations[i], vol =  Beads_PK_Binding.max_volume_allowed,
-                    rounds = 10, blow_out = False, mix_height = 3, offset = 0, wait_time = 2)
+                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0, wait_time = 2)
             # m300.move_to(work_destinations[i].top(0))
             # m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom) #air gap
             if recycle_tip == True:

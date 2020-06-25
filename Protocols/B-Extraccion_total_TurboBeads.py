@@ -271,10 +271,10 @@ def run(ctx: protocol_api.ProtocolContext):
         if rinse == True:
             custom_mix(pipet, reagent, location = source, vol = vol, rounds = 20, blow_out = False, mix_height = 3, offset = 0)
 
-        if dispense_bottom_air_gap_before and reagent.air_gap_vol_bottom:
-            pipet.dispense(reagent.air_gap_vol_bottom, dest.top(z = 0), rate = reagent.flow_rate_dispense)
-
         # SOURCE
+        if dispense_bottom_air_gap_before and reagent.air_gap_vol_bottom:
+            pipet.dispense(reagent.air_gap_vol_bottom, source.top(z = -2), rate = reagent.flow_rate_dispense)
+
         if reagent.air_gap_vol_top != 0: #If there is air_gap_vol, switch pipette to slow speed
             pipet.move_to(source.top(z = 0))
             pipet.air_gap(reagent.air_gap_vol_top) #air gap
