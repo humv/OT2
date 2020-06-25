@@ -22,15 +22,16 @@ metadata = {
 ################################################
 NUM_SAMPLES                     = 96
 BEADS_VOLUME_PER_SAMPLE         = 30
+LYSIS_VOLUME_PER_SAMPLE         = 700
 WASH_VOLUME_PER_SAMPLE          = 500
 ETHANOL_VOLUME_PER_SAMPLE       = 500
 ELUTION_VOLUME_PER_SAMPLE       = 50
-BEADS_WELL_FIRST_TIME_NUM_MIXES = 10
-BEADS_WELL_NUM_MIXES            = 3
-BEADS_NUM_MIXES                 = 10
+BEADS_WELL_FIRST_TIME_NUM_MIXES = 20
+BEADS_WELL_NUM_MIXES            = 10
+LYSIS_NUM_MIXES                 = 20
 ################################################
 
-run_id                      = 'B_Extraccion_total'
+run_id                          = 'B_Extraccion_total'
 
 recycle_tip     = False #
 L_deepwell = 8 # Deepwell lenght (NEST deepwell)
@@ -48,10 +49,11 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: '+str(num_cols))
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': True, 'description': 'Transfer beads + PK + binding'},
-            2:{'Execute': False, 'description': 'Transfer wash'},
-            3:{'Execute': False, 'description': 'Transfer ethanol'},
-            4:{'Execute': False, 'description': 'Transfer elution'}
+            1:{'Execute': True, 'description': 'Transfer beads + PK'},
+            2:{'Execute': True, 'description': 'Transfer lysis + binding'},
+            3:{'Execute': True, 'description': 'Transfer wash'},
+            4:{'Execute': True, 'description': 'Transfer ethanol'},
+            5:{'Execute': True, 'description': 'Transfer elution'}
             }
 
     #Folder and file_path for log time
@@ -120,7 +122,23 @@ def run(ctx: protocol_api.ProtocolContext):
                     h_cono = 1.95,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
-    Beads_PK_Binding = Reagent(name = 'Magnetic beads + PK + Binding',
+    Beads_PK = Reagent(name = 'Magnetic beads + PK',
+                    flow_rate_aspirate = 3,
+                    flow_rate_dispense = 3,
+                    flow_rate_aspirate_mix = 25,
+                    flow_rate_dispense_mix = 50,
+                    air_gap_vol_bottom = 5,
+                    air_gap_vol_top = 0,
+                    disposal_volume = 1,
+                    rinse = True,
+                    max_volume_allowed = 180,
+                    reagent_volume = BEADS_VOLUME_PER_SAMPLE,
+                    reagent_reservoir_volume = NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1,
+                    num_wells = math.ceil(NUM_SAMPLES  * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500),
+                    h_cono = 1.95,
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
+
+    Lysis = Reagent(name = 'Lysis + Binding',
                     flow_rate_aspirate = 0.5,
                     flow_rate_dispense = 0.5,
                     flow_rate_aspirate_mix = 0.5,
@@ -130,9 +148,9 @@ def run(ctx: protocol_api.ProtocolContext):
                     disposal_volume = 1,
                     rinse = True,
                     max_volume_allowed = 180,
-                    reagent_volume = BEADS_VOLUME_PER_SAMPLE,
-                    reagent_reservoir_volume = NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1,
-                    num_wells = math.ceil(NUM_SAMPLES  * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500),
+                    reagent_volume = LYSIS_VOLUME_PER_SAMPLE,
+                    reagent_reservoir_volume = NUM_SAMPLES * LYSIS_VOLUME_PER_SAMPLE * 1.1,
+                    num_wells = math.ceil(NUM_SAMPLES  * LYSIS_VOLUME_PER_SAMPLE * 1.1 / 11500),
                     h_cono = 1.95,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
@@ -170,7 +188,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
     Wash.vol_well               = Wash.vol_well_original
     Ethanol.vol_well            = Ethanol.vol_well_original
-    Beads_PK_Binding.vol_well   = Beads_PK_Binding.vol_well_original
+    Beads_PK.vol_well           = Beads_PK.vol_well_original
+    Lysis.vol_well              = Lysis.vol_well_original
     Elution.vol_well            = Elution.vol_well_original
     Sample.vol_well             = 350 # Arbitrary value
 
@@ -181,7 +200,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('###############################################')
     ctx.comment('VOLUMES FOR ' + str(NUM_SAMPLES) + ' SAMPLES')
     ctx.comment(' ')
-    ctx.comment('Beads + PK + Binding: ' + str(Beads_PK_Binding.num_wells) + ' wells from well 2 in multi reservoir with volume ' + str_rounded(Beads_PK_Binding.vol_well_original) + ' uL each one')
+    ctx.comment('Beads + PK: ' + str(Beads_PK.num_wells) + ' wells from well 1 in multi reservoir with volume ' + str_rounded(Beads_PK.vol_well_original) + ' uL each one')
+    ctx.comment('Lysis + Binding: ' + str(Lysis.num_wells) + ' wells from well 3 in multi reservoir with volume ' + str_rounded(Lysis.vol_well_original) + ' uL each one')
     ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 12 in multi reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
     ctx.comment('Wash: in reservoir 1 with volume ' + str_rounded(Wash.vol_well_original) + ' uL')
     ctx.comment('Etanol: in reservoir 2 with volume ' + str_rounded(Ethanol.vol_well_original) + ' uL')
@@ -334,7 +354,8 @@ def run(ctx: protocol_api.ProtocolContext):
     #Declare which reagents are in each reservoir as well as deepwell and sample plate
     Wash.reagent_reservoir      = res_1
     Ethanol.reagent_reservoir   = res_2
-    Beads_PK_Binding.reagent_reservoir  = reagent_multi_res.rows()[0][1:9]
+    Beads_PK.reagent_reservoir  = reagent_multi_res.rows()[0][0:1]
+    Lysis.reagent_reservoir     = reagent_multi_res.rows()[0][2:9]
     Elution.reagent_reservoir   = reagent_multi_res.rows()[0][11:12]
     work_destinations           = deepwell_plate_samples.rows()[0][:Sample.num_wells]
     wash_destinations           = deepwell_plate_wash.rows()[0][:Sample.num_wells]
@@ -354,7 +375,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
 ###############################################################################
     ###############################################################################
-    # STEP 1 TRANSFER BEADS + PK + Binding
+    # STEP 1 TRANSFER BEADS + PK
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -365,11 +386,11 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
-        beads_trips = math.ceil(Beads_PK_Binding.reagent_volume / Beads_PK_Binding.max_volume_allowed)
-        beads_volume = Beads_PK_Binding.reagent_volume / beads_trips #136.66
+        beads_trips = math.ceil(Beads_PK.reagent_volume / Beads_PK.max_volume_allowed)
+        beads_volume = Beads_PK.reagent_volume / beads_trips #136.66
         beads_transfer_vol = []
         for i in range(beads_trips):
-            beads_transfer_vol.append(beads_volume + Beads_PK_Binding.disposal_volume)
+            beads_transfer_vol.append(beads_volume + Beads_PK.disposal_volume)
         x_offset_source = 0
         x_offset_dest   = 0
         rinse = False # Original: True
@@ -381,34 +402,28 @@ def run(ctx: protocol_api.ProtocolContext):
                 pick_up(m300)
             for j,transfer_vol in enumerate(beads_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
-                [pickup_height, change_col] = calc_height(Beads_PK_Binding, multi_well_rack_area, transfer_vol * 8)
+                [pickup_height, change_col] = calc_height(Beads_PK, multi_well_rack_area, transfer_vol * 8)
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
-                    ctx.comment('Mixing new reservoir column: ' + str(Beads_PK_Binding.col))
-                    custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
-                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0)
+                    ctx.comment('Mixing new reservoir column: ' + str(Beads_PK.col))
+                    custom_mix(m300, Beads_PK, Beads_PK.reagent_reservoir[Beads_PK.col],
+                            vol = Beads_PK.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0)
                     first_mix_done = True
                 else:
-                    ctx.comment('Mixing reservoir column: ' + str(Beads_PK_Binding.col))
-                    custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
-                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = 0)
-                ctx.comment('Aspirate from reservoir column: ' + str(Beads_PK_Binding.col))
+                    ctx.comment('Mixing reservoir column: ' + str(Beads_PK.col))
+                    custom_mix(m300, Beads_PK, Beads_PK.reagent_reservoir[Beads_PK.col],
+                            vol = Beads_PK.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = 0)
+                ctx.comment('Aspirate from reservoir column: ' + str(Beads_PK.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
-                #if j!=0:
-                #    rinse = False
-                move_vol_multi(m300, reagent = Beads_PK_Binding, source = Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
+ 
+                move_vol_multi(m300, reagent = Beads_PK, source = Beads_PK.reagent_reservoir[Beads_PK.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True, drop_height = -1)
-            #ctx.comment(' ')
-            #ctx.comment('Mixing sample ')
-            #custom_mix(m300, Beads_PK_Binding, location = work_destinations[i], vol =  Beads_PK_Binding.max_volume_allowed,
-            #        rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0, wait_time = 2)
-            # m300.move_to(work_destinations[i].top(0))
-            # m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom) #air gap
-            #if recycle_tip == True:
-                #m300.return_tip()
-            #else:
-                #m300.drop_tip(home_after = False)
-            #tip_track['counts'][m300] += 8
+
+        if recycle_tip == True:
+            m300.return_tip()
+        else:
+            m300.drop_tip(home_after = False)
+        tip_track['counts'][m300] += 8
 
         end = datetime.now()
         time_taken = (end - start)
@@ -416,11 +431,64 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 1 TRANSFER BEADS + PK + Binding
+        # STEP 1 TRANSFER BEADS + PK
         ########
 
     ###############################################################################
-    # STEP 2 TRANSFER WASH
+    # STEP 2 TRANSFER LYSIS + BINDING
+    ########
+    STEP += 1
+    if STEPS[STEP]['Execute']==True:
+        start = datetime.now()
+        ctx.comment(' ')
+        ctx.comment('###############################################')
+        ctx.comment('Step '+str(STEP)+': '+STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+        ctx.comment(' ')
+
+        lysis_trips = math.ceil(Lysis.reagent_volume / Lysis.max_volume_allowed)
+        lysis_volume = Lysis.reagent_volume / lysis_trips #136.66
+        lysis_transfer_vol = []
+        for i in range(lysis_trips):
+            lysis_transfer_vol.append(lysis_volume + Lysis.disposal_volume)
+        x_offset_source = 0
+        x_offset_dest   = 0
+        rinse = False # Original: True
+
+        for i in range(num_cols):
+            ctx.comment("Column: " + str(i))
+            if not m300.hw_pipette['has_tip']:
+                pick_up(m300)
+            for j,transfer_vol in enumerate(lysis_transfer_vol):
+                #Calculate pickup_height based on remaining volume and shape of container
+                [pickup_height, change_col] = calc_height(Lysis, multi_well_rack_area, transfer_vol * 8)
+                move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
+                        dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True, drop_height = -1)
+            
+            if LYSIS_NUM_MIXES > 0:
+                ctx.comment(' ')
+                ctx.comment('Mixing sample ')
+                custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
+                        rounds = LYSIS_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0, wait_time = 2)
+
+            if recycle_tip == True:
+                m300.return_tip()
+            else:
+                m300.drop_tip(home_after = False)
+            tip_track['counts'][m300] += 8
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:']=str(time_taken)
+        ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
+        ###############################################################################
+        # STEP 2 TRANSFER LYSIS + BINDING
+        ########
+
+    ###############################################################################
+    # STEP 3 TRANSFER WASH
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -464,11 +532,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 2 TRANSFER WASH
+        # STEP 3 TRANSFER WASH
         ########
 
     ###############################################################################
-    # STEP 3 TRANSFER ETHANOL
+    # STEP 4 TRANSFER ETHANOL
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -512,11 +580,11 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 3 TRANSFER ETHANOL
+        # STEP 4 TRANSFER ETHANOL
         ########
 
     ###############################################################################
-    # STEP 4 TRANSFER ELUTION
+    # STEP 5 TRANSFER ELUTION
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -564,7 +632,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 4 TRANSFER ELUTION
+        # STEP 5 TRANSFER ELUTION
         ########
 
 

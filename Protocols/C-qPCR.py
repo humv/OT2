@@ -44,7 +44,7 @@ size_transfer = math.floor(pipette_allowed_capacity / HYDR_VOL_PER_SAMPLE) # Num
 def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
     ctx.comment('###############################################')
-    ctx.comment('NUM SAMPLES: ' + str(NUM_SAMPLES) + '(first 2 are controls)') 
+    ctx.comment('NUM SAMPLES: ' + str(NUM_SAMPLES) + ' (first 2 are controls)') 
     ctx.comment('###############################################')
     ctx.comment(' ')
 
