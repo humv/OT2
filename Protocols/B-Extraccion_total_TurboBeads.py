@@ -72,7 +72,7 @@ def run(ctx: protocol_api.ProtocolContext):
             15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 1200},
             16:{'Execute': True, 'description': 'Switch off magnet'},
             17:{'Execute': True, 'description': 'Add ELUTION'},
-            18:{'Execute': True, 'description': 'Wait rest', 'wait_time': 300},
+            18:{'Execute': False, 'description': 'Wait rest', 'wait_time': 300},
             19:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},
             20:{'Execute': True, 'description': 'Transfer to final elution plate'},
             }
