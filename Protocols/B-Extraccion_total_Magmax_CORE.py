@@ -192,7 +192,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 4 * math.pi * 4**3 / 3) #Sphere
 
     Lysis.vol_well      = Lysis.vol_well_original
-    Beads_PK.vol_well      = Beads_PK.vol_well_original
+    Beads_PK.vol_well   = Beads_PK.vol_well_original
     Wash.vol_well       = Wash.vol_well_original
     Elution.vol_well    = Elution.vol_well_original
     Sample.vol_well     = 350 # Arbitrary value
@@ -205,9 +205,9 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('###############################################')
     ctx.comment('VOLUMES FOR ' + str(NUM_SAMPLES) + ' SAMPLES')
     ctx.comment(' ')
-    ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 2 in 12 well reservoir with volume ' + str_rounded(Lysis.vol_well_original) + ' uL each one')
-    ctx.comment('Beads: ' + str(Beads_PK.num_wells) + ' wells from well 6 in 12 well reservoir with volume ' + str_rounded(Beads_PK.vol_well_original) + ' uL each one')
-    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 11 in 12 well reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
+    ctx.comment('Beads: ' + str(Beads_PK.num_wells) + ' wells from well 1 in 12 well reservoir with volume ' + str_rounded(Beads_PK.vol_well_original) + ' uL each one')
+    ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 3 in 12 well reservoir with volume ' + str_rounded(Lysis.vol_well_original) + ' uL each one')
+    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 12 in 12 well reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
     ctx.comment('Wash: in 195 mL reservoir 1 with volume ' + str(Wash.vol_well_original) + ' uL (+ dead volume)' )
     ctx.comment('###############################################')
     ctx.comment(' ')
