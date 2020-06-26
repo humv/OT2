@@ -24,13 +24,15 @@ metadata = {
 NUM_SAMPLES                         = 96    # Must be multiple of 8
 LYSIS_VOLUME_PER_SAMPLE             = 700   # Original: 300
 BEADS_VOLUME_PER_SAMPLE             = 30
-WASH_VOLUME_PER_SAMPLE              = 300   # For each wash cycle
+WASH_VOLUME_PER_SAMPLE              = 300
+ETHANOL_VOLUME_PER_SAMPLE           = 300
 ELUTION_VOLUME_PER_SAMPLE           = 90
 ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final elution plate
 BEADS_WELL_FIRST_TIME_NUM_MIXES     = 20
 BEADS_WELL_NUM_MIXES                = 10
 LYSIS_NUM_MIXES                     = 20
 WASH_NUM_MIXES                      = 20
+ETHANOL_NUM_MIXES                   = 20
 ELUTION_NUM_MIXES                   = 20
 VOLUME_SAMPLE                       = 200   # Sample volume received in station A
 SET_TEMP_ON                         = True  # Do you want to start temperature module?
@@ -65,7 +67,7 @@ def run(ctx: protocol_api.ProtocolContext):
             9:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},
             10:{'Execute': True, 'description': 'Remove supernatant'},
             11:{'Execute': True, 'description': 'Switch off magnet'},
-            12:{'Execute': True, 'description': 'Add WASH'},
+            12:{'Execute': True, 'description': 'Add ETHANOL'},
             13:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},
             14:{'Execute': True, 'description': 'Remove supernatant'},
             15:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 1200},
@@ -153,8 +155,25 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True,
                     max_volume_allowed = 180,
                     reagent_volume = WASH_VOLUME_PER_SAMPLE,
-                    reagent_reservoir_volume = (2 * NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE,
-                    num_wells = math.ceil((2 * NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE / 13000), 
+                    reagent_reservoir_volume = (NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE,
+                    num_wells = 1, 
+                    h_cono = 1.95,
+                    v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
+                    tip_recycling = 'A1')
+
+    Ethanol = Reagent(name = 'Ethanol',
+                    flow_rate_aspirate = 3,
+                    flow_rate_dispense = 3,
+                    flow_rate_aspirate_mix = 25,
+                    flow_rate_dispense_mix = 100,
+                    air_gap_vol_bottom = 5,
+                    air_gap_vol_top = 0,
+                    disposal_volume = 1,
+                    rinse = True,
+                    max_volume_allowed = 180,
+                    reagent_volume = ETHANOL_VOLUME_PER_SAMPLE,
+                    reagent_reservoir_volume = (NUM_SAMPLES + 5) * ETHANOL_VOLUME_PER_SAMPLE,
+                    num_wells = 1, 
                     h_cono = 1.95,
                     v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
                     tip_recycling = 'A1')
@@ -194,6 +213,7 @@ def run(ctx: protocol_api.ProtocolContext):
     Lysis.vol_well      = Lysis.vol_well_original
     Beads_PK.vol_well   = Beads_PK.vol_well_original
     Wash.vol_well       = Wash.vol_well_original
+    Ethanol.vol_well    = Ethanol.vol_well_original
     Elution.vol_well    = Elution.vol_well_original
     Sample.vol_well     = 350 # Arbitrary value
 
@@ -209,6 +229,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 3 in 12 well reservoir with volume ' + str_rounded(Lysis.vol_well_original) + ' uL each one')
     ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 12 in 12 well reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
     ctx.comment('Wash: in 195 mL reservoir 1 with volume ' + str(Wash.vol_well_original) + ' uL (+ dead volume)' )
+    ctx.comment('Ethanol: in 195 mL reservoir 2 with volume ' + str(Ethanol.vol_well_original) + ' uL (+ dead volume)' )
     ctx.comment('###############################################')
     ctx.comment(' ')
 
@@ -364,6 +385,9 @@ def run(ctx: protocol_api.ProtocolContext):
     reagent_res_1 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 1')
     res_1 = reagent_res_1.wells()[0]
 
+    reagent_res_2 = ctx.load_labware('nest_1_reservoir_195ml', '10', 'Single reagent reservoir 2')
+    res_2 = reagent_res_2.wells()[0]
+
 ############################################
     ########## tempdeck
     tempdeck = ctx.load_module('Temperature Module Gen2', '1')
@@ -401,6 +425,7 @@ def run(ctx: protocol_api.ProtocolContext):
     Lysis.reagent_reservoir     = reagent_res.rows()[0][2:9]
     Elution.reagent_reservoir   = reagent_res.rows()[0][11:12]
     Wash.reagent_reservoir      = res_1
+    Ethanol.reagent_reservoir   = res_2
     work_destinations           = deepwell_plate.rows()[0][:Sample.num_wells]
     final_destinations          = elution_plate.rows()[0][:Sample.num_wells]
 
@@ -841,7 +866,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ########
 
     ###############################################################################
-    # STEP 12 ADD WASH
+    # STEP 12 ADD ETHANOL
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -852,11 +877,11 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
-        wash_trips = math.ceil(Wash.reagent_volume / Wash.max_volume_allowed)
-        wash_volume = Wash.reagent_volume / wash_trips #136.66
-        wash_transfer_vol = []
-        for i in range(wash_trips):
-            wash_transfer_vol.append(wash_volume + Wash.disposal_volume)
+        ethanol_trips = math.ceil(Ethanol.reagent_volume / Ethanol.max_volume_allowed)
+        ethanol_volume = Ethanol.reagent_volume / ethanol_trips #136.66
+        ethanol_transfer_vol = []
+        for i in range(ethanol_trips):
+            ethanol_transfer_vol.append(ethanol_volume + Ethanol.disposal_volume)
         x_offset_rs = 2.5
         pickup_height = 0.5
         rinse = False # Not needed
@@ -866,18 +891,18 @@ def run(ctx: protocol_api.ProtocolContext):
             x_offset_dest   = -1 * find_side(i) * x_offset_rs
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
-            for transfer_vol in wash_transfer_vol:
+            for transfer_vol in ethanol_transfer_vol:
                 ctx.comment('Aspirate from reservoir 1')
-                move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir,
+                move_vol_multi(m300, reagent = Ethanol, source = Ethanol.reagent_reservoir,
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False)
             
-            if WASH_NUM_MIXES > 0:
-                custom_mix(m300, Wash, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
-                    rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 3, offset = x_offset_dest)
+            if ETHANOL_NUM_MIXES > 0:
+                custom_mix(m300, Ethanol, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
+                    rounds = ETHANOL_NUM_MIXES, blow_out = False, mix_height = 3, offset = x_offset_dest)
             
             m300.move_to(work_destinations[i].top(0))
-            m300.air_gap(Wash.air_gap_vol_bottom) #air gap
+            m300.air_gap(Ethanol.air_gap_vol_bottom) #air gap
 
             if recycle_tip == True:
                 m300.return_tip()
@@ -891,7 +916,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
         ###############################################################################
-        # STEP 12 ADD WASH
+        # STEP 12 ADD ETHANOL
         ########
 
     ###############################################################################
@@ -931,8 +956,8 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
-        supernatant_trips = math.ceil(Wash.reagent_volume / Wash.max_volume_allowed)
-        supernatant_volume = Wash.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
+        supernatant_trips = math.ceil(Ethanol.reagent_volume / Ethanol.max_volume_allowed)
+        supernatant_volume = Ethanol.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
         supernatant_transfer_vol = []
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
