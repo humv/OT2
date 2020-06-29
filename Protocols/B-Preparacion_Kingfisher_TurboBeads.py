@@ -205,7 +205,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
     ctx.comment('Lysis: ' + str(Lysis.num_wells) + ' wells from well 2 in 12 well reservoir with volume ' + str_rounded(Lysis.vol_well_original) + ' uL each one')
     ctx.comment('Beads: ' + str(Beads.num_wells) + ' wells from well 6 in 12 well reservoir with volume ' + str_rounded(Beads.vol_well_original) + ' uL each one')
-    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 11 in 12 well reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
+    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 12 in 12 well reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
     ctx.comment('Wash: in reservoir 1 with volume ' + str_rounded(Wash.vol_well_original) + ' uL (+ dead volume)')
     ctx.comment('Etanol: in reservoir 2 with volume ' + str_rounded(Ethanol.vol_well_original) + ' uL (+ dead volume)')
     ctx.comment('###############################################')
@@ -358,8 +358,8 @@ def run(ctx: protocol_api.ProtocolContext):
     Wash.reagent_reservoir      = res_1
     Ethanol.reagent_reservoir   = res_2
     Lysis.reagent_reservoir     = reagent_multi_res.rows()[0][1:4]
-    Beads.reagent_reservoir     = reagent_multi_res.rows()[0][5:9]
-    Elution.reagent_reservoir   = reagent_multi_res.rows()[0][10:11]
+    Beads.reagent_reservoir     = reagent_multi_res.rows()[0][5:10]
+    Elution.reagent_reservoir   = reagent_multi_res.rows()[0][11:12]
     work_destinations           = deepwell_plate_samples.rows()[0][:Sample.num_wells]
     wash_destinations           = deepwell_plate_wash.rows()[0][:Sample.num_wells]
     ethanol_destinations        = deepwell_plate_ethanol.rows()[0][:Sample.num_wells]
@@ -473,7 +473,7 @@ def run(ctx: protocol_api.ProtocolContext):
         beads_volume = Beads.reagent_volume / beads_trips #136.66
         beads_transfer_vol = []
         for i in range(beads_trips):
-            beads_transfer_vol.append(beads_volume + Beads.disposal_volume)
+            beads_transfer_vol.append(beads_volume + Beads.disposal_volume) # 100 extra isopropanol on calcs
         x_offset_source = 0
         x_offset_dest   = 0
         rinse = False # Original: True
@@ -485,7 +485,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 pick_up(m300)
             for j,transfer_vol in enumerate(beads_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
-                [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)
+                transfer_vol_extra = transfer_vol if j > 0 else transfer_vol + 100  # Extra 100 isopropanol for calcs
+                [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol_extra * 8)    
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mixing new reservoir column: ' + str(Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],

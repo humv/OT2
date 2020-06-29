@@ -20,7 +20,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                     = 96
+NUM_SAMPLES                     = 8
 BEADS_VOLUME_PER_SAMPLE         = 30
 LYSIS_VOLUME_PER_SAMPLE         = 700
 WASH_VOLUME_PER_SAMPLE          = 500
@@ -406,12 +406,12 @@ def run(ctx: protocol_api.ProtocolContext):
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mixing new reservoir column: ' + str(Beads_PK.col))
                     custom_mix(m300, Beads_PK, Beads_PK.reagent_reservoir[Beads_PK.col],
-                            vol = Beads_PK.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0)
+                            vol = Beads_PK.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
                     first_mix_done = True
                 else:
                     ctx.comment('Mixing reservoir column: ' + str(Beads_PK.col))
                     custom_mix(m300, Beads_PK, Beads_PK.reagent_reservoir[Beads_PK.col],
-                            vol = Beads_PK.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = 0)
+                            vol = Beads_PK.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads_PK.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
  
