@@ -26,8 +26,10 @@ metadata = {
 NUM_SAMPLES                 = 96    # Including controls. 94 samples + 2 controls = 96
 HYDR_VOL_PER_SAMPLE         = 15
 VOLUME_SAMPLE               = 5     # Volume of the sample
-SET_TEMP_ON                 = True  # Do you want to start temperature module?
-TEMPERATURE                 = 4     # Temperature of temp module
+SET_TEMP_ON_SLOT_1          = False  # Do you want to start temperature module?
+TEMPERATURE_SLOT_1          = 4     # Temperature of temp module
+SET_TEMP_ON_SLOT_4          = True  # Do you want to start temperature module?
+TEMPERATURE_SLOT_4          = 4     # Temperature of temp module
 ################################################
 
 run_id                      = 'C_qPCR'
@@ -207,9 +209,10 @@ def run(ctx: protocol_api.ProtocolContext):
     tempdeck_orig = ctx.load_module('Temperature Module Gen2', '4')
     tempdeck_dest = ctx.load_module('Temperature Module Gen2', '1')
 
-    if(SET_TEMP_ON):
-        tempdeck_orig.set_temperature(TEMPERATURE)
-        tempdeck_dest.set_temperature(TEMPERATURE)
+    if SET_TEMP_ON_SLOT_4:
+        tempdeck_orig.set_temperature(TEMPERATURE_SLOT_4)
+    if SET_TEMP_ON_SLOT_1:    
+        tempdeck_dest.set_temperature(TEMPERATURE_SLOT_1)
 
     ##################################
     # Sample plate - comes from B
