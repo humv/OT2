@@ -27,7 +27,7 @@ metadata = {
 NUM_SAMPLES                 = 96 # Including controls. 94 samples + 2 controls = 96
 MMIX_VOL_PER_SAMPLE         = 12
 VOLUME_SAMPLE               = 8  # Volume of the sample
-SET_TEMP_ON_SLOT_1          = False  # Do you want to start temperature module?
+SET_TEMP_ON_SLOT_1          = True  # Do you want to start temperature module?
 TEMPERATURE_SLOT_1          = 4     # Temperature of temp module
 SET_TEMP_ON_SLOT_4          = True  # Do you want to start temperature module?
 TEMPERATURE_SLOT_4          = 4     # Temperature of temp module
