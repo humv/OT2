@@ -27,7 +27,7 @@ ETHANOL_VOLUME_PER_SAMPLE       = 500
 ELUTION_VOLUME_PER_SAMPLE       = 50
 BEADS_WELL_FIRST_TIME_NUM_MIXES = 10
 BEADS_WELL_NUM_MIXES            = 3
-BEADS_NUM_MIXES                 = 10
+BEADS_NUM_MIXES                 = 20
 ################################################
 
 run_id                      = 'B_Extraccion_total'

@@ -68,8 +68,8 @@ def run(ctx: protocol_api.ProtocolContext):
             13:{'Execute': True, 'description': 'Allow to dry', 'wait_time': 600},
             14:{'Execute': True, 'description': 'Switch off magnet'},#
             15:{'Execute': True, 'description': 'Add ELUTION'},#
-            16:{'Execute': True, 'description': 'Wait rest', 'wait_time': 60},#
-            17:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 300},#
+            16:{'Execute': True, 'description': 'Wait rest', 'wait_time': 600},#
+            17:{'Execute': True, 'description': 'Incubate wait with magnet ON', 'wait_time': 600},#
             18:{'Execute': True, 'description': 'Transfer to final elution plate'},
             }
 
@@ -437,7 +437,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
-                    rounds = 10, blow_out = False, mix_height = 0, offset = 0, two_thirds_mix_bottom = True)
+                    rounds = 20, blow_out = False, mix_height = 0, offset = 0, two_thirds_mix_bottom = True)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Lysis.air_gap_vol_bottom) #air gap
             if RECYCLE_TIP == True:
