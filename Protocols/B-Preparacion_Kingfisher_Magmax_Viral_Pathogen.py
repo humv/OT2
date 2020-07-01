@@ -85,7 +85,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
             self.dead_vol = dead_vol
-            self.vol_well_original = (reagent_reservoir_volume / num_wells) + dead_vol
+            self.vol_well_original = (reagent_reservoir_volume / num_wells) + dead_vol if num_wells > 0 else 0
 
     #Reagents and their characteristics
     Wash = Reagent(name = 'Wash',
@@ -190,7 +190,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ###################
     #Custom functions
-    def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height, offset, wait_time = 0):
+    def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height, offset, wait_time = 0, drop_height = -1, two_thirds_mix_bottom = False):
         '''
         Function for mix in the same location a certain number of rounds. Blow out optional. Offset
         can set to 0 or a higher/lower value which indicates the lateral movement
@@ -198,9 +198,12 @@ def run(ctx: protocol_api.ProtocolContext):
         if mix_height <= 0:
             mix_height = 1
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-        for _ in range(rounds):
+        for i in range(rounds):
             pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-            pipet.dispense(vol, location = location.top(z = -5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
+            if two_thirds_mix_bottom and i < ((rounds / 3) * 2):
+                pipet.dispense(vol, location = location.bottom(z = 5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
+            else:
+                pipet.dispense(vol, location = location.top(z = drop_height).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
         pipet.dispense(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_dispense_mix)
         if blow_out == True:
             pipet.blow_out(location.top(z = -2)) # Blow out
@@ -250,7 +253,7 @@ def run(ctx: protocol_api.ProtocolContext):
             #pipet.aspirate(reagent.air_gap_vol_top, source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
 
         s = source.bottom(pickup_height).move(Point(x = x_offset_source))
-        pipet.aspirate(vol, s) # aspirate liquid
+        pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate) # aspirate liquid
 
         if reagent.air_gap_vol_bottom != 0: #If there is air_gap_vol, switch pipette to slow speed
             pipet.move_to(source.top(z = 0))
@@ -385,12 +388,12 @@ def run(ctx: protocol_api.ProtocolContext):
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mixing new reservoir column: ' + str(Beads_PK_Binding.col))
                     custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
-                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0)
+                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
                     first_mix_done = True
                 else:
                     ctx.comment('Mixing reservoir column: ' + str(Beads_PK_Binding.col))
                     custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
-                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = 0)
+                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads_PK_Binding.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 #if j!=0:
@@ -401,7 +404,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads_PK_Binding, location = work_destinations[i], vol =  Beads_PK_Binding.max_volume_allowed,
-                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0, wait_time = 2)
+                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0, wait_time = 2, two_thirds_mix_bottom = True)
             # m300.move_to(work_destinations[i].top(0))
             # m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom) #air gap
             if recycle_tip == True:

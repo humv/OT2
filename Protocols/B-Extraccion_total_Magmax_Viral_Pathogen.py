@@ -84,7 +84,7 @@ def run(ctx: protocol_api.ProtocolContext):
     #Define Reagents as objects with their properties
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, flow_rate_aspirate_mix, flow_rate_dispense_mix,
-        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none'):
+        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none', dead_vol = 700):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -103,7 +103,8 @@ def run(ctx: protocol_api.ProtocolContext):
             self.h_cono = h_cono
             self.v_cono = v_fondo
             self.tip_recycling = tip_recycling
-            self.vol_well_original = reagent_reservoir_volume / num_wells
+            self.dead_vol = dead_vol
+            self.vol_well_original = (reagent_reservoir_volume / num_wells) + dead_vol if num_wells > 0 else 0
 
     #Reagents and their characteristics
     Lysis = Reagent(name = 'Lysis',
@@ -192,7 +193,7 @@ def run(ctx: protocol_api.ProtocolContext):
     Lysis.vol_well      = Lysis.vol_well_original
     Wash.vol_well       = Wash.vol_well_original
     Ethanol.vol_well    = Ethanol.vol_well_original
-    Elution.vol_well      = Elution.vol_well_original
+    Elution.vol_well    = Elution.vol_well_original
     Sample.vol_well     = 350 # Arbitrary value
 
     ctx.comment(' ')
@@ -208,28 +209,31 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ###################
     #Custom functions
-    def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height, offset, wait_time = 0):
+    def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height, offset, wait_time = 0, drop_height = -1, two_thirds_mix_bottom = False):
         '''
         Function for mix in the same location a certain number of rounds. Blow out optional. Offset
         can set to 0 or a higher/lower value which indicates the lateral movement
         '''
-        if mix_height == 0:
+        if mix_height <= 0:
             mix_height = 1
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-        for _ in range(rounds):
+        for i in range(rounds):
             pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
-            pipet.dispense(vol, location = location.top(z = -5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
+            if two_thirds_mix_bottom and i < ((rounds / 3) * 2):
+                pipet.dispense(vol, location = location.bottom(z = 5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
+            else:
+                pipet.dispense(vol, location = location.top(z = drop_height).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
         pipet.dispense(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_dispense_mix)
         if blow_out == True:
             pipet.blow_out(location.top(z = -2)) # Blow out
         if wait_time != 0:
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
 
-    def calc_height(reagent, cross_section_area, aspirate_volume):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
-        if reagent.vol_well < aspirate_volume:
+        if (reagent.vol_well - reagent.dead_vol) < aspirate_volume:
             ctx.comment('Next column should be picked')
             ctx.comment('Previous to change: ' + str(reagent.col))
             # column selector position; intialize to required number
@@ -241,15 +245,15 @@ def run(ctx: protocol_api.ProtocolContext):
                     #- reagent.h_cono
             reagent.vol_well = reagent.vol_well - aspirate_volume
             ctx.comment('Remaining volume:' + str(reagent.vol_well))
-            if height < 5:
-                height = 1
+            if height < min_height:
+                height = min_height
             col_change = True
         else:
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - aspirate_volume
             ctx.comment('Calculated height is ' + str(height))
-            if height < 5:
-                height = 1
+            if height < min_height:
+                height = min_height
             ctx.comment('Used height is ' + str(height))
             col_change = False
         return height, col_change
@@ -268,7 +272,7 @@ def run(ctx: protocol_api.ProtocolContext):
             #pipet.aspirate(reagent.air_gap_vol_top, source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
 
         s = source.bottom(pickup_height).move(Point(x = x_offset_source))
-        pipet.aspirate(vol, s) # aspirate liquid
+        pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate) # aspirate liquid
 
         if reagent.air_gap_vol_bottom != 0: #If there is air_gap_vol, switch pipette to slow speed
             pipet.move_to(source.top(z = 0))
@@ -419,12 +423,12 @@ def run(ctx: protocol_api.ProtocolContext):
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mixing new reservoir column: ' + str(Lysis.col))
                     custom_mix(m300, Lysis, Lysis.reagent_reservoir[Lysis.col],
-                            vol = Lysis.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 3, offset = 0)
+                            vol = Lysis.max_volume_allowed, rounds = 10, blow_out = False, mix_height = 0.5, offset = 0)
                     first_mix_done = True
                 else:
                     ctx.comment('Mixing reservoir column: ' + str(Lysis.col))
                     custom_mix(m300, Lysis, Lysis.reagent_reservoir[Lysis.col],
-                            vol = Lysis.max_volume_allowed, rounds = 3, blow_out = False, mix_height = 3, offset = 0)
+                            vol = Lysis.max_volume_allowed, rounds = 3, blow_out = False, mix_height = 0.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Lysis.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 #if j!=0:
@@ -435,7 +439,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
-                    rounds = 10, blow_out = False, mix_height = 0, offset = 0)
+                    rounds = 10, blow_out = False, mix_height = 0, offset = 0, two_thirds_mix_bottom = True)
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Lysis.air_gap_vol_bottom) #air gap
             if RECYCLE_TIP == True:
