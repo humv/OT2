@@ -391,8 +391,6 @@ def run(ctx: protocol_api.ProtocolContext):
 ############################################
     ########## tempdeck
     tempdeck = ctx.load_module('Temperature Module Gen2', '1')
-    if SET_TEMP_ON == True:
-        tempdeck.set_temperature(TEMPERATURE)
 
 ##################################
     ####### Elution plate - final plate, goes to C
@@ -1197,6 +1195,9 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+str(tip_track['counts'][m300]))
+
+        if SET_TEMP_ON == True:
+            tempdeck.set_temperature(TEMPERATURE)
         ###############################################################################
         # STEP 20 TRANSFER TO ELUTION PLATE
         ########

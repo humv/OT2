@@ -1,4 +1,4 @@
-import math
+import math
 from opentrons.types import Point
 from opentrons import protocol_api
 import time
@@ -370,8 +370,6 @@ def run(ctx: protocol_api.ProtocolContext):
 ############################################
     ########## tempdeck
     tempdeck = ctx.load_module('Temperature Module Gen2', '3')
-    if SET_TEMP_ON == True:
-        tempdeck.set_temperature(TEMPERATURE)
 
 ##################################
     ####### Elution plate - final plate, goes to C
@@ -1127,6 +1125,9 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:']=str(time_taken)
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][tips300Samples]))
+
+        if SET_TEMP_ON == True:
+            tempdeck.set_temperature(TEMPERATURE)
     ###############################################################################
     # END STEP 19 TRANSFER TO ELUTION PLATE
     ###############################################################################
