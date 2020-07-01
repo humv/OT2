@@ -404,7 +404,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads_PK_Binding, location = work_destinations[i], vol =  Beads_PK_Binding.max_volume_allowed,
-                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 3, offset = 0, wait_time = 2, two_thirds_mix_bottom = True)
+                    rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0, wait_time = 2, two_thirds_mix_bottom = True)
             # m300.move_to(work_destinations[i].top(0))
             # m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom) #air gap
             if recycle_tip == True:
