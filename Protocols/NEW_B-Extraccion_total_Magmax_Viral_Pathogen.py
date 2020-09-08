@@ -49,7 +49,7 @@ PHOTOSENSITIVE                      = False # True if it has photosensitive reag
 run_id                      = 'B_Extraccion_total_Magmax_Viral_Pathogen'
 
 recycle_tip                 = False     # Do you want to recycle tips? It shoud only be set True for testing
-mag_height                  = 7         # Height needed for NEST deepwell in magnetic deck
+mag_height                  = 6         # Height needed for NEST deepwell in magnetic deck
 waste_drop_height           = -5
 multi_well_rack_area        = 8 * 71    #Cross section of the 12 well reservoir
 next_well_index             = 0         # First reservoir well to use
