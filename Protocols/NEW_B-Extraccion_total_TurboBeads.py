@@ -226,7 +226,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Activar módulo de temperatura: ' + str(SET_TEMP_ON)) 	
     ctx.comment('Valor objetivo módulo de temepratura: ' + str(TEMPERATURE) + ' ºC')
     ctx.comment(' ') 	
-    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE)) 	
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
+    ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS)) 	
     ctx.comment(' ')
 
     #########
@@ -428,10 +429,11 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Puntas de 200 ul utilizadas: ' + str(used_tips) + ' (' + str(round(used_tips / 96, 2)) + ' caja(s))')
         ctx.comment('###############################################')
 
-        for i in range(SOUND_NUM_PLAYS):
-            if i > 0:
-                time.sleep(60)
-            play_sound('finalizado')
+        if not ctx.is_simulating():
+            for i in range(SOUND_NUM_PLAYS):
+                if i > 0:
+                    time.sleep(60)
+                play_sound('finalizado')
 
         return finish_time
 
@@ -529,7 +531,7 @@ def run(ctx: protocol_api.ProtocolContext):
     final_destinations          = elution_plate.rows()[0][:Sample.num_wells]
 
     # pipettes.
-    m300 = ctx.load_instrument('p300_multi_gen2', 'left', tip_racks = tips300) # Load multi pipette
+    m300 = ctx.load_instrument('p300_multi_gen2', 'right', tip_racks = tips300) # Load multi pipette
 
     #### used tip counter and set maximum tips available
     tip_track = {
