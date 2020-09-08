@@ -149,7 +149,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
                     placed_in_multi = True)
 
-    Wash = Reagent(name = 'Wash 1',
+    Wash = Reagent(name = 'Wash',
                     flow_rate_aspirate = 25,
                     flow_rate_dispense = 100,
                     flow_rate_aspirate_mix = 25,
@@ -159,9 +159,10 @@ def run(ctx: protocol_api.ProtocolContext):
                     disposal_volume = 1,
                     max_volume_allowed = 180,
                     reagent_volume = WASH_VOLUME_PER_SAMPLE,
+                    placed_in_multi = True,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic)
 
-    Ethanol = Reagent(name = 'Wash 2',
+    Ethanol = Reagent(name = 'Ethanol',
                     flow_rate_aspirate = 25,
                     flow_rate_dispense = 100,
                     flow_rate_aspirate_mix = 25,
@@ -480,10 +481,11 @@ def run(ctx: protocol_api.ProtocolContext):
 ##################################
     ######## Single reservoirs
 
-    reagent_res_1 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 1')
-    res_1 = reagent_res_1.wells()[0]
+    # reagent_res_1 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 1')
+    # res_1 = reagent_res_1.wells()[0]
 
-    reagent_res_2 = ctx.load_labware('nest_1_reservoir_195ml', '10', 'Single reagent reservoir 2')
+    # reagent_res_2 = ctx.load_labware('nest_1_reservoir_195ml', '10', 'Single reagent reservoir 2')
+    reagent_res_2 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 2')
     res_2 = reagent_res_2.wells()[0]
 
 
@@ -508,7 +510,7 @@ def run(ctx: protocol_api.ProtocolContext):
 ####################################
     ######### Load tip_racks
     tips300 = [ctx.load_labware('opentrons_96_tiprack_300ul', slot, '200µl filter tiprack')
-        for slot in ['2', '3', '6', '9', '11']]
+        for slot in ['2', '3', '6', '9', '10', '11']]
 
 ###############################################################################
     #Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -519,13 +521,14 @@ def run(ctx: protocol_api.ProtocolContext):
     if BEADS_VOLUME_PER_SAMPLE > 0:
         assign_wells(Beads, 2)
 
-    Wash.reagent_reservoir = res_1
-    ctx.comment(Wash.name + ': en el reservorio del slot 8 con un volumen de ' + str_rounded(Wash.vol_well_original) + ' uL')
+    #  Wash.reagent_reservoir = res_1
+    # ctx.comment(Wash.name + ': en el reservorio del slot 8 con un volumen de ' + str_rounded(Wash.vol_well_original) + ' uL')
 
     Ethanol.reagent_reservoir = res_2
     ctx.comment(Ethanol.name + ': en el reservorio del slot 10 con un volumen de ' + str_rounded(Ethanol.vol_well_original) + ' uL')
 
     assign_wells(Elution, 6)
+    assign_wells(Wash, 8) # TODO: Reordenar distribución multicanal
     ctx.comment('###############################################')
     ctx.comment(' ')
 
@@ -714,7 +717,7 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(wash_trips):
             wash_transfer_vol.append(wash_volume + Wash.disposal_volume)
         x_offset_rs = 2.5
-        pickup_height = 0.5
+        # pickup_height = 0.5
 
         for i in range(num_cols):
             x_offset_source = 0
@@ -724,9 +727,11 @@ def run(ctx: protocol_api.ProtocolContext):
                 if TIP_RECYCLING_IN_WASH:
                     w1_tip_pos_list += [tip_track['tips'][m300][int(tip_track['counts'][m300] / 8)]]
             for transfer_vol in wash_transfer_vol:
-                ctx.comment('Aspirando desde el reservorio del slot 8')
+                [pickup_height, change_col] = calc_height(Wash, multi_well_rack_area, transfer_vol*8)
+                ctx.comment('Aspirando desde la columna del reservorio: ' + str(Wash.first_well + Wash.col))
+                ctx.comment('La altura de recogida es ' + str(pickup_height))
 
-                move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir, dest = work_destinations[i],
+                move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir[Wash.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = False)
 
