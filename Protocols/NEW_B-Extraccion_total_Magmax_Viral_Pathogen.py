@@ -477,7 +477,7 @@ def run(ctx: protocol_api.ProtocolContext):
 ####################################
     # load labware and modules
     ######## 12 well rack
-    reagent_res = ctx.load_labware('nest_12_reservoir_15ml', '5','reagent deepwell plate')
+    reagent_res = ctx.load_labware('usascientific_12_reservoir_22ml', '5','Reagent 12 Well Reservoir')
 
 ##################################
     ######## Single reservoirs
