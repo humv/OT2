@@ -105,7 +105,7 @@ def run(ctx: protocol_api.ProtocolContext):
             elif self.placed_in_multi:
                 trips = math.ceil(self.reagent_volume / self.max_volume_allowed)
                 vol_trip = self.reagent_volume / trips * 8
-                max_trips_well = math.floor(11000 / vol_trip)
+                max_trips_well = math.floor(18000 / vol_trip)
                 total_trips = num_cols * trips
                 self.num_wells = math.ceil(total_trips / max_trips_well)
                 return math.ceil(total_trips / self.num_wells) * vol_trip + self.dead_vol
@@ -170,8 +170,9 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
-                    max_volume_allowed = 180,
+                    max_volume_allowed = 180,              
                     reagent_volume = ETHANOL_VOLUME_PER_SAMPLE,
+                    placed_in_multi = True,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic)
 
     Elution = Reagent(name = 'Elution',
@@ -485,8 +486,8 @@ def run(ctx: protocol_api.ProtocolContext):
     # res_1 = reagent_res_1.wells()[0]
 
     # reagent_res_2 = ctx.load_labware('nest_1_reservoir_195ml', '10', 'Single reagent reservoir 2')
-    reagent_res_2 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 2')
-    res_2 = reagent_res_2.wells()[0]
+    # reagent_res_2 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 2')
+    # res_2 = reagent_res_2.wells()[0]
 
 
 
@@ -510,7 +511,7 @@ def run(ctx: protocol_api.ProtocolContext):
 ####################################
     ######### Load tip_racks
     tips300 = [ctx.load_labware('opentrons_96_tiprack_300ul', slot, '200µl filter tiprack')
-        for slot in ['2', '3', '6', '9', '10', '11']]
+        for slot in ['2', '3', '6', '8', '9', '10', '11']]
 
 ###############################################################################
     #Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -519,16 +520,17 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('VOLÚMENES PARA ' + str(NUM_SAMPLES) + ' MUESTRAS')
     ctx.comment(' ')
     if BEADS_VOLUME_PER_SAMPLE > 0:
-        assign_wells(Beads, 2)
+        assign_wells(Beads, 1)
 
     #  Wash.reagent_reservoir = res_1
     # ctx.comment(Wash.name + ': en el reservorio del slot 8 con un volumen de ' + str_rounded(Wash.vol_well_original) + ' uL')
+    assign_wells(Wash, 4) # TODO: Reordenar distribución multicanal
 
-    Ethanol.reagent_reservoir = res_2
-    ctx.comment(Ethanol.name + ': en el reservorio del slot 10 con un volumen de ' + str_rounded(Ethanol.vol_well_original) + ' uL')
+    assign_wells(Ethanol, 8) # TODO: Reordenar distribución multicanal
+    # Ethanol.reagent_reservoir = res_2
+    # ctx.comment(Ethanol.name + ': en el reservorio del slot 10 con un volumen de ' + str_rounded(Ethanol.vol_well_original) + ' uL')
 
-    assign_wells(Elution, 6)
-    assign_wells(Wash, 8) # TODO: Reordenar distribución multicanal
+    assign_wells(Elution, 12)
     ctx.comment('###############################################')
     ctx.comment(' ')
 
@@ -849,9 +851,11 @@ def run(ctx: protocol_api.ProtocolContext):
                 if TIP_RECYCLING_IN_WASH:
                     w2_tip_pos_list += [tip_track['tips'][m300][int(tip_track['counts'][m300] / 8)]]
             for transfer_vol in wash_transfer_vol:
-                ctx.comment('Aspirando desde el reservorio del slot 10')
+                [pickup_height, change_col] = calc_height(Ethanol, multi_well_rack_area, transfer_vol*8)
+                ctx.comment('Aspirando desde la columna del reservorio: ' + str(Ethanol.first_well + Ethanol.col))
+                ctx.comment('La altura de recogida es ' + str(pickup_height))
 
-                move_vol_multi(m300, reagent = Ethanol, source = Ethanol.reagent_reservoir, dest = work_destinations[i],
+                move_vol_multi(m300, reagent = Ethanol, source = Ethanol.reagent_reservoir[Ethanol.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = False)
 
