@@ -115,7 +115,8 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -2))
+            #pipet.blow_out(dest.top(z = -2))
+            pipet.blow_out(dest.top(z = disp_height))
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10)
 
