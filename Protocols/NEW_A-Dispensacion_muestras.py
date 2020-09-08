@@ -35,7 +35,7 @@ PHOTOSENSITIVE                      = False # True if it has photosensitive reag
 ################################################
 
 num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
-air_gap_vol_sample      = 5
+air_gap_vol_sample      = 25
 run_id                  = 'preparacion_tipo_A'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
@@ -51,6 +51,13 @@ def run(ctx: protocol_api.ProtocolContext):
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
             STEPS[s]['wait_time'] = 0
+
+    #Folder and file_path for log time
+    if not ctx.is_simulating():
+        folder_path = '/var/lib/jupyter/notebooks/'+run_id
+        if not os.path.isdir(folder_path):
+            os.mkdir(folder_path)
+        file_path = folder_path + '/StationA_time_log.txt'
 
     # Define Reagents as objects with their properties
     class Reagent:
@@ -111,6 +118,10 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.blow_out(dest.top(z = -2))
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10)
+
+        if air_gap_vol != 0:
+            pipet.move_to(dest.top(z = disp_height))
+            pipet.air_gap(air_gap_vol) #air gap
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
     x_offset, source_height = 5):
@@ -240,20 +251,20 @@ def run(ctx: protocol_api.ProtocolContext):
 
     source_racks = [ctx.load_labware(
         'opentrons_24_tuberack_nest_2ml_snapcap', slot,
-        'source tuberack with snapcap' + str(i + 1)) for i, slot in enumerate(['5', '2', '6', '3'][:rack_num])
+        'source tuberack with snapcap' + str(i + 1)) for i, slot in enumerate(['4', '1', '5', '2'][:rack_num])
     ]
 
     ##################################
     # Destination plate
     dest_plate = ctx.load_labware(
-        'nest_96_wellplate_2ml_deep', '1',
+        'nest_96_wellplate_2ml_deep', '6',
         'NEST 96 Deepwell Plate 2mL')
 
     ####################################
     # Load tip_racks
     tips1000 = [ctx.load_labware(
         'opentrons_96_filtertiprack_1000ul', slot, 
-        '1000µl filter tiprack') for slot in ['7']]
+        '1000µl filter tiprack') for slot in ['8']]
 
     ################################################################################
     # setup samples and destinations
@@ -298,7 +309,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
                 pickup_height = 3, rinse = Samples.rinse, disp_height = -10,
-                blow_out = True, touch_tip = True)
+                blow_out = True, touch_tip = False)
 
             p1000.drop_tip(home_after = False)
             tip_track['counts'][p1000] += 1
