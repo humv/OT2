@@ -41,11 +41,11 @@ ELUTION_NUM_MIXES                   = 5     # 5
 TIP_RECYCLING_IN_WASH               = True
 TIP_RECYCLING_IN_ELUTION            = True
 
-SET_TEMP_ON                         = True  # Do you want to start temperature module?
+SET_TEMP_ON                         = False  # Do you want to start temperature module?
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
 
 PHOTOSENSITIVE                      = False # True if it has photosensitive reagents
-SOUND_NUM_PLAYS                     = 3
+SOUND_NUM_PLAYS                     = 0
 ################################################
 
 run_id                      = 'B_Extraccion_total_Magmax_Viral_Pathogen'
@@ -70,7 +70,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
             1:{'Execute': True, 'description': 'Transferir bolas magnéticas'},
-            2:{'Execute': True, 'description': 'Espera', 'wait_time': 300},         # TODO: Ver si es necesaria
+            2:{'Execute': False, 'description': 'Espera', 'wait_time': 300},         # TODO: Ver si es necesaria
             3:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 600},
             4:{'Execute': True, 'description': 'Desechar sobrenadante'},
             5:{'Execute': True, 'description': 'Imán OFF'},
@@ -81,10 +81,10 @@ def run(ctx: protocol_api.ProtocolContext):
             10:{'Execute': True, 'description': 'Transferir segundo lavado'},
             11:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 300},
             12:{'Execute': True, 'description': 'Desechar sobrenadante'},
-            13:{'Execute': True, 'description': 'Secado', 'wait_time': 600}, # 180
+            13:{'Execute': True, 'description': 'Secado', 'wait_time': 180}, # 180 - 600
             14:{'Execute': True, 'description': 'Imán OFF'},
             15:{'Execute': True, 'description': 'Transferir elución'},              # TODO: No migrada la espera de 10 mins después de este paso
-            16:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 600}, # 180
+            16:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 180}, # 180 - 600
             17:{'Execute': True, 'description': 'Transferir elución a la placa'},
             }
 
