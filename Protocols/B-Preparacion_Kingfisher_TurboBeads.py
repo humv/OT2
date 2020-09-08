@@ -20,16 +20,16 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                     = 96    # Must be multiple of 8
+NUM_SAMPLES                     = 8  # Must be multiple of 8
 LYSIS_VOLUME_PER_SAMPLE         = 300
 BEADS_VOLUME_PER_SAMPLE         = 420
 WASH_VOLUME_PER_SAMPLE          = 300
 ETHANOL_VOLUME_PER_SAMPLE       = 300
 ELUTION_VOLUME_PER_SAMPLE       = 50
 LYSIS_NUM_MIXES                 = 5
-BEADS_WELL_FIRST_TIME_NUM_MIXES = 20
-BEADS_WELL_NUM_MIXES            = 20
-BEADS_NUM_MIXES                 = 20
+BEADS_WELL_FIRST_TIME_NUM_MIXES = 10
+BEADS_WELL_NUM_MIXES            = 3
+BEADS_NUM_MIXES                 = 2
 ################################################
 
 run_id                      = 'B_Extraccion_total'

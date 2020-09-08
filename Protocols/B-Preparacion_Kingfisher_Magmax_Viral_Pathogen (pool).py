@@ -20,10 +20,10 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                     = 96
-BEADS_VOLUME_PER_SAMPLE         = 280
-WASH_VOLUME_PER_SAMPLE          = 500
-ETHANOL_VOLUME_PER_SAMPLE       = 500
+NUM_SAMPLES                     = 8
+BEADS_VOLUME_PER_SAMPLE         = 560
+WASH_VOLUME_PER_SAMPLE          = 1000
+ETHANOL_VOLUME_PER_SAMPLE       = 1000
 ELUTION_VOLUME_PER_SAMPLE       = 50
 BEADS_WELL_FIRST_TIME_NUM_MIXES = 10
 BEADS_WELL_NUM_MIXES            = 3
@@ -182,7 +182,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('VOLUMES FOR ' + str(NUM_SAMPLES) + ' SAMPLES')
     ctx.comment(' ')
     ctx.comment('Beads + PK + Binding: ' + str(Beads_PK_Binding.num_wells) + ' wells from well 2 in multi reservoir with volume ' + str_rounded(Beads_PK_Binding.vol_well_original) + ' uL each one')
-    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 7 in multi reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
+    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 11 in multi reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
     ctx.comment('Wash: in reservoir 1 with volume ' + str_rounded(Wash.vol_well_original) + ' uL')
     ctx.comment('Etanol: in reservoir 2 with volume ' + str_rounded(Ethanol.vol_well_original) + ' uL')
     ctx.comment('###############################################')
@@ -337,8 +337,8 @@ def run(ctx: protocol_api.ProtocolContext):
     #Declare which reagents are in each reservoir as well as deepwell and sample plate
     Wash.reagent_reservoir      = res_1
     Ethanol.reagent_reservoir   = res_2
-    Beads_PK_Binding.reagent_reservoir  = reagent_multi_res.rows()[0][1:5]
-    Elution.reagent_reservoir   = reagent_multi_res.rows()[0][6:7]
+    Beads_PK_Binding.reagent_reservoir  = reagent_multi_res.rows()[0][1:8]
+    Elution.reagent_reservoir   = reagent_multi_res.rows()[0][10:11]
     work_destinations           = deepwell_plate_samples.rows()[0][:Sample.num_wells]
     wash_destinations           = deepwell_plate_wash.rows()[0][:Sample.num_wells]
     ethanol_destinations        = deepwell_plate_ethanol.rows()[0][:Sample.num_wells]
