@@ -11,7 +11,7 @@ import csv
 
 # metadata
 metadata = {
-    'protocolName': 'Station B - RNA extraction - TurboBeads',
+    'protocolName': 'Station B - RNA extraction - Generic',
     'author': 'Aitor Gastaminza & José Luis Villanueva & Alex Gasulla & Manuel Alba & Daniel Peñil & David Martínez',
     'source': 'HU Marqués de Valdecilla',
     'apiLevel': '2.6',
@@ -22,22 +22,27 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_SAMPLES                         = 96    # Must be multiple of 8
+NUM_WASHES                          = 2     # Number of washes to do. Value between 0 - 3.
 
 VOLUME_SAMPLE                       = 200   # Volume received from station A
-LYSIS_VOLUME_PER_SAMPLE             = 300   # 0 to ignore Lysis transfer
-BEADS_VOLUME_PER_SAMPLE             = 420   # 0 to ignore Beads transfer
-WASH_VOLUME_PER_SAMPLE              = 300
-ELUTION_VOLUME_PER_SAMPLE           = 90
-ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
+LYSIS_VOLUME_PER_SAMPLE             = 200   # 0 to ignore Lysis transfer
+BEADS_VOLUME_PER_SAMPLE             = 200   # 0 to ignore Beads transfer
+WASH_1_VOLUME_PER_SAMPLE            = 200
+WASH_2_VOLUME_PER_SAMPLE            = 200
+WASH_3_VOLUME_PER_SAMPLE            = 200
+ELUTION_VOLUME_PER_SAMPLE           = 100
+ELUTION_FINAL_VOLUME_PER_SAMPLE     = 100    # Volume transfered to final plates
 
-LYSIS_NUM_MIXES                     = 5
-BEADS_WELL_FIRST_TIME_NUM_MIXES     = 20
-BEADS_WELL_NUM_MIXES                = 20
-BEADS_NUM_MIXES                     = 20
-WASH_NUM_MIXES                      = 20
-ELUTION_NUM_MIXES                   = 20
+LYSIS_NUM_MIXES                     = 10
+BEADS_WELL_FIRST_TIME_NUM_MIXES     = 5
+BEADS_WELL_NUM_MIXES                = 1
+BEADS_NUM_MIXES                     = 10
+WASH_1_NUM_MIXES                    = 10
+WASH_2_NUM_MIXES                    = 10
+WASH_3_NUM_MIXES                    = 10
+ELUTION_NUM_MIXES                   = 10
 
-TIP_RECYCLING_IN_WASH               = True 
+TIP_RECYCLING_IN_WASH               = True
 TIP_RECYCLING_IN_ELUTION            = True
 
 SET_TEMP_ON                         = True  # Do you want to start temperature module?
@@ -66,24 +71,28 @@ def run(ctx: protocol_api.ProtocolContext):
 
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': True, 'description': 'Transferir lisis'},                 # Change this step number may affect remove supernatant step
-            2:{'Execute': True, 'description': 'Transferir bolas magnéticas'},      # Change this step number may affect remove supernatant step
-            3:{'Execute': True, 'description': 'Espera', 'wait_time': 300},         # TODO: Ver si es necesaria
+            1:{'Execute': LYSIS_VOLUME_PER_SAMPLE > 0, 'description': 'Transferir lisis'},
+            2:{'Execute': BEADS_VOLUME_PER_SAMPLE > 0, 'description': 'Transferir bolas magnéticas'},
+            3:{'Execute': False, 'description': 'Espera', 'wait_time': 300},         # TODO: Ver si es necesaria
             4:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 600}, 
             5:{'Execute': True, 'description': 'Desechar sobrenadante'},
-            6:{'Execute': True, 'description': 'Imán OFF'},
-            7:{'Execute': True, 'description': 'Transferir primer lavado'},
-            8:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 300},
-            9:{'Execute': True, 'description': 'Desechar sobrenadante'},
-            10:{'Execute': True, 'description': 'Imán OFF'},
-            11:{'Execute': True, 'description': 'Transferir segundo lavado'},
-            12:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 300},
-            13:{'Execute': True, 'description': 'Desechar sobrenadante'},
-            14:{'Execute': True, 'description': 'Secado', 'wait_time': 1200}, #180
-            15:{'Execute': True, 'description': 'Imán OFF'},
-            16:{'Execute': True, 'description': 'Transferir elución'},
-            17:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 300}, # 180
-            18:{'Execute': True, 'description': 'Transferir elución a la placa'},
+            6:{'Execute': NUM_WASHES > 0, 'description': 'Imán OFF'},
+            7:{'Execute': NUM_WASHES > 0, 'description': 'Transferir primer lavado'},
+            8:{'Execute': NUM_WASHES > 0, 'description': 'Incubación con el imán ON', 'wait_time': 300},
+            9:{'Execute': NUM_WASHES > 0, 'description': 'Desechar sobrenadante'},
+            10:{'Execute': NUM_WASHES > 1, 'description': 'Imán OFF'},
+            11:{'Execute': NUM_WASHES > 1, 'description': 'Transferir segundo lavado'},
+            12:{'Execute': NUM_WASHES > 1, 'description': 'Incubación con el imán ON', 'wait_time': 300},
+            13:{'Execute': NUM_WASHES > 1, 'description': 'Desechar sobrenadante'},
+            14:{'Execute': NUM_WASHES > 2, 'description': 'Imán OFF'},
+            15:{'Execute': NUM_WASHES > 2, 'description': 'Transferir tercer lavado'},
+            16:{'Execute': NUM_WASHES > 2, 'description': 'Incubación con el imán ON', 'wait_time': 300},
+            17:{'Execute': NUM_WASHES > 2, 'description': 'Desechar sobrenadante'},
+            18:{'Execute': True, 'description': 'Secado', 'wait_time': 180},
+            19:{'Execute': True, 'description': 'Imán OFF'},
+            20:{'Execute': True, 'description': 'Transferir elución'},
+            21:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 180},
+            22:{'Execute': True, 'description': 'Transferir elución a la placa'},
             }
 
     #Folder and file_path for log time
@@ -160,7 +169,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
                     placed_in_multi = True)
 
-    Wash = Reagent(name = 'Wash 1',
+    Wash_1 = Reagent(name = 'Wash 1',
                     flow_rate_aspirate = 25,
                     flow_rate_dispense = 100,
                     flow_rate_aspirate_mix = 25,
@@ -169,7 +178,31 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
                     max_volume_allowed = 180,
-                    reagent_volume = WASH_VOLUME_PER_SAMPLE, 
+                    reagent_volume = WASH_1_VOLUME_PER_SAMPLE, 
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic)
+
+    Wash_2 = Reagent(name = 'Wash 2',
+                    flow_rate_aspirate = 25,
+                    flow_rate_dispense = 100,
+                    flow_rate_aspirate_mix = 25,
+                    flow_rate_dispense_mix = 100,
+                    air_gap_vol_bottom = 5,
+                    air_gap_vol_top = 0,
+                    disposal_volume = 1,
+                    max_volume_allowed = 180,
+                    reagent_volume = WASH_2_VOLUME_PER_SAMPLE, 
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic)
+
+    Wash_3 = Reagent(name = 'Wash 3',
+                    flow_rate_aspirate = 25,
+                    flow_rate_dispense = 100,
+                    flow_rate_aspirate_mix = 25,
+                    flow_rate_dispense_mix = 100,
+                    air_gap_vol_bottom = 5,
+                    air_gap_vol_top = 0,
+                    disposal_volume = 1,
+                    max_volume_allowed = 180,
+                    reagent_volume = WASH_3_VOLUME_PER_SAMPLE, 
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic)
 
     Elution = Reagent(name = 'Elution',
@@ -202,11 +235,14 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('VALORES DE VARIABLES')
     ctx.comment(' ')
     ctx.comment('Número de muestras: ' + str(NUM_SAMPLES)) 
+    ctx.comment('Número de ciclos de lavado: ' + str(NUM_WASHES))
     ctx.comment(' ') 
     ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul') 
     ctx.comment('Volumen de lisis por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen de solución con bolas magnéticas por muestra: ' + str(BEADS_VOLUME_PER_SAMPLE) + ' ul')
-    ctx.comment('Volumen de lavado por muestra: ' + str(WASH_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment('Volumen del primer lavado por muestra: ' + str(WASH_1_VOLUME_PER_SAMPLE) + ' ul') 
+    ctx.comment('Volumen del segundo lavado por muestra: ' + str(WASH_2_VOLUME_PER_SAMPLE) + ' ul') 
+    ctx.comment('Volumen del tercer lavado por muestra: ' + str(WASH_3_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen de elución por muestra: ' + str(ELUTION_VOLUME_PER_SAMPLE) + ' ul') 	
     ctx.comment('Volumen de elución a retirar del deepwell: ' + str(ELUTION_FINAL_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment(' ') 	 	
@@ -214,7 +250,9 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Número de mezclas en la primera recogida de un canal con bolas magnéticas: ' + str(BEADS_WELL_FIRST_TIME_NUM_MIXES))
     ctx.comment('Número de mezclas en el resto de recogidas de un canal con bolas magnéticas: ' + str(BEADS_WELL_NUM_MIXES)) 	
     ctx.comment('Número de mezclas con la solución de bolas magnéticas: ' + str(BEADS_NUM_MIXES))
-    ctx.comment('Número de mezclas con el lavado: ' + str(WASH_NUM_MIXES))
+    ctx.comment('Número de mezclas con el primer lavado: ' + str(WASH_1_NUM_MIXES)) 
+    ctx.comment('Número de mezclas con el segundo lavado: ' + str(WASH_2_NUM_MIXES)) 
+    ctx.comment('Número de mezclas con el tercer lavado: ' + str(WASH_3_NUM_MIXES)) 
     ctx.comment('Número de mezclas con la elución: ' + str(ELUTION_NUM_MIXES))
     ctx.comment(' ') 	
     ctx.comment('Reciclado de puntas en los lavados activado: ' + str(TIP_RECYCLING_IN_WASH)) 
@@ -440,6 +478,7 @@ def run(ctx: protocol_api.ProtocolContext):
             side = 1 # right
         return side
 
+
     def assign_wells(reagent, first_well_pos = None):
         global next_well_index
         if first_well_pos is not None and first_well_pos > next_well_index:
@@ -458,8 +497,15 @@ def run(ctx: protocol_api.ProtocolContext):
 
 ##################################
     ######## Single reservoirs
-    reagent_res_1 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 1')
-    res_1 = reagent_res_1.wells()[0]
+    if NUM_WASHES > 0:
+        reagent_res_1 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 1')
+        res_1 = reagent_res_1.wells()[0]
+        if NUM_WASHES > 1:
+            reagent_res_2 = ctx.load_labware('nest_1_reservoir_195ml', '10', 'Single reagent reservoir 2')
+            res_2 = reagent_res_2.wells()[0]
+            if NUM_WASHES > 2:
+                reagent_res_3 = ctx.load_labware('nest_1_reservoir_195ml', '11', 'Single reagent reservoir 3')
+                res_3 = reagent_res_3.wells()[0]
 
     
 
@@ -482,8 +528,16 @@ def run(ctx: protocol_api.ProtocolContext):
 
 ####################################
     ######### Load tip_racks
+    tip_rack_slots = ['2', '3', '6', '9']
+    if NUM_WASHES < 3:
+        tip_rack_slots.insert(4, '11')
+        if NUM_WASHES < 2:
+            tip_rack_slots.insert(4, '10')
+            if NUM_WASHES < 1:
+                tip_rack_slots.insert(3, '8')
+
     tips300 = [ctx.load_labware('opentrons_96_tiprack_300ul', slot, '200µl filter tiprack')
-        for slot in ['2', '3', '6', '9', '10', '11']]
+        for slot in tip_rack_slots]
 
 ###############################################################################
     #Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -491,20 +545,25 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('###############################################')
     ctx.comment('VOLÚMENES PARA ' + str(NUM_SAMPLES) + ' MUESTRAS')
     ctx.comment(' ')
-
     if LYSIS_VOLUME_PER_SAMPLE > 0:
-        assign_wells(Lysis, 2)
+        assign_wells(Lysis)
     if BEADS_VOLUME_PER_SAMPLE > 0:
-        assign_wells(Beads, 6)
+        assign_wells(Beads)
     
-    ctx.comment(Wash.name + ': en el reservorio del slot 8 con un volumen de ' + str_rounded(2 * Wash.vol_well_original) + ' uL')
+    if NUM_WASHES > 0:
+        Wash_1.reagent_reservoir = res_1
+        ctx.comment(Wash_1.name + ': en el reservorio del slot 8 con un volumen de ' + str_rounded(Wash_1.vol_well_original) + ' uL')
+        if NUM_WASHES > 1:
+            Wash_2.reagent_reservoir = res_2
+            ctx.comment(Wash_2.name + ': en el reservorio del slot 10 con un volumen de ' + str_rounded(Wash_2.vol_well_original) + ' uL')
+            if NUM_WASHES > 2:
+                Wash_3.reagent_reservoir = res_3
+                ctx.comment(Wash_3.name + ': en el reservorio del slot 11 con un volumen de ' + str_rounded(Wash_3.vol_well_original) + ' uL')
 
-    assign_wells(Elution, 12)
-
+    assign_wells(Elution)
     ctx.comment('###############################################')
     ctx.comment(' ')
 
-    Wash.reagent_reservoir    = res_1
     work_destinations           = deepwell_plate.rows()[0][:Sample.num_wells]
     final_destinations          = elution_plate.rows()[0][:Sample.num_wells]
 
@@ -642,7 +701,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ###############################################################################
         # STEP 3 Espera
         ########
-
+    
     ###############################################################################
     # STEP 4 Incubación con el imán ON
     ########
@@ -668,9 +727,9 @@ def run(ctx: protocol_api.ProtocolContext):
         start = log_step_start()
 
         total_supernatant_volume = Sample.reagent_volume
-        if STEPS[1]['Execute'] == True:             # Step 1 is lysis transfer
+        if LYSIS_VOLUME_PER_SAMPLE > 0:
             total_supernatant_volume += Lysis.reagent_volume
-        if STEPS[2]['Execute'] == True:             # Step 2 is beads transfer
+        if BEADS_VOLUME_PER_SAMPLE > 0:
             total_supernatant_volume += Beads.reagent_volume
 
         supernatant_trips = math.ceil((total_supernatant_volume) / Sample.max_volume_allowed)
@@ -730,11 +789,11 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        wash_trips = math.ceil(Wash.reagent_volume / Wash.max_volume_allowed)
-        wash_volume = Wash.reagent_volume / wash_trips #136.66
+        wash_trips = math.ceil(Wash_1.reagent_volume / Wash_1.max_volume_allowed)
+        wash_volume = Wash_1.reagent_volume / wash_trips #136.66
         wash_transfer_vol = []
         for i in range(wash_trips):
-            wash_transfer_vol.append(wash_volume + Wash.disposal_volume)
+            wash_transfer_vol.append(wash_volume + Wash_1.disposal_volume)
         x_offset_rs = 2.5
         pickup_height = 0.5
 
@@ -748,16 +807,16 @@ def run(ctx: protocol_api.ProtocolContext):
             for transfer_vol in wash_transfer_vol:
                 ctx.comment('Aspirando desde el reservorio del slot 8')
 
-                move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir, dest = work_destinations[i],
+                move_vol_multi(m300, reagent = Wash_1, source = Wash_1.reagent_reservoir, dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = False)
             
-            if WASH_NUM_MIXES > 0:
-                custom_mix(m300, Wash, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
-                        rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
+            if WASH_1_NUM_MIXES > 0:
+                custom_mix(m300, Wash_1, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
+                        rounds = WASH_1_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
             
             m300.move_to(work_destinations[i].top(0))
-            m300.air_gap(Wash.air_gap_vol_bottom) #air gap
+            m300.air_gap(Wash_1.air_gap_vol_bottom) #air gap
 
             drop_tip(m300)
 
@@ -789,8 +848,8 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        supernatant_trips = math.ceil(Wash.reagent_volume / Wash.max_volume_allowed)
-        supernatant_volume = Wash.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
+        supernatant_trips = math.ceil(Wash_1.reagent_volume / Wash_1.max_volume_allowed)
+        supernatant_volume = Wash_1.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
         supernatant_transfer_vol = []
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
@@ -806,7 +865,7 @@ def run(ctx: protocol_api.ProtocolContext):
             if not m300.hw_pipette['has_tip']:
                 if TIP_RECYCLING_IN_WASH:
                     pick_up_tip(m300, w1_tip_pos_list[i])
-                    m300.dispense(Wash.air_gap_vol_top, work_destinations[i].top(z = 0), rate = Wash.flow_rate_dispense)
+                    m300.dispense(Wash_1.air_gap_vol_top, work_destinations[i].top(z = 0), rate = Wash_1.flow_rate_dispense)
                 else:
                     pick_up_tip(m300)
             for transfer_vol in supernatant_transfer_vol:
@@ -850,11 +909,11 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        wash_trips = math.ceil(Wash.reagent_volume / Wash.max_volume_allowed)
-        wash_volume = Wash.reagent_volume / wash_trips #136.66
+        wash_trips = math.ceil(Wash_2.reagent_volume / Wash_2.max_volume_allowed)
+        wash_volume = Wash_2.reagent_volume / wash_trips #136.66
         wash_transfer_vol = []
         for i in range(wash_trips):
-            wash_transfer_vol.append(wash_volume + Wash.disposal_volume)
+            wash_transfer_vol.append(wash_volume + Wash_2.disposal_volume)
         x_offset_rs = 2.5
         pickup_height = 0.5
 
@@ -868,16 +927,16 @@ def run(ctx: protocol_api.ProtocolContext):
             for transfer_vol in wash_transfer_vol:
                 ctx.comment('Aspirando desde el reservorio del slot 10')
 
-                move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir, dest = work_destinations[i],
+                move_vol_multi(m300, reagent = Wash_2, source = Wash_2.reagent_reservoir, dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = False)
             
-            if WASH_NUM_MIXES > 0:
-                custom_mix(m300, Wash, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
-                        rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
+            if WASH_2_NUM_MIXES > 0:
+                custom_mix(m300, Wash_2, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
+                        rounds = WASH_2_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
             
             m300.move_to(work_destinations[i].top(0))
-            m300.air_gap(Wash.air_gap_vol_bottom) #air gap
+            m300.air_gap(Wash_2.air_gap_vol_bottom) #air gap
 
             drop_tip(m300)
 
@@ -909,8 +968,8 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        supernatant_trips = math.ceil(Wash.reagent_volume / Wash.max_volume_allowed)
-        supernatant_volume = Wash.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
+        supernatant_trips = math.ceil(Wash_2.reagent_volume / Wash_2.max_volume_allowed)
+        supernatant_volume = Wash_2.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
         supernatant_transfer_vol = []
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
@@ -926,7 +985,7 @@ def run(ctx: protocol_api.ProtocolContext):
             if not m300.hw_pipette['has_tip']:
                 if TIP_RECYCLING_IN_WASH:
                     pick_up_tip(m300, w2_tip_pos_list[i])
-                    m300.dispense(Wash.air_gap_vol_top, work_destinations[i].top(z = 0), rate = Wash.flow_rate_dispense)
+                    m300.dispense(Wash_2.air_gap_vol_top, work_destinations[i].top(z = 0), rate = Wash_2.flow_rate_dispense)
                 else:
                     pick_up_tip(m300)
             for transfer_vol in supernatant_transfer_vol:
@@ -949,7 +1008,126 @@ def run(ctx: protocol_api.ProtocolContext):
         ########
 
     ###############################################################################
-    # STEP 14 Secado
+    # STEP 14 Imán OFF
+    ########
+    STEP += 1
+    if STEPS[STEP]['Execute']==True:
+        start = log_step_start()
+
+        # Imán OFF
+        magdeck.disengage()
+
+        log_step_end(start)
+        ###############################################################################
+        # STEP 14 Imán OFF
+        ########
+
+    ###############################################################################
+    # STEP 15 Transferir tercer lavado
+    ########
+    STEP += 1
+    if STEPS[STEP]['Execute']==True:
+        start = log_step_start()
+
+        wash_trips = math.ceil(Wash_3.reagent_volume / Wash_3.max_volume_allowed)
+        wash_volume = Wash_3.reagent_volume / wash_trips #136.66
+        wash_transfer_vol = []
+        for i in range(wash_trips):
+            wash_transfer_vol.append(wash_volume + Wash_3.disposal_volume)
+        x_offset_rs = 2.5
+        pickup_height = 0.5
+
+        for i in range(num_cols):
+            x_offset_source = 0
+            x_offset_dest   = -1 * find_side(i) * x_offset_rs
+            if not m300.hw_pipette['has_tip']:
+                pick_up_tip(m300)
+                if TIP_RECYCLING_IN_WASH:
+                    w3_tip_pos_list += [tip_track['tips'][m300][int(tip_track['counts'][m300] / 8)]]
+            for transfer_vol in wash_transfer_vol:
+                ctx.comment('Aspirando desde el reservorio del slot 11')
+
+                move_vol_multi(m300, reagent = Wash_3, source = Wash_3.reagent_reservoir, dest = work_destinations[i],
+                        vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
+                        pickup_height = pickup_height, blow_out = False)
+            
+            if WASH_3_NUM_MIXES > 0:
+                custom_mix(m300, Wash_3, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
+                        rounds = WASH_3_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
+            
+            m300.move_to(work_destinations[i].top(0))
+            m300.air_gap(Wash_3.air_gap_vol_bottom) #air gap
+
+            drop_tip(m300)
+
+        log_step_end(start)
+        ###############################################################################
+        # STEP 15 Transferir tercer lavado
+        ########
+
+    ###############################################################################
+    # STEP 16 Incubación con el imán ON
+    ########
+    STEP += 1
+    if STEPS[STEP]['Execute']==True:
+        start = log_step_start()
+
+        # switch on magnet
+        magdeck.engage(mag_height)
+        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Incubación con el imán ON durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.')
+
+        log_step_end(start)
+        ####################################################################
+        # STEP 16 Incubación con el imán ON
+        ########
+
+    ###############################################################################
+    # STEP 17 Desechar sobrenadante
+    ########
+    STEP += 1
+    if STEPS[STEP]['Execute']==True:
+        start = log_step_start()
+
+        supernatant_trips = math.ceil(Wash_3.reagent_volume / Wash_3.max_volume_allowed)
+        supernatant_volume = Wash_3.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
+        supernatant_transfer_vol = []
+        for i in range(supernatant_trips):
+            supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
+        
+        x_offset_rs = 2
+        pickup_height = 0.5 # Original 0.5
+
+        for i in range(num_cols):
+            x_offset_source = find_side(i) * x_offset_rs
+            x_offset_dest   = 0
+            not_first_transfer = False
+
+            if not m300.hw_pipette['has_tip']:
+                if TIP_RECYCLING_IN_WASH:
+                    pick_up_tip(m300, w3_tip_pos_list[i])
+                else:
+                    pick_up_tip(m300)
+            for transfer_vol in supernatant_transfer_vol:
+                #Pickup_height is fixed here
+                ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
+                ctx.comment('La altura de recogida es ' + str(pickup_height) )
+                move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
+                    dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
+                    pickup_height = pickup_height, wait_time = 2, blow_out = False, drop_height = waste_drop_height,
+                    dispense_bottom_air_gap_before = not_first_transfer)
+                m300.move_to(waste.top(z = waste_drop_height))
+                m300.air_gap(Sample.air_gap_vol_bottom)
+                not_first_transfer = True
+
+            drop_tip(m300, not TIP_RECYCLING_IN_WASH)
+
+        log_step_end(start)
+        ###############################################################################
+        # STEP 17 Desechar sobrenadante
+        ########
+
+    ###############################################################################
+    # STEP 18 Secado
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -961,11 +1139,11 @@ def run(ctx: protocol_api.ProtocolContext):
 
         log_step_end(start)
         ###############################################################################
-        # STEP 14 Secado
+        # STEP 18 Secado
         ########
 
     ###############################################################################
-    # STEP 15 Imán OFF
+    # STEP 19 Imán OFF
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -976,11 +1154,11 @@ def run(ctx: protocol_api.ProtocolContext):
 
         log_step_end(start)
         ###############################################################################
-        # STEP 15 Imán OFF
+        # STEP 19 Imán OFF
         ########
     
     ###############################################################################
-    # STEP 16 Transferir elución
+    # STEP 20 Transferir elución
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -1025,11 +1203,11 @@ def run(ctx: protocol_api.ProtocolContext):
             
         log_step_end(start)
         ###############################################################################
-        # STEP 16 Transferir elución
+        # STEP 20 Transferir elución
         ########
 
     ###############################################################################
-    # STEP 17 Incubación con el imán ON
+    # STEP 21 Incubación con el imán ON
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -1041,11 +1219,11 @@ def run(ctx: protocol_api.ProtocolContext):
 
         log_step_end(start)
         ####################################################################
-        # STEP 17 Incubación con el imán ON
+        # STEP 21 Incubación con el imán ON
         ########
 
     ###############################################################################
-    # STEP 18 Transferir elución a la placa
+    # STEP 22 Transferir elución a la placa
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
@@ -1087,7 +1265,7 @@ def run(ctx: protocol_api.ProtocolContext):
         log_step_end(start)
 
         ###############################################################################
-        # STEP 18 Transferir elución a la placa
+        # STEP 22 Transferir elución a la placa
         ########
 
 
