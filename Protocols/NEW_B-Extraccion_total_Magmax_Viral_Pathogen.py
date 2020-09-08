@@ -1,6 +1,7 @@
 import math
 from opentrons.types import Point
 from opentrons import protocol_api
+import subprocess
 import time
 import numpy as np
 from timeit import default_timer as timer
@@ -44,12 +45,14 @@ SET_TEMP_ON                         = True  # Do you want to start temperature m
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
 
 PHOTOSENSITIVE                      = False # True if it has photosensitive reagents
+SOUND_NUM_PLAYS                     = 3
 ################################################
 
 run_id                      = 'B_Extraccion_total_Magmax_Viral_Pathogen'
+path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 
 recycle_tip                 = False     # Do you want to recycle tips? It shoud only be set True for testing
-mag_height                  = 7         # Height needed for NEST deepwell in magnetic deck
+mag_height                  = 6         # Height needed for NEST deepwell in magnetic deck
 waste_drop_height           = -5
 multi_well_rack_area        = 8 * 71    #Cross section of the 12 well reservoir
 next_well_index             = 0         # First reservoir well to use
@@ -222,6 +225,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Valor objetivo módulo de temepratura: ' + str(TEMPERATURE) + ' ºC')
     ctx.comment(' ')
     ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
+    ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
     ctx.comment(' ')
 
     #########
@@ -384,6 +388,18 @@ def run(ctx: protocol_api.ProtocolContext):
         start_time = now.strftime("%Y/%m/%d %H:%M:%S")
         return start_time
 
+    def run_quiet_process(command):
+        subprocess.check_output('{} &> /dev/null'.format(command), shell=True)
+
+    def play_sound(filename):
+        print('Speaker')
+        print('Next\t--> CTRL-C')
+        try:
+            run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
+        except KeyboardInterrupt:
+            pass
+            print()
+
     def finish_run():
         ctx.comment('###############################################')
         ctx.comment('Protocolo finalizado')
@@ -410,6 +426,12 @@ def run(ctx: protocol_api.ProtocolContext):
         used_tips = tip_track['num_refills'][m300] * 96 * len(m300.tip_racks) + tip_track['counts'][m300]
         ctx.comment('Puntas de 200 ul utilizadas: ' + str(used_tips) + ' (' + str(round(used_tips / 96, 2)) + ' caja(s))')
         ctx.comment('###############################################')
+
+        if not ctx.is_simulating():
+            for i in range(SOUND_NUM_PLAYS):
+                if i > 0:
+                    time.sleep(60)
+                play_sound('finalizado')
 
         return finish_time
 
@@ -511,7 +533,7 @@ def run(ctx: protocol_api.ProtocolContext):
     final_destinations          = elution_plate.rows()[0][:Sample.num_wells]
 
     # pipettes.
-    m300 = ctx.load_instrument('p300_multi_gen2', 'left', tip_racks = tips300) # Load multi pipette
+    m300 = ctx.load_instrument('p300_multi_gen2', 'right', tip_racks = tips300) # Load multi pipette
 
     #### used tip counter and set maximum tips available
     tip_track = {
