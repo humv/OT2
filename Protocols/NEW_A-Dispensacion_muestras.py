@@ -54,7 +54,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     #Folder and file_path for log time
     if not ctx.is_simulating():
-        folder_path = '/var/lib/jupyter/notebooks/'+run_id
+        folder_path = '/var/lib/jupyter/notebooks/' + run_id
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
         file_path = folder_path + '/StationA_time_log.txt'

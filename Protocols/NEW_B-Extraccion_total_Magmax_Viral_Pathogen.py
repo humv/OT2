@@ -66,10 +66,7 @@ num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
 def run(ctx: protocol_api.ProtocolContext):
     w1_tip_pos_list             = []
     w2_tip_pos_list             = []
-    w3_tip_pos_list             = []
     elution_tip_pos_list        = []
-
-    ctx.comment('Columnas a utilizar: '+str(num_cols))
 
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
@@ -94,7 +91,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     #Folder and file_path for log time
     import os
-    folder_path = '/var/lib/jupyter/notebooks' + run_id
+    folder_path = '/var/lib/jupyter/notebooks/' + run_id
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
@@ -150,8 +147,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     disposal_volume = 1,
                     max_volume_allowed = pipette_allowed_capacity,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
-                    v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
-                    placed_in_multi = True)
+                    placed_in_multi = True,
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Wash = Reagent(name = 'Wash',
                     flow_rate_aspirate = 25,
@@ -208,7 +205,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('###############################################')
     ctx.comment('VALORES DE VARIABLES')
     ctx.comment(' ')
-    ctx.comment('Número de muestras: ' + str(NUM_SAMPLES))
+    ctx.comment('Número de muestras: ' + str(NUM_SAMPLES) + ' (' + str(num_cols) + ' columnas)')
     ctx.comment('Capacidad de puntas: ' + txt_tip_capacity)
     ctx.comment(' ')
     ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
@@ -298,7 +295,6 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.dispense(reagent.air_gap_vol_bottom, source.top(z = -2), rate = reagent.flow_rate_dispense)
 
         if reagent.air_gap_vol_top != 0: #If there is air_gap_vol, switch pipette to slow speed
-            # pipet.move_to(source.top(z = 0))
             pipet.air_gap(reagent.air_gap_vol_top, height = 0) #air gap
 
         if aspirate_with_x_scroll:
@@ -308,7 +304,6 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate) # aspirate liquid
 
         if reagent.air_gap_vol_bottom != 0: #If there is air_gap_vol, switch pipette to slow speed
-            # pipet.move_to(source.top(z = 0))
             pipet.air_gap(reagent.air_gap_vol_bottom, height = 0) #air gap
 
         # if wait_time != 0:
@@ -361,8 +356,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     ctx._hw_manager.hardware.set_lights(button=(0, 0 ,1))
                     time.sleep(0.3)
                 ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
-                ctx.pause('Reemplaza las cajas de puntas de ' + str(pip.max_volume) + 'µl antes \
-                de continuar.')
+                ctx.pause('Reemplaza las cajas de puntas de ' + str(pip.max_volume) + 'µl antes de continuar.')
                 pip.reset_tipracks()
                 tip_track['counts'][pip] = 0
                 tip_track['num_refills'][pip] += 1
@@ -477,7 +471,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         next_well_index = reagent.first_well - 1 + reagent.num_wells
         reagent.reagent_reservoir = reagent_res.rows()[0][reagent.first_well - 1:next_well_index]
-        ctx.comment(reagent.name + ': ' + str(reagent.num_wells) + ' canales desde el canal '+ str(reagent.first_well) +' en el reservorio de 12 canales con un volumen de ' + str_rounded(reagent.vol_well_original) + ' uL cada uno')
+        ctx.comment(reagent.name + ': ' + str(reagent.num_wells) +  (' canal' if reagent.num_wells == 1 else ' canales') + ' desde el canal '+ str(reagent.first_well) +' en el reservorio de 12 canales con un volumen de ' + str_rounded(reagent.vol_well_original) + ' uL cada uno')
 
 ####################################
     # load labware and modules
@@ -591,7 +585,6 @@ def run(ctx: protocol_api.ProtocolContext):
                 custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
                         rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 1, offset = 0, wait_time = 2)
 
-            # m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Beads.air_gap_vol_bottom, height = 0) #air gap
 
             drop_tip(m300)
@@ -669,7 +662,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
                         wait_time = 2, blow_out = True, drop_height = waste_drop_height,
                         dispense_bottom_air_gap_before = not_first_transfer)
-                # m300.move_to(waste.top(z = waste_drop_height))
+
                 m300.air_gap(Sample.air_gap_vol_bottom, height = 0)
                 not_first_transfer = True
 
@@ -730,7 +723,6 @@ def run(ctx: protocol_api.ProtocolContext):
                 custom_mix(m300, Wash, location = work_destinations[i], vol = Wash.max_volume_allowed, two_thirds_mix_bottom = True,
                         rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
 
-            # m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom, height = 0) #air gap
 
             drop_tip(m300)
@@ -791,7 +783,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
                         wait_time = 2, blow_out = False, drop_height = waste_drop_height,
                         dispense_bottom_air_gap_before = not_first_transfer)
-                # m300.move_to(waste.top(z = waste_drop_height))
+
                 m300.air_gap(Sample.air_gap_vol_bottom, height = 0)
                 not_first_transfer = True
 
@@ -852,7 +844,6 @@ def run(ctx: protocol_api.ProtocolContext):
                 custom_mix(m300, Ethanol, location = work_destinations[i], vol = Ethanol.max_volume_allowed, two_thirds_mix_bottom = True,
                         rounds = EHTANOL_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
 
-            # m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Ethanol.air_gap_vol_bottom, height = 0) #air gap
 
             drop_tip(m300)
@@ -913,7 +904,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
                         wait_time = 2, blow_out = False, dispense_bottom_air_gap_before = not_first_transfer,
                         drop_height = waste_drop_height)
-                # m300.move_to(waste.top(z = waste_drop_height))
+
                 m300.air_gap(Sample.air_gap_vol_bottom, height = 0)
                 not_first_transfer = True
 
@@ -994,7 +985,6 @@ def run(ctx: protocol_api.ProtocolContext):
                 custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = ELUTION_NUM_MIXES,
                         blow_out = False, mix_height = 1, offset = x_offset_dest, drop_height = -35)
 
-            # m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Elution.air_gap_vol_bottom, height = 0) #air gap
 
             drop_tip(m300)
@@ -1052,7 +1042,6 @@ def run(ctx: protocol_api.ProtocolContext):
                         dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 3)
 
-            # m300.move_to(final_destinations[i].top(0))
             m300.air_gap(Sample.air_gap_vol_bottom, height = 0) #air gap
 
             drop_tip(m300, not TIP_RECYCLING_IN_ELUTION)

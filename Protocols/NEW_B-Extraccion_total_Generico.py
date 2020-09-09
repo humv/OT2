@@ -24,6 +24,7 @@ metadata = {
 ################################################
 NUM_SAMPLES                         = 96    # Must be multiple of 8
 NUM_WASHES                          = 2     # Number of washes to do. Value between 0 - 3.
+USE_300_TIPS                        = True  # Check that TIP_RECYCLING variables have desired values
 
 VOLUME_SAMPLE                       = 200   # Volume received from station A
 LYSIS_VOLUME_PER_SAMPLE             = 200   # 0 to ignore Lysis transfer
@@ -62,6 +63,9 @@ waste_drop_height           = -5
 multi_well_rack_area        = 8 * 71    #Cross section of the 12 well reservoir
 next_well_index             = 0         # First reservoir well to use
 
+pipette_allowed_capacity    = 280 if USE_300_TIPS else 180
+txt_tip_capacity            = '300 uL' if USE_300_TIPS else '200 uL'
+
 num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
@@ -69,8 +73,6 @@ def run(ctx: protocol_api.ProtocolContext):
     w2_tip_pos_list             = []
     w3_tip_pos_list             = []
     elution_tip_pos_list        = []
-
-    ctx.comment('Columnas a utilizar: '+str(num_cols))
 
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
@@ -100,7 +102,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     #Folder and file_path for log time
     import os
-    folder_path = '/var/lib/jupyter/notebooks' + run_id
+    folder_path = '/var/lib/jupyter/notebooks/' + run_id
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
@@ -237,8 +239,9 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('###############################################')
     ctx.comment('VALORES DE VARIABLES')
     ctx.comment(' ')
-    ctx.comment('Número de muestras: ' + str(NUM_SAMPLES)) 
+    ctx.comment('Número de muestras: ' + str(NUM_SAMPLES) + ' (' + str(num_cols) + ' columnas)')
     ctx.comment('Número de ciclos de lavado: ' + str(NUM_WASHES))
+    ctx.comment('Capacidad de puntas: ' + txt_tip_capacity)
     ctx.comment(' ') 
     ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul') 
     ctx.comment('Volumen de lisis por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
