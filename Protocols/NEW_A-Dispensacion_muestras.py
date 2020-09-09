@@ -121,8 +121,8 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.touch_tip(speed = 20, v_offset = -10)
 
         if air_gap_vol != 0:
-            pipet.move_to(dest.top(z = disp_height))
-            pipet.air_gap(air_gap_vol) #air gap
+            # pipet.move_to(dest.top(z = disp_height))
+            pipet.air_gap(air_gap_vol, height = disp_height) #air gap
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
     x_offset, source_height = 5):
