@@ -244,7 +244,7 @@ def run(ctx: protocol_api.ProtocolContext):
             col_change = False
         return height, col_change
 
-    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, drop_height = -5):
+    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, drop_height = -5, dispense_bottom_air_gap_before = False):
         # Rinse before aspirating
         if rinse == True:
             #pipet.aspirate(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
@@ -252,6 +252,10 @@ def run(ctx: protocol_api.ProtocolContext):
             #pipet.dispense(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_dispense)
 
         # SOURCE
+        if dispense_bottom_air_gap_before and reagent.air_gap_vol_bottom:
+            pipet.dispense(reagent.air_gap_vol_bottom, source.top(z = -2), rate = reagent.flow_rate_dispense)
+
+
         if reagent.air_gap_vol_top != 0: #If there is air_gap_vol, switch pipette to slow speed
             pipet.move_to(source.top(z = 0))
             pipet.air_gap(reagent.air_gap_vol_top) #air gap
@@ -448,6 +452,8 @@ def run(ctx: protocol_api.ProtocolContext):
         first_mix_done = False
 
         for i in range(num_cols):
+            not_first_transfer = False
+
             ctx.comment("Column: " + str(i))
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
@@ -469,8 +475,11 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Beads_PK_Binding, source = Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = False, 
-                        touch_tip = False, drop_height = 5)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = True, 
+                        touch_tip = False, drop_height = 5, dispense_bottom_air_gap_before = not_first_transfer)
+                
+                m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom, height = 5)
+                not_first_transfer = True
             
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
