@@ -285,7 +285,7 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.dispense(reagent.air_gap_vol_top, dest.top(z = 0), rate = reagent.flow_rate_dispense)
 
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -5))
+            pipet.blow_out(dest.top(z = drop_height))
 
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10, radius=0.7)
@@ -475,7 +475,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Beads_PK_Binding, source = Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = True, 
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = False, 
                         touch_tip = False, drop_height = 5, dispense_bottom_air_gap_before = not_first_transfer)
                 
                 m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom, height = 5)
