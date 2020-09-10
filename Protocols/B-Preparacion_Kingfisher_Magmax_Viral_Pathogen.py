@@ -1,6 +1,7 @@
 import math
 from opentrons.types import Point
 from opentrons import protocol_api
+import subprocess
 import time
 import numpy as np
 from timeit import default_timer as timer
@@ -28,9 +29,13 @@ ELUTION_VOLUME_PER_SAMPLE       = 50
 BEADS_WELL_FIRST_TIME_NUM_MIXES = 10
 BEADS_WELL_NUM_MIXES            = 3
 BEADS_NUM_MIXES                 = 2
+
+PHOTOSENSITIVE                      = False # True if it has photosensitive reagents
+SOUND_NUM_PLAYS                     = 1
 ################################################
 
 run_id                      = 'B_Extraccion_total'
+path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 
 recycle_tip     = False #
 L_deepwell = 8 # Deepwell lenght (NEST deepwell)
@@ -56,7 +61,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     #Folder and file_path for log time
     import os
-    folder_path = '/var/lib/jupyter/notebooks' + run_id
+    folder_path = '/var/lib/jupyter/notebooks/' + run_id
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
@@ -239,7 +244,7 @@ def run(ctx: protocol_api.ProtocolContext):
             col_change = False
         return height, col_change
 
-    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, drop_height = -5):
+    def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height, rinse, avoid_droplet, wait_time, blow_out, touch_tip = False, drop_height = -5, dispense_bottom_air_gap_before = False):
         # Rinse before aspirating
         if rinse == True:
             #pipet.aspirate(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
@@ -247,6 +252,10 @@ def run(ctx: protocol_api.ProtocolContext):
             #pipet.dispense(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_dispense)
 
         # SOURCE
+        if dispense_bottom_air_gap_before and reagent.air_gap_vol_bottom:
+            pipet.dispense(reagent.air_gap_vol_bottom, source.top(z = -2), rate = reagent.flow_rate_dispense)
+
+
         if reagent.air_gap_vol_top != 0: #If there is air_gap_vol, switch pipette to slow speed
             pipet.move_to(source.top(z = 0))
             pipet.air_gap(reagent.air_gap_vol_top) #air gap
@@ -256,9 +265,7 @@ def run(ctx: protocol_api.ProtocolContext):
         pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate) # aspirate liquid
 
         if reagent.air_gap_vol_bottom != 0: #If there is air_gap_vol, switch pipette to slow speed
-            pipet.move_to(source.top(z = 0))
-            pipet.air_gap(reagent.air_gap_vol_bottom) #air gap
-            #pipet.aspirate(air_gap_vol_bottom, source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
+            pipet.air_gap(reagent.air_gap_vol_bottom, height = 0) #air gap
 
         if wait_time != 0:
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
@@ -278,7 +285,7 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.dispense(reagent.air_gap_vol_top, dest.top(z = 0), rate = reagent.flow_rate_dispense)
 
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -5))
+            pipet.blow_out(dest.top(z = drop_height))
 
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10, radius=0.7)
@@ -299,6 +306,70 @@ def run(ctx: protocol_api.ProtocolContext):
             pip.reset_tipracks()
             tip_track['counts'][pip] = 0
         pip.pick_up_tip()
+
+    ##########
+    def start_run():
+        ctx.comment(' ')
+        ctx.comment('###############################################')
+        ctx.comment('Empezando protocolo')
+        if PHOTOSENSITIVE == False:
+            ctx._hw_manager.hardware.set_lights(button = True, rails =  True)
+        else:
+            ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+        now = datetime.now()
+
+        # dd/mm/YY H:M:S
+        start_time = now.strftime("%Y/%m/%d %H:%M:%S")
+        return start_time
+
+    def run_quiet_process(command):
+        subprocess.check_output('{} &> /dev/null'.format(command), shell=True)
+
+    def play_sound(filename):
+        print('Speaker')
+        print('Next\t--> CTRL-C')
+        try:
+            run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
+        except KeyboardInterrupt:
+            pass
+            print()
+
+    def finish_run():
+        ctx.comment('###############################################')
+        ctx.comment('Protocolo finalizado')
+        ctx.comment(' ')
+        #Set light color to blue
+        ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+        now = datetime.now()
+        # dd/mm/YY H:M:S
+        finish_time = now.strftime("%Y/%m/%d %H:%M:%S")
+        if PHOTOSENSITIVE==False:
+            for i in range(10):
+                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
+                time.sleep(0.3)
+                ctx._hw_manager.hardware.set_lights(button = True, rails =  True)
+                time.sleep(0.3)
+        else:
+            for i in range(10):
+                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
+                time.sleep(0.3)
+                ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+                time.sleep(0.3)
+        ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+
+        # TODO: Añadir refills a los tip_racks
+        # used_tips = tip_track['num_refills'][m300] * 96 * len(m300.tip_racks) + tip_track['counts'][m300]
+        ctx.comment('Puntas de 200 uL utilizadas: ' + str(tip_track['counts'][m300]) + ' (' + str(round(tip_track['counts'][m300] / 96, 2)) + ' caja(s))')
+        ctx.comment('###############################################')
+
+        if not ctx.is_simulating():
+            for i in range(SOUND_NUM_PLAYS):
+                if i > 0:
+                    time.sleep(60)
+                play_sound('finalizado')
+
+        return finish_time
+
 
     ##########
     def find_side(col):
@@ -356,6 +427,8 @@ def run(ctx: protocol_api.ProtocolContext):
 ###############################################################################
 
 ###############################################################################
+    start_run()
+    
     ###############################################################################
     # STEP 1 TRANSFER BEADS + PK + Binding
     ########
@@ -379,6 +452,8 @@ def run(ctx: protocol_api.ProtocolContext):
         first_mix_done = False
 
         for i in range(num_cols):
+            not_first_transfer = False
+
             ctx.comment("Column: " + str(i))
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
@@ -400,13 +475,18 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Beads_PK_Binding, source = Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True, drop_height = -1)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = False, 
+                        touch_tip = False, drop_height = 5, dispense_bottom_air_gap_before = not_first_transfer)
+                
+                m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom, height = 5)
+                not_first_transfer = True
+            
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
             custom_mix(m300, Beads_PK_Binding, location = work_destinations[i], vol =  Beads_PK_Binding.max_volume_allowed,
                     rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0, wait_time = 2, two_thirds_mix_bottom = True)
-            # m300.move_to(work_destinations[i].top(0))
-            # m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom) #air gap
+            m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom, height = 0) #air gap
+
             if recycle_tip == True:
                 m300.return_tip()
             else:
@@ -589,18 +669,5 @@ def run(ctx: protocol_api.ProtocolContext):
                 f.write(row + '\n')
         f.close()
 
-    # Light flash end of program
-    import os
-    #os.system('mpg123 /etc/audio/speaker-test.mp3')
-    for i in range(3):
-        ctx._hw_manager.hardware.set_lights(rails=False)
-        ctx._hw_manager.hardware.set_lights(button=(1, 0 ,0))
-        time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(rails=True)
-        ctx._hw_manager.hardware.set_lights(button=(0, 0 ,1))
-        time.sleep(0.3)
-    ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
-    ctx.comment('Finished! \nMove deepwell plates Kingfisher robot.')
-    ctx.comment('Used tips 200uL in total: '+str(tip_track['counts'][m300]))
-    ctx.comment('Used racks 200uL in total: '+str(tip_track['counts'][m300]/96))
-    ctx.comment('Available 200uL tips: '+str(tip_track['maxes'][m300]))
+    finish_run()
+

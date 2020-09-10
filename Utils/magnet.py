@@ -8,6 +8,6 @@ def run(protocol: protocol_api.ProtocolContext):
 
     for i in range(50):
         protocol.pause()
-        mag_mod.engage(height = 7)
+        mag_mod.engage(height = 6)
         protocol.pause()
         mag_mod.disengage()

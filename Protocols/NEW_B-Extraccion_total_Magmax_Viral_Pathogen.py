@@ -22,7 +22,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                         = 96    # Must be multiple of 8
+NUM_SAMPLES                         = 16    # Must be multiple of 8
 
 VOLUME_SAMPLE                       = 200   # Volume received from station A
 BEADS_VOLUME_PER_SAMPLE             = 280   # 0 to ignore Lysis transfer
@@ -33,10 +33,10 @@ ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
 
 BEADS_WELL_FIRST_TIME_NUM_MIXES     = 10
 BEADS_WELL_NUM_MIXES                = 3
-BEADS_NUM_MIXES                     = 5    # 20
-WASH_NUM_MIXES                      = 5    # 10  
-EHTANOL_NUM_MIXES                   = 5    # 10
-ELUTION_NUM_MIXES                   = 5     # 5
+BEADS_NUM_MIXES                     = 10    # 20
+WASH_NUM_MIXES                      = 10    # 10  
+EHTANOL_NUM_MIXES                   = 10    # 10
+ELUTION_NUM_MIXES                   = 10     # 5
 
 TIP_RECYCLING_IN_WASH               = True
 TIP_RECYCLING_IN_ELUTION            = True
