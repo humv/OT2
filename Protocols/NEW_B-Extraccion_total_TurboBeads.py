@@ -39,7 +39,7 @@ BEADS_NUM_MIXES                     = 20
 WASH_NUM_MIXES                      = 20
 ELUTION_NUM_MIXES                   = 20
 
-TIP_RECYCLING_IN_WASH               = True 
+TIP_RECYCLING_IN_WASH               = True
 TIP_RECYCLING_IN_ELUTION            = True
 
 SET_TEMP_ON                         = True  # Do you want to start temperature module?
@@ -74,7 +74,7 @@ def run(ctx: protocol_api.ProtocolContext):
             1:{'Execute': True, 'description': 'Transferir lisis'},                 # Change this step number may affect remove supernatant step
             2:{'Execute': True, 'description': 'Transferir bolas magnéticas'},      # Change this step number may affect remove supernatant step
             3:{'Execute': True, 'description': 'Espera', 'wait_time': 300},         # TODO: Ver si es necesaria
-            4:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 600}, 
+            4:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 600},
             5:{'Execute': True, 'description': 'Desechar sobrenadante'},
             6:{'Execute': True, 'description': 'Imán OFF'},
             7:{'Execute': True, 'description': 'Transferir primer lavado'},
@@ -105,11 +105,13 @@ def run(ctx: protocol_api.ProtocolContext):
             if(self.name == 'Sample'):
                 self.num_wells = num_cols
                 return VOLUME_SAMPLE
-            elif self.placed_in_multi:    
+            elif self.placed_in_multi:
                 trips = math.ceil(self.reagent_volume / self.max_volume_allowed)
                 vol_trip = self.reagent_volume / trips * 8
-                max_trips_well = math.floor(11000 / vol_trip)
+                max_trips_well = math.floor(18000 / vol_trip)
                 total_trips = num_cols * trips
+                if self.name == 'Wash':
+                    total_trips = total_trips * 2
                 self.num_wells = math.ceil(total_trips / max_trips_well)
                 return math.ceil(total_trips / self.num_wells) * vol_trip + self.dead_vol
             else:
@@ -117,7 +119,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 return self.reagent_volume * NUM_SAMPLES
 
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, flow_rate_aspirate_mix, flow_rate_dispense_mix,
-        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, max_volume_allowed, reagent_volume, v_fondo, 
+        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, max_volume_allowed, reagent_volume, v_fondo,
         dead_vol = 700, first_well = None, placed_in_multi = False):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
@@ -165,7 +167,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic
                     placed_in_multi = True)
 
-    Wash = Reagent(name = 'Wash 1',
+    Wash = Reagent(name = 'Wash',
                     flow_rate_aspirate = 25,
                     flow_rate_dispense = 100,
                     flow_rate_aspirate_mix = 25,
@@ -174,8 +176,9 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
                     max_volume_allowed = 180,
-                    reagent_volume = WASH_VOLUME_PER_SAMPLE, 
-                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic)
+                    reagent_volume = WASH_VOLUME_PER_SAMPLE,
+                    v_fondo = 695, #1.95 * multi_well_rack_area / 2, #Prismatic)
+                    placed_in_multi = True)
 
     Elution = Reagent(name = 'Elution',
                     flow_rate_aspirate = 25,
@@ -208,29 +211,29 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
     ctx.comment('Número de muestras: ' + str(NUM_SAMPLES) + ' (' + str(num_cols) + ' columnas)')
     ctx.comment('Capacidad de puntas: ' + txt_tip_capacity)
-    ctx.comment(' ') 
-    ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul') 
+    ctx.comment(' ')
+    ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
     ctx.comment('Volumen de lisis por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen de solución con bolas magnéticas por muestra: ' + str(BEADS_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen de lavado por muestra: ' + str(WASH_VOLUME_PER_SAMPLE) + ' ul')
-    ctx.comment('Volumen de elución por muestra: ' + str(ELUTION_VOLUME_PER_SAMPLE) + ' ul') 	
+    ctx.comment('Volumen de elución por muestra: ' + str(ELUTION_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen de elución a retirar del deepwell: ' + str(ELUTION_FINAL_VOLUME_PER_SAMPLE) + ' ul')
-    ctx.comment(' ') 	 	
-    ctx.comment('Número de mezclas con el lisis: ' + str(LYSIS_NUM_MIXES)) 
+    ctx.comment(' ')
+    ctx.comment('Número de mezclas con el lisis: ' + str(LYSIS_NUM_MIXES))
     ctx.comment('Número de mezclas en la primera recogida de un canal con bolas magnéticas: ' + str(BEADS_WELL_FIRST_TIME_NUM_MIXES))
-    ctx.comment('Número de mezclas en el resto de recogidas de un canal con bolas magnéticas: ' + str(BEADS_WELL_NUM_MIXES)) 	
+    ctx.comment('Número de mezclas en el resto de recogidas de un canal con bolas magnéticas: ' + str(BEADS_WELL_NUM_MIXES))
     ctx.comment('Número de mezclas con la solución de bolas magnéticas: ' + str(BEADS_NUM_MIXES))
     ctx.comment('Número de mezclas con el lavado: ' + str(WASH_NUM_MIXES))
     ctx.comment('Número de mezclas con la elución: ' + str(ELUTION_NUM_MIXES))
-    ctx.comment(' ') 	
-    ctx.comment('Reciclado de puntas en los lavados activado: ' + str(TIP_RECYCLING_IN_WASH)) 
+    ctx.comment(' ')
+    ctx.comment('Reciclado de puntas en los lavados activado: ' + str(TIP_RECYCLING_IN_WASH))
     ctx.comment('Reciclado de puntas en la elución activado: ' + str(TIP_RECYCLING_IN_ELUTION))
     ctx.comment(' ')
-    ctx.comment('Activar módulo de temperatura: ' + str(SET_TEMP_ON)) 	
+    ctx.comment('Activar módulo de temperatura: ' + str(SET_TEMP_ON))
     ctx.comment('Valor objetivo módulo de temepratura: ' + str(TEMPERATURE) + ' ºC')
-    ctx.comment(' ') 	
+    ctx.comment(' ')
     ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
-    ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS)) 	
+    ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
     ctx.comment(' ')
 
     #########
@@ -262,8 +265,8 @@ def run(ctx: protocol_api.ProtocolContext):
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4):
         nonlocal ctx
         ctx.comment('Volumen útil restante ' + str(reagent.vol_well - reagent.dead_vol) +
-                    ' < volumen necesario ' + str(aspirate_volume - Sample.disposal_volume * 8) + '?')
-        if (reagent.vol_well - reagent.dead_vol + 1) < (aspirate_volume - Sample.disposal_volume * 8):
+                    ' < volumen necesario ' + str(aspirate_volume - reagent.disposal_volume * 8) + '?')
+        if (reagent.vol_well - reagent.dead_vol + 1) < (aspirate_volume - reagent.disposal_volume * 8):
             ctx.comment('Se debe utilizar el siguiente canal')
             ctx.comment('Canal anterior: ' + str(reagent.col))
             # column selector position; intialize to required number
@@ -272,14 +275,14 @@ def run(ctx: protocol_api.ProtocolContext):
             reagent.vol_well = reagent.vol_well_original
             ctx.comment('Nuevo volumen:' + str(reagent.vol_well))
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
-            reagent.vol_well = reagent.vol_well - (aspirate_volume - Sample.disposal_volume * 8)
+            reagent.vol_well = reagent.vol_well - (aspirate_volume - reagent.disposal_volume * 8)
             ctx.comment('Volumen restante:' + str(reagent.vol_well))
             if height < min_height:
                 height = min_height
             col_change = True
         else:
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
-            reagent.vol_well = reagent.vol_well - (aspirate_volume - (Sample.disposal_volume * 8))
+            reagent.vol_well = reagent.vol_well - (aspirate_volume - (reagent.disposal_volume * 8))
             ctx.comment('La altura calculada es ' + str(height))
             if height < min_height:
                 height = min_height
@@ -288,7 +291,7 @@ def run(ctx: protocol_api.ProtocolContext):
         return height, col_change
 
     def move_vol_multi(pipet, reagent, source, dest, vol, x_offset_source, x_offset_dest, pickup_height,
-        blow_out, wait_time = 0, touch_tip = False, touch_tip_v_offset = 0, drop_height = -5, 
+        blow_out, wait_time = 0, touch_tip = False, touch_tip_v_offset = 0, drop_height = -5,
         aspirate_with_x_scroll = False, dispense_bottom_air_gap_before = False):
 
         # SOURCE
@@ -301,7 +304,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         if aspirate_with_x_scroll:
             aspirate_with_x_scrolling(pip = pipet, volume = vol, src = source, pickup_height = pickup_height, rate = reagent.flow_rate_aspirate, start_x_offset_src = 0, stop_x_offset_src = x_offset_source)
-        else:    
+        else:
             s = source.bottom(pickup_height).move(Point(x = x_offset_source))
             pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate) # aspirate liquid
 
@@ -324,7 +327,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = touch_tip_v_offset, radius=0.7)
-            
+
         if wait_time != 0:
             ctx.delay(seconds=wait_time, msg='Esperando durante ' + str(wait_time) + ' segundos.')
 
@@ -369,10 +372,10 @@ def run(ctx: protocol_api.ProtocolContext):
             else:
                 pip.pick_up_tip(position)
 
-    def drop_tip(pip, increment_count = True):
+    def drop_tip(pip, recycle = False, increment_count = True):
         nonlocal tip_track
         #if not ctx.is_simulating():
-        if recycle_tip:
+        if recycle or recycle_tip:
             pip.return_tip()
         else:
             pip.drop_tip(home_after = False)
@@ -482,13 +485,6 @@ def run(ctx: protocol_api.ProtocolContext):
     reagent_res = ctx.load_labware('nest_12_reservoir_15ml', '5','reagent deepwell plate')
 
 ##################################
-    ######## Single reservoirs
-    reagent_res_1 = ctx.load_labware('nest_1_reservoir_195ml', '8', 'Single reagent reservoir 1')
-    res_1 = reagent_res_1.wells()[0]
-
-    
-
-##################################
     ########## tempdeck
     tempdeck = ctx.load_module('Temperature Module Gen2', '1')
 
@@ -499,7 +495,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ######## Deepwell - comes from A
     magdeck = ctx.load_module('Magnetic Module Gen2', '4')
     deepwell_plate = magdeck.load_labware('kingfisher_96_wellplate_2000ul', 'KingFisher 96 Well Plate 2mL')
-    
+
 ####################################
     ######## Waste reservoir
     waste_reservoir = ctx.load_labware('nest_1_reservoir_195ml', '7', 'waste reservoir') # Change to our waste reservoir
@@ -508,7 +504,7 @@ def run(ctx: protocol_api.ProtocolContext):
 ####################################
     ######### Load tip_racks
     tips300 = [ctx.load_labware('opentrons_96_tiprack_300ul', slot, '200µl filter tiprack')
-        for slot in ['2', '3', '6', '9', '10', '11']]
+        for slot in ['2', '3', '6', '8', '9', '10', '11']]
 
 ###############################################################################
     #Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -518,18 +514,16 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
 
     if LYSIS_VOLUME_PER_SAMPLE > 0:
-        assign_wells(Lysis, 2)
+        assign_wells(Lysis, 1)
     if BEADS_VOLUME_PER_SAMPLE > 0:
-        assign_wells(Beads, 6)
-    
-    ctx.comment(Wash.name + ': en el reservorio del slot 8 con un volumen de ' + str_rounded(2 * Wash.vol_well_original) + ' uL')
+        assign_wells(Beads, 3)
 
+    assign_wells(Wash, 6)
     assign_wells(Elution, 12)
 
     ctx.comment('###############################################')
     ctx.comment(' ')
 
-    Wash.reagent_reservoir    = res_1
     work_destinations           = deepwell_plate.rows()[0][:Sample.num_wells]
     final_destinations          = elution_plate.rows()[0][:Sample.num_wells]
 
@@ -575,18 +569,18 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 1)
-            
+
             if LYSIS_NUM_MIXES > 0:
                 ctx.comment(' ')
                 ctx.comment('Mezclando muestra ')
                 custom_mix(m300, Lysis, location = work_destinations[i], vol =  Lysis.max_volume_allowed,
                         rounds = LYSIS_NUM_MIXES, blow_out = False, mix_height = 1, offset = 0)
-            
+
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Lysis.air_gap_vol_bottom) #air gap
-            
-            drop_tip(m300)      
-            
+
+            drop_tip(m300)
+
         log_step_end(start)
         ###############################################################################
         # STEP 1 Transferir lisis
@@ -615,19 +609,19 @@ def run(ctx: protocol_api.ProtocolContext):
             for j,transfer_vol in enumerate(beads_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
                 # transfer_vol_extra = transfer_vol if j > 0 else transfer_vol + 100  # Extra 100 isopropanol for calcs
-                # [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol_extra * 8)    
-                [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)    
+                # [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol_extra * 8)
+                [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mezclando nuevo canal del reservorio: ' + str(Beads.first_well + Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, 
+                            vol = Beads.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES,
                             blow_out = False, mix_height = 1.5, offset = 0)
                     first_mix_done = True
                 else:
                     ctx.comment('Mezclando canal del reservorio: ' + str(Beads.first_well + Beads.col))
                     mix_height = 1.5 if pickup_height > 1.5 else pickup_height
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, 
+                            vol = Beads.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES,
                             blow_out = False, mix_height = mix_height, offset = 0)
 
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Beads.first_well + Beads.col))
@@ -635,18 +629,18 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 1)
-            
+
             if BEADS_NUM_MIXES > 0:
                 ctx.comment(' ')
                 ctx.comment('Mezclando muestra ')
                 custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
                         rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 1, offset = 0, wait_time = 2)
-            
+
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Beads.air_gap_vol_bottom) #air gap
 
-            drop_tip(m300)      
-            
+            drop_tip(m300)
+
         log_step_end(start)
         ###############################################################################
         # STEP 2 Transferir bolas magnéticas
@@ -660,7 +654,7 @@ def run(ctx: protocol_api.ProtocolContext):
         start = log_step_start()
 
         ctx.comment(' ')
-        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Espera durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.') # 
+        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Espera durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.') #
         ctx.comment(' ')
 
         log_step_end(start)
@@ -703,7 +697,7 @@ def run(ctx: protocol_api.ProtocolContext):
         supernatant_transfer_vol = []
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
-        
+
         x_offset_rs = 2
         pickup_height = 0.5 # Original 0.5
 
@@ -761,7 +755,6 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(wash_trips):
             wash_transfer_vol.append(wash_volume + Wash.disposal_volume)
         x_offset_rs = 2.5
-        pickup_height = 0.5
 
         for i in range(num_cols):
             x_offset_source = 0
@@ -771,20 +764,23 @@ def run(ctx: protocol_api.ProtocolContext):
                 if TIP_RECYCLING_IN_WASH:
                     w1_tip_pos_list += [tip_track['tips'][m300][int(tip_track['counts'][m300] / 8)]]
             for transfer_vol in wash_transfer_vol:
-                ctx.comment('Aspirando desde el reservorio del slot 8')
+                #Calculate pickup_height based on remaining volume and shape of container
+                [pickup_height, change_col] = calc_height(Wash, multi_well_rack_area, transfer_vol * 8)
+                ctx.comment('Aspirando desde la columna del reservorio: ' + str(Wash.first_well + Wash.col + 1))
+                ctx.comment('La altura de recogida es ' + str(pickup_height))
 
-                move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir, dest = work_destinations[i],
+                move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir[Wash.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = False)
-            
+
             if WASH_NUM_MIXES > 0:
                 custom_mix(m300, Wash, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
                         rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
-            
+
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
-            drop_tip(m300)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -819,7 +815,7 @@ def run(ctx: protocol_api.ProtocolContext):
         supernatant_transfer_vol = []
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
-        
+
         x_offset_rs = 2
         pickup_height = 0.5 # Original 0.5
 
@@ -839,14 +835,14 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
                 ctx.comment('La altura de recogida es ' + str(pickup_height) )
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
-                        x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height, 
+                        x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
                         wait_time = 2, blow_out = False, drop_height = waste_drop_height,
                         dispense_bottom_air_gap_before = not_first_transfer)
                 m300.move_to(waste.top(z = waste_drop_height))
                 m300.air_gap(Sample.air_gap_vol_bottom)
                 not_first_transfer = True
 
-            drop_tip(m300, not TIP_RECYCLING_IN_WASH)
+            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -891,20 +887,23 @@ def run(ctx: protocol_api.ProtocolContext):
                 if TIP_RECYCLING_IN_WASH:
                     w2_tip_pos_list += [tip_track['tips'][m300][int(tip_track['counts'][m300] / 8)]]
             for transfer_vol in wash_transfer_vol:
-                ctx.comment('Aspirando desde el reservorio del slot 10')
+                #Calculate pickup_height based on remaining volume and shape of container
+                [pickup_height, change_col] = calc_height(Wash, multi_well_rack_area, transfer_vol * 8)
+                ctx.comment('Aspirando desde la columna del reservorio: ' + str(Wash.first_well + Wash.col + 1))
+                ctx.comment('La altura de recogida es ' + str(pickup_height))
 
-                move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir, dest = work_destinations[i],
+                move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir[Wash.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = False)
-            
+
             if WASH_NUM_MIXES > 0:
                 custom_mix(m300, Wash, location = work_destinations[i], vol = 180, two_thirds_mix_bottom = True,
                         rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
-            
+
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash.air_gap_vol_bottom) #air gap
 
-            drop_tip(m300)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -939,7 +938,7 @@ def run(ctx: protocol_api.ProtocolContext):
         supernatant_transfer_vol = []
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
-        
+
         x_offset_rs = 2
         pickup_height = 0.5 # Original 0.5
 
@@ -960,13 +959,13 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('La altura de recogida es ' + str(pickup_height) )
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
-                        wait_time = 2, blow_out = False, dispense_bottom_air_gap_before = not_first_transfer, 
+                        wait_time = 2, blow_out = False, dispense_bottom_air_gap_before = not_first_transfer,
                         drop_height = waste_drop_height)
                 m300.move_to(waste.top(z = waste_drop_height))
                 m300.air_gap(Sample.air_gap_vol_bottom)
                 not_first_transfer = True
 
-            drop_tip(m300, not TIP_RECYCLING_IN_WASH)
+            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -981,7 +980,7 @@ def run(ctx: protocol_api.ProtocolContext):
         start = log_step_start()
 
         ctx.comment(' ')
-        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Secado durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.') # 
+        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Secado durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.') #
         ctx.comment(' ')
 
         log_step_end(start)
@@ -1003,7 +1002,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ###############################################################################
         # STEP 15 Imán OFF
         ########
-    
+
     ###############################################################################
     # STEP 16 Transferir elución
     ########
@@ -1036,18 +1035,18 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Elution, source = Elution.reagent_reservoir[Elution.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = False, drop_height = -35)
-            
+
             if ELUTION_NUM_MIXES > 0:
                 ctx.comment(' ')
                 ctx.comment('Mezclando muestra with Elution')
                 custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = ELUTION_NUM_MIXES,
                         blow_out = False, mix_height = 1, offset = x_offset_dest, drop_height = -35)
-            
+
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Elution.air_gap_vol_bottom) #air gap
-            
-            drop_tip(m300)
-            
+
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_ELUTION)
+
         log_step_end(start)
         ###############################################################################
         # STEP 16 Transferir elución
@@ -1100,11 +1099,11 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 3)
-            
+
             m300.move_to(final_destinations[i].top(0))
             m300.air_gap(Sample.air_gap_vol_bottom) #air gap
 
-            drop_tip(m300, not TIP_RECYCLING_IN_ELUTION)
+            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_ELUTION)
 
         if SET_TEMP_ON == True:
             tempdeck.set_temperature(TEMPERATURE)
