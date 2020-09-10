@@ -32,12 +32,12 @@ ETHANOL_VOLUME_PER_SAMPLE           = 500
 ELUTION_VOLUME_PER_SAMPLE           = 50
 ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
 
-BEADS_WELL_FIRST_TIME_NUM_MIXES     = 10
-BEADS_WELL_NUM_MIXES                = 3
-BEADS_NUM_MIXES                     = 10    # 20
-WASH_NUM_MIXES                      = 10    # 10  
-EHTANOL_NUM_MIXES                   = 10    # 10
-ELUTION_NUM_MIXES                   = 10     # 5
+BEADS_WELL_FIRST_TIME_NUM_MIXES     = 5
+BEADS_WELL_NUM_MIXES                = 1
+BEADS_NUM_MIXES                     = 5    # 20
+WASH_NUM_MIXES                      = 5    # 10  
+EHTANOL_NUM_MIXES                   = 5    # 10
+ELUTION_NUM_MIXES                   = 5     # 5
 
 TIP_RECYCLING_IN_WASH               = False
 TIP_RECYCLING_IN_ELUTION            = False
