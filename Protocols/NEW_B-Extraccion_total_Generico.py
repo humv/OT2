@@ -117,7 +117,7 @@ def run(ctx: protocol_api.ProtocolContext):
             elif self.placed_in_multi:    
                 trips = math.ceil(self.reagent_volume / self.max_volume_allowed)
                 vol_trip = self.reagent_volume / trips * 8
-                max_trips_well = math.floor(11000 / vol_trip)
+                max_trips_well = math.floor(18000 / vol_trip)
                 total_trips = num_cols * trips
                 self.num_wells = math.ceil(total_trips / max_trips_well)
                 return math.ceil(total_trips / self.num_wells) * vol_trip + self.dead_vol
@@ -300,8 +300,8 @@ def run(ctx: protocol_api.ProtocolContext):
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4):
         nonlocal ctx
         ctx.comment('Volumen útil restante ' + str(reagent.vol_well - reagent.dead_vol) +
-                    ' < volumen necesario ' + str(aspirate_volume - Sample.disposal_volume * 8) + '?')
-        if (reagent.vol_well - reagent.dead_vol + 1) < (aspirate_volume - Sample.disposal_volume * 8):
+                    ' < volumen necesario ' + str(aspirate_volume - reagent.disposal_volume * 8) + '?')
+        if (reagent.vol_well - reagent.dead_vol + 1) < (aspirate_volume - reagent.disposal_volume * 8):
             ctx.comment('Se debe utilizar el siguiente canal')
             ctx.comment('Canal anterior: ' + str(reagent.col))
             # column selector position; intialize to required number
@@ -310,14 +310,14 @@ def run(ctx: protocol_api.ProtocolContext):
             reagent.vol_well = reagent.vol_well_original
             ctx.comment('Nuevo volumen:' + str(reagent.vol_well))
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
-            reagent.vol_well = reagent.vol_well - (aspirate_volume - Sample.disposal_volume * 8)
+            reagent.vol_well = reagent.vol_well - (aspirate_volume - reagent.disposal_volume * 8)
             ctx.comment('Volumen restante:' + str(reagent.vol_well))
             if height < min_height:
                 height = min_height
             col_change = True
         else:
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
-            reagent.vol_well = reagent.vol_well - (aspirate_volume - (Sample.disposal_volume * 8))
+            reagent.vol_well = reagent.vol_well - (aspirate_volume - (reagent.disposal_volume * 8))
             ctx.comment('La altura calculada es ' + str(height))
             if height < min_height:
                 height = min_height
@@ -407,10 +407,10 @@ def run(ctx: protocol_api.ProtocolContext):
             else:
                 pip.pick_up_tip(position)
 
-    def drop_tip(pip, increment_count = True):
+    def drop_tip(pip, recycle = False, increment_count = True):
         nonlocal tip_track
         #if not ctx.is_simulating():
-        if recycle_tip:
+        if recycle or recycle_tip:
             pip.return_tip()
         else:
             pip.drop_tip(home_after = False)
@@ -843,7 +843,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash_1.air_gap_vol_bottom) #air gap
 
-            drop_tip(m300)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -905,7 +905,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 m300.air_gap(Sample.air_gap_vol_bottom)
                 not_first_transfer = True
 
-            drop_tip(m300, not TIP_RECYCLING_IN_WASH)
+            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -963,7 +963,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash_2.air_gap_vol_bottom) #air gap
 
-            drop_tip(m300)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -1025,7 +1025,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 m300.air_gap(Sample.air_gap_vol_bottom)
                 not_first_transfer = True
 
-            drop_tip(m300, not TIP_RECYCLING_IN_WASH)
+            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -1083,7 +1083,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Wash_3.air_gap_vol_bottom) #air gap
 
-            drop_tip(m300)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -1144,7 +1144,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 m300.air_gap(Sample.air_gap_vol_bottom)
                 not_first_transfer = True
 
-            drop_tip(m300, not TIP_RECYCLING_IN_WASH)
+            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -1224,7 +1224,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.move_to(work_destinations[i].top(0))
             m300.air_gap(Elution.air_gap_vol_bottom) #air gap
             
-            drop_tip(m300)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_ELUTION)
             
         log_step_end(start)
         ###############################################################################
@@ -1282,7 +1282,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.move_to(final_destinations[i].top(0))
             m300.air_gap(Sample.air_gap_vol_bottom) #air gap
 
-            drop_tip(m300, not TIP_RECYCLING_IN_ELUTION)
+            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_ELUTION)
 
         if SET_TEMP_ON == True:
             tempdeck.set_temperature(TEMPERATURE)

@@ -261,8 +261,8 @@ def run(ctx: protocol_api.ProtocolContext):
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4):
         nonlocal ctx
         ctx.comment('Volumen útil restante ' + str(reagent.vol_well - reagent.dead_vol) +
-                    ' < volumen necesario ' + str(aspirate_volume - Sample.disposal_volume * 8) + '?')
-        if (reagent.vol_well - reagent.dead_vol + 1) < (aspirate_volume - Sample.disposal_volume * 8):
+                    ' < volumen necesario ' + str(aspirate_volume - reagent.disposal_volume * 8) + '?')
+        if (reagent.vol_well - reagent.dead_vol + 1) < (aspirate_volume - reagent.disposal_volume * 8):
             ctx.comment('Se debe utilizar el siguiente canal')
             ctx.comment('Canal anterior: ' + str(reagent.col))
             # column selector position; intialize to required number
@@ -271,14 +271,14 @@ def run(ctx: protocol_api.ProtocolContext):
             reagent.vol_well = reagent.vol_well_original
             ctx.comment('Nuevo volumen:' + str(reagent.vol_well))
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
-            reagent.vol_well = reagent.vol_well - (aspirate_volume - Sample.disposal_volume * 8)
+            reagent.vol_well = reagent.vol_well - (aspirate_volume - reagent.disposal_volume * 8)
             ctx.comment('Volumen restante:' + str(reagent.vol_well))
             if height < min_height:
                 height = min_height
             col_change = True
         else:
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
-            reagent.vol_well = reagent.vol_well - (aspirate_volume - (Sample.disposal_volume * 8))
+            reagent.vol_well = reagent.vol_well - (aspirate_volume - (reagent.disposal_volume * 8))
             ctx.comment('La altura calculada es ' + str(height))
             if height < min_height:
                 height = min_height
@@ -560,7 +560,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 # transfer_vol_extra = transfer_vol if j > 0 else transfer_vol + 100  # Extra 100 isopropanol for calcs
                 # [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol_extra * 8)
                 [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)
-                if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
+                # if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
+                if change_col == True or (i == 0 and j == 0): #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mezclando nuevo canal del reservorio: ' + str(Beads.first_well + Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
                             vol = Beads.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES,
@@ -577,7 +578,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('La altura de recogida es ' + str(pickup_height))
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 1)
+                        pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5)
 
             if BEADS_NUM_MIXES > 0:
                 ctx.comment(' ')
@@ -717,7 +718,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir[Wash.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, blow_out = False)
+                        pickup_height = pickup_height, drop_height = 5, blow_out = False)
 
             if WASH_NUM_MIXES > 0:
                 custom_mix(m300, Wash, location = work_destinations[i], vol = Wash.max_volume_allowed, two_thirds_mix_bottom = True,
@@ -838,7 +839,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multi(m300, reagent = Ethanol, source = Ethanol.reagent_reservoir[Ethanol.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, blow_out = False)
+                        pickup_height = pickup_height, drop_height = 5, blow_out = False)
 
             if EHTANOL_NUM_MIXES > 0:
                 custom_mix(m300, Ethanol, location = work_destinations[i], vol = Ethanol.max_volume_allowed, two_thirds_mix_bottom = True,
@@ -1038,9 +1039,9 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
                 ctx.comment('La altura de recogida es ' + str(pickup_height) )
 
-                move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
-                        dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 3)
+                move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = final_destinations[i],
+                        vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
+                        pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = -1)
 
             m300.air_gap(Sample.air_gap_vol_bottom, height = 0) #air gap
 
