@@ -496,6 +496,7 @@ def run(ctx: protocol_api.ProtocolContext):
     sample_sources_full = generate_source_table(source_racks)
     sample_sources      = sample_sources_full[NUM_CONTROL_SPACES:num_samples]
     destinations        = dest_plate.wells()[NUM_CONTROL_SPACES:num_samples]
+    destinations_full   = dest_plate.wells()[:num_samples]
     lysys_source        = lysys_rack.wells_by_name()['B3']
     dests_lysis         = list(divide_destinations(destinations, size_transfer))
     
@@ -597,7 +598,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('La altura de recogida es ' + str(pickup_height))
                 move_vol_multichannel(m20, reagent = Beads, source = beads_reservoir[Beads.col],
                         dest = destinations[i], vol = transfer_vol, 
-                        pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 1, 
+                        pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5, 
                         air_gap_vol = Beads.air_gap_vol_bottom, x_offset = x_offset)
 
             m20.air_gap(Beads.air_gap_vol_bottom, height = 0) #air gap
