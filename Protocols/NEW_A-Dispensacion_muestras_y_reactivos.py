@@ -58,7 +58,8 @@ def run(ctx: protocol_api.ProtocolContext):
     STEPS = {  # Dictionary with STEP activation, description and times
         1: {'Execute': False, 'description': 'Dispensar Lysys'},
         2: {'Execute': False, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
-        3: {'Execute': True, 'description': 'MTransferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
+        3: {'Execute': True, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
+        4: {'Execute': True, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -147,8 +148,8 @@ def run(ctx: protocol_api.ProtocolContext):
                       ) 
 
     Beads = Reagent(name = 'Beads',
-                    flow_rate_aspirate = 0.5,
-                    flow_rate_dispense = 0.5,
+                    flow_rate_aspirate = 5,
+                    flow_rate_dispense = 10,
                     flow_rate_aspirate_mix = 0.5,
                     flow_rate_dispense_mix = 0.5,
                     air_gap_vol_bottom = 5,
@@ -158,6 +159,20 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
                     placed_in_multi = True,
                     first_well = 0,
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
+                    
+    Pk = Reagent(name = 'Pk',
+                    flow_rate_aspirate = 5,
+                    flow_rate_dispense = 10,
+                    flow_rate_aspirate_mix = 0.5,
+                    flow_rate_dispense_mix = 0.5,
+                    air_gap_vol_bottom = 5,
+                    air_gap_vol_top = 0,
+                    disposal_volume = 1,
+                    max_volume_allowed = 18,
+                    reagent_volume = PK_VOLUME_PER_SAMPLE,
+                    placed_in_multi = True,
+                    first_well = 11,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Lysis = Simple_Reagent(name                      = 'Lysis',
@@ -504,6 +519,7 @@ def run(ctx: protocol_api.ProtocolContext):
     dests_lysis         = list(divide_destinations(destinations, size_transfer))
     
     beads_reservoir = reagent_res.rows()[0][Beads.first_well - 1:Beads.first_well - 1 + Beads.num_wells]
+    pk_reservoir = reagent_res.rows()[0][Pk.first_well - 1:Pk.first_well - 1 + Pk.num_wells]
 
     p1000 = ctx.load_instrument(
         'p1000_single_gen2', 'right', 
@@ -575,7 +591,44 @@ def run(ctx: protocol_api.ProtocolContext):
 
     
     ###############################################################################
-    # STEP 3 Transferir bolas magnéticas
+    # STEP 3 Transferir Proteinasa K
+    ###############################################################################
+    STEP += 1
+    if STEPS[STEP]['Execute']==True:
+        start = log_step_start()
+
+        pk_trips = math.ceil(Pk.reagent_volume / Pk.max_volume_allowed)
+        pk_volume = Pk.reagent_volume / pk_trips
+        pk_transfer_vol = []
+        for i in range(pk_trips):
+            pk_transfer_vol.append(pk_volume + Pk.disposal_volume)
+        
+        for i in range(num_cols):
+            ctx.comment("Column: " + str(i))
+            if not m20.hw_pipette['has_tip']:
+                pick_up_tip(m20, tips20)
+            for j,transfer_vol in enumerate(pk_transfer_vol):
+                #Calculate pickup_height based on remaining volume and shape of container
+                # transfer_vol_extra = transfer_vol if j > 0 else transfer_vol + 100  # Extra 100 isopropanol for calcs
+                # [pickup_height, change_col] = calc_height(Pk, multi_well_rack_area, transfer_vol_extra * 8)
+                [pickup_height, change_col] = calc_height(Pk, multi_well_rack_area, transfer_vol * 8)
+                
+                ctx.comment('Aspirando desde la columna del reservorio: ' + str(Pk.first_well + Pk.col))
+                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                move_vol_multichannel(m20, reagent = Pk, source = pk_reservoir[Pk.col],
+                        dest = destinations_full[i], vol = transfer_vol, 
+                        pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5, 
+                        air_gap_vol = Pk.air_gap_vol_bottom, x_offset = x_offset, skipFinalAirGap = True)
+
+            # m20.air_gap(Pk.air_gap_vol_bottom, height = 5) #air gap
+
+        drop_tip(m20)
+
+        log_step_end(start)
+
+    
+    ###############################################################################
+    # STEP 4 Transferir bolas magnéticas
     ###############################################################################
     STEP += 1
     if STEPS[STEP]['Execute']==True:
