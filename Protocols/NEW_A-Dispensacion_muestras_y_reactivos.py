@@ -25,7 +25,7 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 94   
+NUM_REAL_SAMPLES        = 30
 NUM_MIXES               = 0
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
 
@@ -56,8 +56,8 @@ next_well_index         = 0         # First reagent well to use
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': True, 'description': 'Dispensar Lysys'},
-        2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
+        1: {'Execute': False, 'description': 'Dispensar Lysys'},
+        2: {'Execute': False, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
         3: {'Execute': True, 'description': 'MTransferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
@@ -196,7 +196,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment(' ')
 
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, drop_height, blow_out, touch_tip, x_offset,
-                       pickup_height = 0, rinse = False):
+                       pickup_height = 0, rinse = False, skipFinalAirGap = False):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -225,14 +225,17 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
         if blow_out == True:
-            #pipet.blow_out(dest.top(z = -2))
             pipet.blow_out(dest.top(z = drop_height))
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10)
 
-        if air_gap_vol != 0:
-            # pipet.move_to(dest.top(z = drop_height))
+        if air_gap_vol != 0 and not skipFinalAirGap:
+            #pipet.move_to(dest.top(z = drop_height))
             pipet.air_gap(air_gap_vol, height = drop_height) #air gap
+        
+        if skipFinalAirGap and air_gap_vol != 0:
+            pipet.aspirate(air_gap_vol, dest.top(z = drop_height))
+
     
     def distribute_custom(pipette, reagent, volume, src, dest, waste_pool, pickup_height, extra_dispensal, dest_x_offset, drop_height=0):
         # Custom distribute function that allows for blow_out in different location and adjustement of touch_tip
@@ -496,7 +499,7 @@ def run(ctx: protocol_api.ProtocolContext):
     sample_sources_full = generate_source_table(source_racks)
     sample_sources      = sample_sources_full[NUM_CONTROL_SPACES:num_samples]
     destinations        = dest_plate.wells()[NUM_CONTROL_SPACES:num_samples]
-    destinations_full   = dest_plate.wells()[:num_samples]
+    destinations_full   = dest_plate.rows()[0][:num_samples]
     lysys_source        = lysys_rack.wells_by_name()['B3']
     dests_lysis         = list(divide_destinations(destinations, size_transfer))
     
@@ -597,11 +600,11 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Beads.first_well + Beads.col))
                 ctx.comment('La altura de recogida es ' + str(pickup_height))
                 move_vol_multichannel(m20, reagent = Beads, source = beads_reservoir[Beads.col],
-                        dest = destinations[i], vol = transfer_vol, 
+                        dest = destinations_full[i], vol = transfer_vol, 
                         pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5, 
-                        air_gap_vol = Beads.air_gap_vol_bottom, x_offset = x_offset)
+                        air_gap_vol = Beads.air_gap_vol_bottom, x_offset = x_offset, skipFinalAirGap = True)
 
-            m20.air_gap(Beads.air_gap_vol_bottom, height = 5) #air gap
+            # m20.air_gap(Beads.air_gap_vol_bottom, height = 5) #air gap
 
         drop_tip(m20)
 
