@@ -26,7 +26,8 @@ metadata = {
 ################################################
 NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
 NUM_REAL_SAMPLES        = 22
-NUM_MIXES               = 0
+NUM_BEFORE_MIXES        = 0
+NUM_AFTER_MIXES         = 1
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
 
 SOUND_NUM_PLAYS         = 0
@@ -57,7 +58,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
         1: {'Execute': False, 'description': 'Dispensar Lysys'},
-        2: {'Execute': False, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
+        2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
         3: {'Execute': True, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
         4: {'Execute': True, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
@@ -180,12 +181,22 @@ def run(ctx: protocol_api.ProtocolContext):
                      flow_rate_dispense        = 100,
                      delay                     = 0
                      ) 
-
     ctx.comment(' ')
     ctx.comment('###############################################')
-    ctx.comment('CONTROLES: ' + str(NUM_CONTROL_SPACES))  
-    ctx.comment('MUESTRAS: ' + str(NUM_REAL_SAMPLES)) 
-    ctx.comment('###############################################')
+    ctx.comment('VALORES DE VARIABLES')
+    ctx.comment(' ')
+    ctx.comment('Número de muestras: ' + str(NUM_REAL_SAMPLES) + ' (' + str(num_cols) + ' columnas)')
+    ctx.comment('Número de controles: ' + str(NUM_CONTROL_SPACES))
+    ctx.comment(' ')
+    ctx.comment('Número de mezclas en la Muestra: ' + str(NUM_BEFORE_MIXES))
+    ctx.comment('Número de mezclas en el deepwell: ' + str(NUM_AFTER_MIXES))
+    ctx.comment(' ')
+    ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
+    ctx.comment('Volumen de solución con bolas magnéticas por muestra: ' + str(BEADS_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment('Volumen del proteinasa K por muestra: ' + str(PK_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment('Volumen de lysys por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment(' ')
+    ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
     ctx.comment(' ')
 
     ##################
@@ -580,14 +591,21 @@ def run(ctx: protocol_api.ProtocolContext):
                 pick_up(p1000)
 
             # Mix the sample BEFORE dispensing
-            if NUM_MIXES > 0:
+            if NUM_BEFORE_MIXES > 0:
+                ctx.comment("Mezclas en origen " + str(NUM_BEFORE_MIXES))
                 custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, 
-                    rounds = NUM_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
+                    rounds = NUM_BEFORE_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
 
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
                 pickup_height = 3, rinse = False, drop_height = -10,
                 blow_out = True, touch_tip = False)
+
+            # Mix the sample BEFORE dispensing
+            if NUM_AFTER_MIXES > 0:
+                ctx.comment("Mezclas en destino " + str(NUM_AFTER_MIXES))
+                custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix, 
+                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
 
             p1000.drop_tip(home_after = False)
             tip_track['counts'][p1000] += 1
