@@ -25,18 +25,18 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 30
+NUM_REAL_SAMPLES        = 22
 NUM_MIXES               = 0
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
 
 SOUND_NUM_PLAYS         = 0
 PHOTOSENSITIVE          = False # True if it has photosensitive reagents
 LYSIS_VOLUME_PER_SAMPLE = 265 # ul per sample.
-BEADS_VOLUME_PER_SAMPLE = 10 # ul per sample.
-PK_VOLUME_PER_SAMPLE    = 10 # ul per sample.
+BEADS_VOLUME_PER_SAMPLE = 13 # ul per sample.
+PK_VOLUME_PER_SAMPLE    = 13 # ul per sample.
 ################################################
 
-recycle_tip             = True
+recycle_tip             = False
 num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
 num_cols                = math.ceil(num_samples / 8) # Columns we are working on
 air_gap_vol_sample      = 25
@@ -148,31 +148,31 @@ def run(ctx: protocol_api.ProtocolContext):
                       ) 
 
     Beads = Reagent(name = 'Beads',
-                    flow_rate_aspirate = 5,
-                    flow_rate_dispense = 10,
+                    flow_rate_aspirate = 25,
+                    flow_rate_dispense = 100,
                     flow_rate_aspirate_mix = 0.5,
                     flow_rate_dispense_mix = 0.5,
-                    air_gap_vol_bottom = 5,
+                    air_gap_vol_bottom = 1,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
                     max_volume_allowed = 18,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
                     placed_in_multi = True,
-                    first_well = 0,
+                    first_well = 1,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
                     
     Pk = Reagent(name = 'Pk',
-                    flow_rate_aspirate = 5,
-                    flow_rate_dispense = 10,
+                    flow_rate_aspirate = 3,
+                    flow_rate_dispense = 3,
                     flow_rate_aspirate_mix = 0.5,
                     flow_rate_dispense_mix = 0.5,
-                    air_gap_vol_bottom = 5,
+                    air_gap_vol_bottom = 1,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
                     max_volume_allowed = 18,
                     reagent_volume = PK_VOLUME_PER_SAMPLE,
                     placed_in_multi = True,
-                    first_well = 11,
+                    first_well = 12,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Lysis = Simple_Reagent(name                      = 'Lysis',
@@ -227,7 +227,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         # SOURCE
         s = source.bottom(pickup_height).move(Point(x = x_offset[0]))
-        pipet.aspirate(vol, s)  # aspirate liquid
+        pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate)  # aspirate liquid
         if air_gap_vol != 0:  # If there is air_gap_vol, switch pipette to slow speed
             pipet.aspirate(air_gap_vol, source.top(z = -2),
                            rate = reagent.flow_rate_aspirate)  # air gap
@@ -241,6 +241,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
         if blow_out == True:
             pipet.blow_out(dest.top(z = drop_height))
+            pipet.dispense(10, dest.top(z = drop_height))  # dispense all
+        
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10)
 
@@ -248,8 +250,11 @@ def run(ctx: protocol_api.ProtocolContext):
             #pipet.move_to(dest.top(z = drop_height))
             pipet.air_gap(air_gap_vol, height = drop_height) #air gap
         
-        if skipFinalAirGap and air_gap_vol != 0:
-            pipet.aspirate(air_gap_vol, dest.top(z = drop_height))
+        #if skipFinalAirGap and air_gap_vol != 0:
+            #pipet.air_gap(air_gap_vol, height = drop_height) #air gap
+            #pipet.move_to(dest.top(z = drop_height))
+            #ctx.comment("Prueba de AirGap")
+            #pipet.aspirate(air_gap_vol, dest.top(z = drop_height),rate = reagent.flow_rate_dispense)
 
     
     def distribute_custom(pipette, reagent, volume, src, dest, waste_pool, pickup_height, extra_dispensal, dest_x_offset, drop_height=0):
@@ -518,7 +523,7 @@ def run(ctx: protocol_api.ProtocolContext):
     lysys_source        = lysys_rack.wells_by_name()['B3']
     dests_lysis         = list(divide_destinations(destinations, size_transfer))
     
-    beads_reservoir = reagent_res.rows()[0][Beads.first_well - 1:Beads.first_well - 1 + Beads.num_wells]
+    beads_reservoir = reagent_res.rows()[0][Beads.first_well - 1:Beads.first_well -1 + Beads.num_wells]
     pk_reservoir = reagent_res.rows()[0][Pk.first_well - 1:Pk.first_well - 1 + Pk.num_wells]
 
     p1000 = ctx.load_instrument(
@@ -601,12 +606,12 @@ def run(ctx: protocol_api.ProtocolContext):
         pk_volume = Pk.reagent_volume / pk_trips
         pk_transfer_vol = []
         for i in range(pk_trips):
-            pk_transfer_vol.append(pk_volume + Pk.disposal_volume)
+            pk_transfer_vol.append(pk_volume)
         
         for i in range(num_cols):
             ctx.comment("Column: " + str(i))
             if not m20.hw_pipette['has_tip']:
-                pick_up_tip(m20, tips20)
+                pick_up_tip(m20)
             for j,transfer_vol in enumerate(pk_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
                 # transfer_vol_extra = transfer_vol if j > 0 else transfer_vol + 100  # Extra 100 isopropanol for calcs
@@ -638,12 +643,12 @@ def run(ctx: protocol_api.ProtocolContext):
         beads_volume = Beads.reagent_volume / beads_trips
         beads_transfer_vol = []
         for i in range(beads_trips):
-            beads_transfer_vol.append(beads_volume + Beads.disposal_volume)
+            beads_transfer_vol.append(beads_volume)
         
         for i in range(num_cols):
             ctx.comment("Column: " + str(i))
             if not m20.hw_pipette['has_tip']:
-                pick_up_tip(m20, tips20)
+                pick_up_tip(m20)
             for j,transfer_vol in enumerate(beads_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
                 # transfer_vol_extra = transfer_vol if j > 0 else transfer_vol + 100  # Extra 100 isopropanol for calcs
