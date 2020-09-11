@@ -651,7 +651,6 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(num_cols):
             x_offset_source = find_side(i) * x_offset_rs
             x_offset_dest   = 0
-            not_first_transfer = False
 
             if not m300.hw_pipette['has_tip']:
                 pick_up_tip(m300)
@@ -662,10 +661,9 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
                         wait_time = 2, blow_out = True, drop_height = waste_drop_height,
-                        dispense_bottom_air_gap_before = not_first_transfer)
+                        dispense_bottom_air_gap_before = not (i == 0 and j == 0))
 
                 m300.air_gap(Sample.air_gap_vol_bottom, height = 0)
-                not_first_transfer = True
 
             drop_tip(m300)
 
@@ -768,7 +766,6 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(num_cols):
             x_offset_source = find_side(i) * x_offset_rs
             x_offset_dest   = 0
-            not_first_transfer = False
 
             if not m300.hw_pipette['has_tip']:
                 if TIP_RECYCLING_IN_WASH:
@@ -783,10 +780,9 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
                         wait_time = 2, blow_out = False, drop_height = waste_drop_height,
-                        dispense_bottom_air_gap_before = not_first_transfer)
+                        dispense_bottom_air_gap_before = not (i == 0 and j == 0))
 
                 m300.air_gap(Sample.air_gap_vol_bottom, height = 0)
-                not_first_transfer = True
 
             drop_tip(m300, increment_count = not TIP_RECYCLING_IN_WASH)
 
@@ -889,7 +885,6 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(num_cols):
             x_offset_source = find_side(i) * x_offset_rs
             x_offset_dest   = 0
-            not_first_transfer = False
 
             if not m300.hw_pipette['has_tip']:
                 if TIP_RECYCLING_IN_WASH:
@@ -903,11 +898,10 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('La altura de recogida es ' + str(pickup_height) )
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
-                        wait_time = 2, blow_out = False, dispense_bottom_air_gap_before = not_first_transfer,
+                        wait_time = 2, blow_out = False, dispense_bottom_air_gap_before = not (i == 0 and j == 0),
                         drop_height = waste_drop_height)
 
                 m300.air_gap(Sample.air_gap_vol_bottom, height = 0)
-                not_first_transfer = True
 
             drop_tip(m300, increment_count = not TIP_RECYCLING_IN_WASH)
 
