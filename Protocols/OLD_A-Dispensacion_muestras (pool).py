@@ -12,7 +12,7 @@ metadata = {
     'protocolName': 'Station A - Sample dispensing',
     'author': 'Aitor Gastaminza, Alex Gasulla & José Luis Villanueva (Hospital Clinic Barcelona),  Manuel Alba & Daniel Peñil',
     'source': 'Hospital Clínic Barcelona & HU Marqués de Valdecilla',
-    'apiLevel': '2.6',
+    'apiLevel': '2.0',
     'description': 'Protocol for sample dispensing'
 }
 
@@ -25,20 +25,15 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 94   
+NUM_REAL_SAMPLES        = 94
 NUM_MIXES               = 0
-VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
-
-SOUND_NUM_PLAYS                     = 3
-PHOTOSENSITIVE                      = False # True if it has photosensitive reagents
-
+VOLUME_SAMPLE           = 400 # Sample volume to place in deepwell
 ################################################
 
 num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
-air_gap_vol_sample      = 25
+air_gap_vol_sample      = 5
 run_id                  = 'preparacion_tipo_A'
-path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
-sonido_defecto          = 'finalizado.mp3'
+
 volume_mix              = 500 # Volume used on mix
 x_offset                = [0,0]
 
@@ -46,7 +41,7 @@ x_offset                = [0,0]
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'}
+        1: {'Execute': True, 'description': 'Mix and move samples ('+str(VOLUME_SAMPLE)+'ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -54,7 +49,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     #Folder and file_path for log time
     if not ctx.is_simulating():
-        folder_path = '/var/lib/jupyter/notebooks/' + run_id
+        folder_path = '/var/lib/jupyter/notebooks/'+run_id
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
         file_path = folder_path + '/StationA_time_log.txt'
@@ -70,16 +65,16 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # Reagents and their characteristics
     Samples = Reagent(name                  = 'Samples',
-                      flow_rate_aspirate    = 25,
-                      flow_rate_dispense    = 100,
+                      flow_rate_aspirate    = 1,
+                      flow_rate_dispense    = 1,
                       rinse                 = False,
                       delay                 = 0
                       ) 
 
     ctx.comment(' ')
     ctx.comment('###############################################')
-    ctx.comment('CONTROLES: ' + str(NUM_CONTROL_SPACES))  
-    ctx.comment('MUESTRAS: ' + str(NUM_REAL_SAMPLES)) 
+    ctx.comment('CONTROL SPACES: ' + str(NUM_CONTROL_SPACES))  
+    ctx.comment('NUM SAMPLES: ' + str(NUM_REAL_SAMPLES)) 
     ctx.comment('###############################################')
     ctx.comment(' ')
 
@@ -115,14 +110,9 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
         if blow_out == True:
-            #pipet.blow_out(dest.top(z = -2))
-            pipet.blow_out(dest.top(z = disp_height))
+            pipet.blow_out(dest.top(z = -2))
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10)
-
-        if air_gap_vol != 0:
-            # pipet.move_to(dest.top(z = disp_height))
-            pipet.air_gap(air_gap_vol, height = disp_height) #air gap
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
     x_offset, source_height = 5):
@@ -176,69 +166,6 @@ def run(ctx: protocol_api.ProtocolContext):
                 tip_track['counts'][pip] = 0
         pip.pick_up_tip()
 
-    def run_quiet_process(command):
-        subprocess.check_output('{} &> /dev/null'.format(command), shell=True)
-
-    def play_sound(filename):
-        print('Speaker')
-        print('Next\t--> CTRL-C')
-        try:
-            run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
-            run_quiet_process('mpg123 {}'.format(path_sounds + sonido_defecto))
-            run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
-
-        except KeyboardInterrupt:
-            pass
-            print()
-    def start_run():
-        ctx.comment(' ')
-        ctx.comment('###############################################')
-        ctx.comment('Empezando protocolo')
-        if PHOTOSENSITIVE == False:
-            ctx._hw_manager.hardware.set_lights(button = True, rails =  True)
-        else:
-            ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
-        now = datetime.now()
-
-        # dd/mm/YY H:M:S
-        start_time = now.strftime("%Y/%m/%d %H:%M:%S")
-        return start_time
-
-    def finish_run():
-        ctx.comment('###############################################')
-        ctx.comment('Protocolo finalizado')
-        ctx.comment(' ')
-        #Set light color to blue
-        ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
-        now = datetime.now()
-        # dd/mm/YY H:M:S
-        finish_time = now.strftime("%Y/%m/%d %H:%M:%S")
-        if PHOTOSENSITIVE==False:
-            for i in range(10):
-                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
-                time.sleep(0.3)
-                ctx._hw_manager.hardware.set_lights(button = True, rails =  True)
-                time.sleep(0.3)
-        else:
-            for i in range(10):
-                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
-                time.sleep(0.3)
-                ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
-                time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
-
-        used_tips = tip_track['num_refills'][p1000] * 96 * len(p1000.tip_racks) + tip_track['counts'][p1000]
-        ctx.comment('Puntas de 1000 ul utilizadas: ' + str(used_tips) + ' (' + str(round(used_tips / 96, 2)) + ' caja(s))')
-        ctx.comment('###############################################')
-
-        if not ctx.is_simulating():
-            for i in range(SOUND_NUM_PLAYS):
-                if i > 0:
-                    time.sleep(60)
-                play_sound('finished_process_esp')
-
-            return finish_time
-
     ####################################
     # load labware and modules
 
@@ -252,20 +179,20 @@ def run(ctx: protocol_api.ProtocolContext):
 
     source_racks = [ctx.load_labware(
         'opentrons_24_tuberack_nest_2ml_snapcap', slot,
-        'source tuberack with snapcap' + str(i + 1)) for i, slot in enumerate(['4', '1', '5', '2'][:rack_num])
+        'source tuberack with snapcap' + str(i + 1)) for i, slot in enumerate(['5', '2', '6', '3'][:rack_num])
     ]
 
     ##################################
     # Destination plate
     dest_plate = ctx.load_labware(
-        'nest_96_wellplate_2ml_deep', '6',
+        'nest_96_wellplate_2ml_deep', '1',
         'NEST 96 Deepwell Plate 2mL')
 
     ####################################
     # Load tip_racks
     tips1000 = [ctx.load_labware(
         'opentrons_96_filtertiprack_1000ul', slot, 
-        '1000µl filter tiprack') for slot in ['8']]
+        '1000µl filter tiprack') for slot in ['7']]
 
     ################################################################################
     # setup samples and destinations
@@ -280,14 +207,8 @@ def run(ctx: protocol_api.ProtocolContext):
     # used tip counter and set maximum tips available
     tip_track = {
         'counts': {p1000: 0},
-        'maxes': {p1000: 96 * len(p1000.tip_racks)}, #96 tips per tiprack * number or tipracks in the layout
-        'num_refills' : {p1000 : 0},
-        'tips': { p1000: [tip for rack in tips1000 for tip in rack.rows()[0]]}
-
+        'maxes': {p1000: len(tips1000) * 96}
     }
-
-
-    start_run()
 
     ############################################################################
     # STEP 1: MIX AND MOVE SAMPLES
@@ -310,7 +231,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
                 pickup_height = 3, rinse = Samples.rinse, disp_height = -10,
-                blow_out = True, touch_tip = False)
+                blow_out = True, touch_tip = True)
 
             p1000.drop_tip(home_after = False)
             tip_track['counts'][p1000] += 1
@@ -337,5 +258,26 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # Light flash end of program
     # from opentrons.drivers.rpi_drivers import gpio
-
-    finish_run()
+    #if not ctx.is_simulating():
+        #os.system('mpg123 -f -14000 /var/lib/jupyter/notebooks/final.mp3')
+    if not ctx.is_simulating():
+        fname = ' /var/lib/jupyter/notebooks/finished_process_esp.mp3'
+        if os.path.isfile(fname) is True:
+                subprocess.run(
+                    ['mpg123', fname],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+        else:
+            ctx.comment(f"Sound file does not exist. Call the technician")
+    for i in range(3):
+        ctx._hw_manager.hardware.set_lights(rails = False)
+        ctx._hw_manager.hardware.set_lights(button = (1, 0 ,0))
+        time.sleep(0.3)
+        ctx._hw_manager.hardware.set_lights(rails = True)
+        ctx._hw_manager.hardware.set_lights(button = (0, 0 ,1))
+        time.sleep(0.3)
+    ctx._hw_manager.hardware.set_lights(button = (0, 1 ,0))
+    ctx.comment('Finished! \nMove deepwell plate (slot 1) to Station B for extraction protocol')
+    ctx.comment('Used p1000 tips in total: ' + str(tip_track['counts'][p1000]))
+    ctx.comment('Used p1000 racks in total: ' + str(tip_track['counts'][p1000] / 96))
