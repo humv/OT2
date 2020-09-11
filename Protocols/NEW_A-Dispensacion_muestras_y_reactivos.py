@@ -601,9 +601,9 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5, 
                         air_gap_vol = Beads.air_gap_vol_bottom, x_offset = x_offset)
 
-            m20.air_gap(Beads.air_gap_vol_bottom, height = 0) #air gap
+            m20.air_gap(Beads.air_gap_vol_bottom, height = 5) #air gap
 
-            drop_tip(m20)
+        drop_tip(m20)
 
         log_step_end(start)
 
