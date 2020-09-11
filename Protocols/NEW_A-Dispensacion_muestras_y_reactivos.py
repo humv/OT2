@@ -57,10 +57,10 @@ next_well_index         = 0         # First reagent well to use
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': False, 'description': 'Dispensar Lysys'},
-        2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
-        3: {'Execute': True, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
-        4: {'Execute': True, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
+        1: {'Execute': True, 'description': 'Dispensar Lysys'},
+        2: {'Execute': False, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
+        3: {'Execute': False, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
+        4: {'Execute': False, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -571,7 +571,7 @@ def run(ctx: protocol_api.ProtocolContext):
         used_vol = []
         for dest in dests_lysis:
             if not p1000.hw_pipette['has_tip']:
-                 pick_up_tip(p1000,tips1000)
+                 pick_up_tip(p1000)
             used_vol_temp = distribute_custom(p1000, Lysis, volume = LYSIS_VOLUME_PER_SAMPLE,
                 src = lysys_source, dest = dest,
                 waste_pool = lysys_source, pickup_height = 1,
@@ -579,6 +579,7 @@ def run(ctx: protocol_api.ProtocolContext):
             used_vol.append(used_vol_temp)
 
         p1000.drop_tip(home_after = False)
+        tip_track['counts'][p1000] += 1
 
         log_step_end(start)
 
@@ -608,7 +609,7 @@ def run(ctx: protocol_api.ProtocolContext):
             if NUM_AFTER_MIXES > 0:
                 ctx.comment("Mezclas en destino " + str(NUM_AFTER_MIXES))
                 custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix, 
-                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset, air_gap_vol = 2 )
+                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1, x_offset = x_offset, air_gap_vol = 2 )
 
             p1000.drop_tip(home_after = False)
             tip_track['counts'][p1000] += 1
