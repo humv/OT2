@@ -30,8 +30,8 @@ BEADS_WELL_FIRST_TIME_NUM_MIXES = 10
 BEADS_WELL_NUM_MIXES            = 3
 BEADS_NUM_MIXES                 = 2
 
-PHOTOSENSITIVE                      = False # True if it has photosensitive reagents
-SOUND_NUM_PLAYS                     = 1
+PHOTOSENSITIVE                  = False # True if it has photosensitive reagents
+SOUND_NUM_PLAYS                 = 1
 ################################################
 
 run_id                      = 'B_Extraccion_total'
