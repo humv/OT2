@@ -29,9 +29,10 @@ NUM_REAL_SAMPLES        = 94
 NUM_MIXES               = 0
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
 
-SOUND_NUM_PLAYS                     = 3
-PHOTOSENSITIVE                      = False # True if it has photosensitive reagents
+SOUND_NUM_PLAYS         = 3
+PHOTOSENSITIVE          = False # True if it has photosensitive reagents
 
+OPENTRONS_TIPS          = True
 ################################################
 
 num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
@@ -102,7 +103,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         # SOURCE
         s = source.bottom(pickup_height).move(Point(x = x_offset[0]))
-        pipet.aspirate(vol, s)  # aspirate liquid
+        pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate)  # aspirate liquid
         if air_gap_vol != 0:  # If there is air_gap_vol, switch pipette to slow speed
             pipet.aspirate(air_gap_vol, source.top(z = -2),
                            rate = reagent.flow_rate_aspirate)  # air gap
@@ -115,13 +116,12 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
         if blow_out == True:
-            #pipet.blow_out(dest.top(z = -2))
             pipet.blow_out(dest.top(z = disp_height))
+            
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10)
 
         if air_gap_vol != 0:
-            # pipet.move_to(dest.top(z = disp_height))
             pipet.air_gap(air_gap_vol, height = disp_height) #air gap
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
@@ -264,8 +264,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ####################################
     # Load tip_racks
     tips1000 = [ctx.load_labware(
-        'opentrons_96_filtertiprack_1000ul', slot, 
-        '1000µl filter tiprack') for slot in ['8']]
+        'opentrons_96_filtertiprack_1000ul' if OPENTRONS_TIPS else 'geb_96_tiprack_1000ul',
+        slot, '1000µl filter tiprack') for slot in ['8']]
 
     ################################################################################
     # setup samples and destinations
@@ -283,7 +283,6 @@ def run(ctx: protocol_api.ProtocolContext):
         'maxes': {p1000: 96 * len(p1000.tip_racks)}, #96 tips per tiprack * number or tipracks in the layout
         'num_refills' : {p1000 : 0},
         'tips': { p1000: [tip for rack in tips1000 for tip in rack.rows()[0]]}
-
     }
 
 
