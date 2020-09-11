@@ -285,7 +285,7 @@ def run(ctx: protocol_api.ProtocolContext):
         return (len(dest) * volume)
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    x_offset, source_height = 5):
+    x_offset, source_height = 5, air_gap_vol = 0):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
         blow_out: Blow out optional [True,False]
@@ -310,6 +310,9 @@ def run(ctx: protocol_api.ProtocolContext):
 
         if blow_out == True:
             pipet.blow_out(location.top(z = -2))  # Blow out
+        
+        if air_gap_vol > 0:
+            pipet.air_gap(air_gap_vol, height = 0) #air gap
 
     def generate_source_table(source):
         '''
@@ -599,13 +602,13 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
                 pickup_height = 3, rinse = False, drop_height = -10,
-                blow_out = True, touch_tip = False)
+                blow_out = True, touch_tip = False, skipFinalAirGap = True)
 
             # Mix the sample BEFORE dispensing
             if NUM_AFTER_MIXES > 0:
                 ctx.comment("Mezclas en destino " + str(NUM_AFTER_MIXES))
                 custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix, 
-                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
+                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset, air_gap_vol = 2 )
 
             p1000.drop_tip(home_after = False)
             tip_track['counts'][p1000] += 1
