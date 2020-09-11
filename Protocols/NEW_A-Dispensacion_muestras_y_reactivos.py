@@ -112,7 +112,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 self.first_well = next_well_index + 1
 
             next_well_index = self.first_well - 1 + self.num_wells
-            self.comment_vol_info()
+            
             return self.first_well
 
         def comment_vol_info(self):
@@ -159,7 +159,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     max_volume_allowed = 18,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
                     placed_in_multi = True,
-                    first_well = 1,
+                    first_well = 12,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
                     
     Pk = Reagent(name = 'Pk',
@@ -173,7 +173,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     max_volume_allowed = 18,
                     reagent_volume = PK_VOLUME_PER_SAMPLE,
                     placed_in_multi = True,
-                    first_well = 12,
+                    first_well = 1,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Lysis = Simple_Reagent(name                      = 'Lysis',
@@ -198,6 +198,15 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
     ctx.comment(' ')
+
+    
+    ctx.comment('###############################################')
+    ctx.comment('VOLUMENES PARA ' + str(num_samples) + ' muestras.')
+    ctx.comment('')
+    ctx.comment('Volumen de lysys necesario en B3 :' + str(LYSIS_VOLUME_PER_SAMPLE * NUM_REAL_SAMPLES) + " ul")
+    Beads.comment_vol_info()
+    Pk.comment_vol_info()
+    ctx.comment('')
 
     ##################
     # Custom functions
