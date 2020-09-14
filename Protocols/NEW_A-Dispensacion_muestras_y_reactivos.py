@@ -183,6 +183,8 @@ def run(ctx: protocol_api.ProtocolContext):
     Lysis = Simple_Reagent(name                      = 'Lysis',
                      flow_rate_aspirate        = 50,
                      flow_rate_dispense        = 100,
+                     flow_rate_aspirate_mix = 0.5,
+                     flow_rate_dispense_mix = 0.5,
                      delay                     = 0
                      ) 
     ctx.comment(' ')
@@ -588,6 +590,11 @@ def run(ctx: protocol_api.ProtocolContext):
         for dest in dests_lysis:
             if not p1000.hw_pipette['has_tip']:
                  pick_up_tip(p1000)
+            num_mixes = 3
+            ctx.comment("Mezclas-   " + str(num_mixes))
+            custom_mix(p1000, reagent = Lysis, location = lysys_source, vol = LYSIS_VOLUME_PER_SAMPLE, 
+                rounds = num_mixes, blow_out = False, mix_height = 15, x_offset = x_offset)
+
             used_vol_temp = distribute_custom(p1000, Lysis, volume = LYSIS_VOLUME_PER_SAMPLE,
                 src = lysys_source, dest = dest,
                 waste_pool = lysys_source, pickup_height = 1,
