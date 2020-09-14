@@ -40,7 +40,7 @@ PK_VOLUME_PER_SAMPLE    = 13 # ul per sample.
 recycle_tip             = False
 num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
 num_cols                = math.ceil(num_samples / 8) # Columns we are working on
-air_gap_vol_sample      = 100
+
 extra_dispensal         = 1
 run_id                  = 'preparacion_tipo_A'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
@@ -57,10 +57,10 @@ next_well_index         = 0         # First reagent well to use
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': False, 'description': 'Dispensar Lysys'},
+        1: {'Execute': True, 'description': 'Dispensar Lysys'},
         2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
-        3: {'Execute': False, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
-        4: {'Execute': False, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
+        3: {'Execute': True, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
+        4: {'Execute': True, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -75,13 +75,14 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # Define Reagents as objects with their properties
     class Simple_Reagent:
-        def __init__(self, name, flow_rate_aspirate, flow_rate_dispense,flow_rate_aspirate_mix, flow_rate_dispense_mix, delay):
+        def __init__(self, name, flow_rate_aspirate, flow_rate_dispense,flow_rate_aspirate_mix, flow_rate_dispense_mix, delay, air_gap_vol_bottom = 2):
             self.name               = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
             self.flow_rate_aspirate_mix = flow_rate_aspirate_mix
             self.flow_rate_dispense_mix = flow_rate_dispense_mix
             self.delay              = delay 
+            self.air_gap_vol_bottom = air_gap_vol_bottom
     
     def str_rounded(num):
         return str(int(num + 0.5))
@@ -149,7 +150,8 @@ def run(ctx: protocol_api.ProtocolContext):
                       flow_rate_dispense    = 100,
                       flow_rate_aspirate_mix = 0.5,
                       flow_rate_dispense_mix = 0.5,
-                      delay                 = 0
+                      delay                 = 0,
+                      air_gap_vol_bottom    = 25
                       ) 
                 
     Pk = Reagent(name = 'Pk',
@@ -185,7 +187,8 @@ def run(ctx: protocol_api.ProtocolContext):
                      flow_rate_dispense        = 0.5,
                      flow_rate_aspirate_mix = 0.5,
                      flow_rate_dispense_mix = 0.5,
-                     delay                     = 0
+                     delay                     = 0,
+                     air_gap_vol_bottom    = 100
                      ) 
     ctx.comment(' ')
     ctx.comment('###############################################')
@@ -267,7 +270,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         if blow_out == True:
             pipet.blow_out(dest.top(z = drop_height))
-            #pipet.dispense(10, dest.top(z = drop_height))  # dispense all
+            pipet.dispense(10, dest.top(z = drop_height))  # FIXME: ¿quitar? ¿solo para bolas y pk?
         
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10)
@@ -288,14 +291,14 @@ def run(ctx: protocol_api.ProtocolContext):
         pipette.aspirate((len(dest) * volume) +extra_dispensal
                          , src.bottom(pickup_height), rate = reagent.flow_rate_aspirate)
         pipette.move_to(src.top(z=5))
-        #pipette.aspirate(air_gap_vol_sample, rate = reagent.flow_rate_aspirate)  # air gap
+        #pipette.aspirate(reagent.air_gap_vol_bottom, rate = reagent.flow_rate_aspirate)  # air gap
         ctx.delay(seconds = 2) # pause for x seconds depending on reagent
-        pipette.air_gap(air_gap_vol_sample, height = 5) #air gap
+        pipette.air_gap(reagent.air_gap_vol_bottom, height = 5) #air gap
         for d in dest:
-            pipette.dispense(volume + air_gap_vol_sample, d.top(), rate = reagent.flow_rate_dispense)
+            pipette.dispense(volume + reagent.air_gap_vol_bottom, d.top(), rate = reagent.flow_rate_dispense)
             #pipette.move_to(d.top(z=5))
-            #pipette.aspirate(air_gap_vol_sample, rate = reagent.flow_rate_dispense)  # air gap
-            pipette.air_gap(air_gap_vol_sample, height = 5) #air gap
+            #pipette.aspirate(reagent.air_gap_vol_bottom, rate = reagent.flow_rate_dispense)  # air gap
+            pipette.air_gap(reagent.air_gap_vol_bottom, height = 5) #air gap
         try:
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
         except:
@@ -627,7 +630,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rounds = NUM_BEFORE_MIXES, blow_out = False, mix_height = 15, x_offset = x_offset)
 
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
-                vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
+                vol = VOLUME_SAMPLE, air_gap_vol = Samples.air_gap_vol_bottom, x_offset = x_offset,
                 pickup_height = 3, rinse = False, drop_height = -10,
                 blow_out = NUM_AFTER_MIXES < 1, touch_tip = False, skipFinalAirGap = True)
 
