@@ -53,7 +53,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: '+str(num_cols))
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': True, 'description': 'Transfer beads + PK + binding'},
+            1:{'Execute': False, 'description': 'Transfer beads + PK + binding'},
             2:{'Execute': True, 'description': 'Transfer wash'},
             3:{'Execute': True, 'description': 'Transfer ethanol'},
             4:{'Execute': True, 'description': 'Transfer elution'}
@@ -94,8 +94,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
     #Reagents and their characteristics
     Wash = Reagent(name = 'Wash',
-                    flow_rate_aspirate = 5, # Original = 0.5
-                    flow_rate_dispense = 5, # Original = 1
+                    flow_rate_aspirate = 25, # Original = 0.5
+                    flow_rate_dispense = 100, # Original = 1
                     flow_rate_aspirate_mix = 1, # Liquid density very high, needs slow aspiration
                     flow_rate_dispense_mix = 1, # Liquid density very high, needs slow dispensation
                     air_gap_vol_bottom = 5,
@@ -110,8 +110,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Ethanol = Reagent(name = 'Ethanol',
-                    flow_rate_aspirate = 5,
-                    flow_rate_dispense = 5,
+                    flow_rate_aspirate = 25,
+                    flow_rate_dispense = 100,
                     flow_rate_aspirate_mix = 1,
                     flow_rate_dispense_mix = 1,
                     air_gap_vol_bottom = 5,
@@ -142,8 +142,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Elution = Reagent(name = 'Elution',
-                    flow_rate_aspirate = 3, # Original 0.5
-                    flow_rate_dispense = 3, # Original 1
+                    flow_rate_aspirate = 25, # Original 0.5
+                    flow_rate_dispense = 100, # Original 1
                     flow_rate_aspirate_mix = 15,
                     flow_rate_dispense_mix = 25,
                     air_gap_vol_bottom = 5,
