@@ -31,10 +31,10 @@ ETHANOL_VOLUME_PER_SAMPLE           = 500
 ELUTION_VOLUME_PER_SAMPLE           = 50
 ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
 
-BEADS_NUM_MIXES                     = 10    # 20
-WASH_NUM_MIXES                      = 10    # 10  
-EHTANOL_NUM_MIXES                   = 10    # 10
-ELUTION_NUM_MIXES                   = 10     # 5
+BEADS_NUM_MIXES                     = 5    # 20
+WASH_NUM_MIXES                      = 5    # 10  
+EHTANOL_NUM_MIXES                   = 5    # 10
+ELUTION_NUM_MIXES                   = 5     # 5
 
 TIP_RECYCLING_IN_WASH               = False
 TIP_RECYCLING_IN_ELUTION            = False
@@ -57,6 +57,9 @@ next_well_index             = 0         # First reservoir well to use
 
 pipette_allowed_capacity    = 280 if USE_300_TIPS else 180
 txt_tip_capacity            = '300 uL' if USE_300_TIPS else '200 uL'
+
+x_offset_rs_mv              = 2 if USE_300_TIPS else 2.5
+x_offset_rs_sn              = 1.5 if USE_300_TIPS else 2
 
 num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
 
@@ -134,7 +137,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.vol_well = self.vol_well_original
 
     #Reagents and their characteristics
-    Beads = Reagent(name = 'Beads',
+    Beads = Reagent(name = 'Beads', 
                     flow_rate_aspirate = 0.5,
                     flow_rate_dispense = 0.5,
                     flow_rate_aspirate_mix = 0.5,
@@ -575,13 +578,11 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        ctx.comment(' ')
         magdeck.engage(height = mag_height)
         ctx.delay(seconds = STEPS[STEP]['wait_time'], msg = 'Incubación con el imán ON durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.')
-        ctx.comment(' ')
 
         log_step_end(start)
-        ###############################################################################
+        ####################################################################
         # STEP 3 Incubación con el imán ON
         ########
 
@@ -600,20 +601,19 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
 
-        x_offset_rs = 2
         pickup_height = 0.5 # Original 0.5
 
         for i in range(num_cols):
-            x_offset_source = find_side(i) * x_offset_rs
+            x_offset_source = find_side(i) * x_offset_rs_sn
             x_offset_dest   = 0
 
             if not m300.hw_pipette['has_tip']:
                 pick_up_tip(m300)
             for j, transfer_vol in enumerate(supernatant_transfer_vol):
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
-                ctx.comment('La altura de recogida es ' + str(pickup_height) )
+                ctx.comment('La altura de recogida es ' + str(pickup_height))
 
-                move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
+                move_vol_multi(m300, reagent = Beads, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
                         wait_time = 2, blow_out = True, drop_height = waste_drop_height,
                         dispense_bottom_air_gap_before = not (i == 0 and j == 0))
@@ -654,12 +654,10 @@ def run(ctx: protocol_api.ProtocolContext):
         wash_transfer_vol = []
         for i in range(wash_trips):
             wash_transfer_vol.append(wash_volume + Wash.disposal_volume)
-        x_offset_rs = 2.5
-        # pickup_height = 0.5
 
         for i in range(num_cols):
             x_offset_source = 0
-            x_offset_dest   = -1 * find_side(i) * x_offset_rs
+            x_offset_dest   = -1 * find_side(i) * x_offset_rs_mv
             if not m300.hw_pipette['has_tip']:
                 pick_up_tip(m300)
                 if TIP_RECYCLING_IN_WASH:
@@ -693,9 +691,8 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        # switch on magnet
         magdeck.engage(mag_height)
-        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Incubación con el imán ON durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.')
+        ctx.delay(seconds = STEPS[STEP]['wait_time'], msg = 'Incubación con el imán ON durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.')
 
         log_step_end(start)
         ####################################################################
@@ -715,11 +712,10 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
 
-        x_offset_rs = 2
         pickup_height = 0.5 # Original 0.5
 
         for i in range(num_cols):
-            x_offset_source = find_side(i) * x_offset_rs
+            x_offset_source = find_side(i) * x_offset_rs_sn
             x_offset_dest   = 0
 
             if not m300.hw_pipette['has_tip']:
@@ -729,9 +725,9 @@ def run(ctx: protocol_api.ProtocolContext):
                 else:
                     pick_up_tip(m300)
             for j, transfer_vol in enumerate(supernatant_transfer_vol):
-                #Pickup_height is fixed here
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
-                ctx.comment('La altura de recogida es ' + str(pickup_height) )
+                ctx.comment('La altura de recogida es ' + str(pickup_height))
+
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
                         wait_time = 2, blow_out = False, drop_height = waste_drop_height,
@@ -773,12 +769,11 @@ def run(ctx: protocol_api.ProtocolContext):
         wash_transfer_vol = []
         for i in range(wash_trips):
             wash_transfer_vol.append(wash_volume + Ethanol.disposal_volume)
-        x_offset_rs = 2.5
         pickup_height = 0.5
 
         for i in range(num_cols):
             x_offset_source = 0
-            x_offset_dest   = -1 * find_side(i) * x_offset_rs
+            x_offset_dest   = -1 * find_side(i) * x_offset_rs_mv
             if not m300.hw_pipette['has_tip']:
                 pick_up_tip(m300)
                 if TIP_RECYCLING_IN_WASH:
@@ -812,9 +807,8 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        # switch on magnet
         magdeck.engage(mag_height)
-        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Incubación con el imán ON durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.')
+        ctx.delay(seconds = STEPS[STEP]['wait_time'], msg = 'Incubación con el imán ON durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.')
 
         log_step_end(start)
         ####################################################################
@@ -834,11 +828,10 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(supernatant_trips):
             supernatant_transfer_vol.append(supernatant_volume + Sample.disposal_volume)
 
-        x_offset_rs = 2
         pickup_height = 0.5 # Original 0.5
 
         for i in range(num_cols):
-            x_offset_source = find_side(i) * x_offset_rs
+            x_offset_source = find_side(i) * x_offset_rs_sn
             x_offset_dest   = 0
 
             if not m300.hw_pipette['has_tip']:
@@ -848,9 +841,9 @@ def run(ctx: protocol_api.ProtocolContext):
                 else:
                     pick_up_tip(m300)
             for j, transfer_vol in enumerate(supernatant_transfer_vol):
-                #Pickup_height is fixed here
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
-                ctx.comment('La altura de recogida es ' + str(pickup_height) )
+                ctx.comment('La altura de recogida es ' + str(pickup_height))
+
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
                         wait_time = 2, blow_out = False, dispense_bottom_air_gap_before = not (i == 0 and j == 0),
@@ -908,13 +901,12 @@ def run(ctx: protocol_api.ProtocolContext):
         elution_wash_vol = []
         for i in range(elution_trips):
             elution_wash_vol.append(elution_volume + Sample.disposal_volume)
-        x_offset_rs = 2.5
 
         ########
         # Water or elution buffer
         for i in range(num_cols):
             x_offset_source = 0
-            x_offset_dest   = -1 * find_side(i) * x_offset_rs # Original 0
+            x_offset_dest   = -1 * find_side(i) * x_offset_rs_mv # Original 0
             if not m300.hw_pipette['has_tip']:
                 pick_up_tip(m300)
                 if TIP_RECYCLING_IN_ELUTION:
@@ -951,9 +943,8 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        # switch on magnet
         magdeck.engage(mag_height)
-        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Incubación con el imán ON durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.')
+        ctx.delay(seconds = STEPS[STEP]['wait_time'], msg = 'Incubación con el imán ON durante ' + format(STEPS[STEP]['wait_time']) + ' segundos.')
 
         log_step_end(start)
         ####################################################################
@@ -972,9 +963,9 @@ def run(ctx: protocol_api.ProtocolContext):
         elution_vol = []
         for i in range(elution_trips):
             elution_vol.append(elution_volume + Elution.disposal_volume)
-        x_offset_rs = 2
+
         for i in range(num_cols):
-            x_offset_source = find_side(i) * x_offset_rs
+            x_offset_source = find_side(i) * x_offset_rs_sn
             x_offset_dest   = 0
             if not m300.hw_pipette['has_tip']:
                 if TIP_RECYCLING_IN_ELUTION:
