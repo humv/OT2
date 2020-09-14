@@ -57,8 +57,8 @@ next_well_index         = 0         # First reagent well to use
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': True, 'description': 'Dispensar Lysys'},
-        2: {'Execute': False, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
+        1: {'Execute': False, 'description': 'Dispensar Lysys'},
+        2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
         3: {'Execute': False, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
         4: {'Execute': False, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
@@ -267,7 +267,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         if blow_out == True:
             pipet.blow_out(dest.top(z = drop_height))
-            pipet.dispense(10, dest.top(z = drop_height))  # dispense all
+            #pipet.dispense(10, dest.top(z = drop_height))  # dispense all
         
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -10)
@@ -303,7 +303,7 @@ def run(ctx: protocol_api.ProtocolContext):
         return (len(dest) * volume)
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    x_offset, source_height = 5, air_gap_vol = 0):
+    x_offset, source_height = 5, air_gap_vol = 0, blow_out_from_top = -15):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
         blow_out: Blow out optional [True,False]
@@ -327,7 +327,7 @@ def run(ctx: protocol_api.ProtocolContext):
             z = mix_height).move(Point(x = x_offset[1])), rate = reagent.flow_rate_dispense_mix)
 
         if blow_out == True:
-            pipet.blow_out(location.top(z = mix_height))  # Blow out
+            pipet.blow_out(location.top(z = blow_out_from_top))  # Blow out
         
         if air_gap_vol > 0:
             pipet.air_gap(air_gap_vol, height = 0) #air gap
@@ -624,12 +624,12 @@ def run(ctx: protocol_api.ProtocolContext):
             if NUM_BEFORE_MIXES > 0:
                 ctx.comment("Mezclas en origen " + str(NUM_BEFORE_MIXES))
                 custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, 
-                    rounds = NUM_BEFORE_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
+                    rounds = NUM_BEFORE_MIXES, blow_out = False, mix_height = 15, x_offset = x_offset)
 
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
                 pickup_height = 3, rinse = False, drop_height = -10,
-                blow_out = True, touch_tip = False, skipFinalAirGap = True)
+                blow_out = NUM_AFTER_MIXES < 1, touch_tip = False, skipFinalAirGap = True)
 
             # Mix the sample BEFORE dispensing
             if NUM_AFTER_MIXES > 0:
