@@ -75,10 +75,12 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # Define Reagents as objects with their properties
     class Simple_Reagent:
-        def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, delay):
+        def __init__(self, name, flow_rate_aspirate, flow_rate_dispense,flow_rate_aspirate_mix, flow_rate_dispense_mix, delay):
             self.name               = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
+            self.flow_rate_aspirate_mix = flow_rate_aspirate_mix
+            self.flow_rate_dispense_mix = flow_rate_dispense_mix
             self.delay              = delay 
     
     def str_rounded(num):
@@ -145,6 +147,8 @@ def run(ctx: protocol_api.ProtocolContext):
     Samples = Simple_Reagent(name                  = 'Samples',
                       flow_rate_aspirate    = 25,
                       flow_rate_dispense    = 100,
+                      flow_rate_aspirate_mix = 0.5,
+                      flow_rate_dispense_mix = 0.5,
                       delay                 = 0
                       ) 
                 
@@ -306,19 +310,19 @@ def run(ctx: protocol_api.ProtocolContext):
             mix_height = 3
 
         pipet.aspirate(1, location = location.bottom(
-                        z = source_height).move(Point(x = x_offset[0])), rate = reagent.flow_rate_aspirate)
+                        z = source_height).move(Point(x = x_offset[0])), rate = reagent.flow_rate_aspirate_mix)
 
         for _ in range(rounds):
             pipet.aspirate(vol, location = location.bottom(
-                z = source_height).move(Point(x = x_offset[0])), rate = reagent.flow_rate_aspirate)
+                z = source_height).move(Point(x = x_offset[0])), rate = reagent.flow_rate_aspirate_mix)
             pipet.dispense(vol, location = location.bottom(
-                z = mix_height).move(Point(x = x_offset[1])), rate = reagent.flow_rate_dispense)
+                z = mix_height).move(Point(x = x_offset[1])), rate = reagent.flow_rate_dispense_mix)
 
         pipet.dispense(1, location = location.bottom(
-            z = mix_height).move(Point(x = x_offset[1])), rate = reagent.flow_rate_dispense)
+            z = mix_height).move(Point(x = x_offset[1])), rate = reagent.flow_rate_dispense_mix)
 
         if blow_out == True:
-            pipet.blow_out(location.top(z = -2))  # Blow out
+            pipet.blow_out(location.top(z = mix_height))  # Blow out
         
         if air_gap_vol > 0:
             pipet.air_gap(air_gap_vol, height = 0) #air gap
