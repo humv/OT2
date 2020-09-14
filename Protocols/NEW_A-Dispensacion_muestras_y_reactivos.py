@@ -24,8 +24,8 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 22
+NUM_CONTROL_SPACES      = 0  # The control spaces are being ignored at the first cycles
+NUM_REAL_SAMPLES        = 16
 NUM_BEFORE_MIXES        = 0
 NUM_AFTER_MIXES         = 1
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
@@ -58,9 +58,9 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
         1: {'Execute': True, 'description': 'Dispensar Lysys'},
-        2: {'Execute': False, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
-        3: {'Execute': False, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
-        4: {'Execute': False, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
+        2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
+        3: {'Execute': True, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
+        4: {'Execute': True, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -147,21 +147,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       flow_rate_dispense    = 100,
                       delay                 = 0
                       ) 
-
-    Beads = Reagent(name = 'Beads',
-                    flow_rate_aspirate = 25,
-                    flow_rate_dispense = 100,
-                    flow_rate_aspirate_mix = 0.5,
-                    flow_rate_dispense_mix = 0.5,
-                    air_gap_vol_bottom = 1,
-                    air_gap_vol_top = 0,
-                    disposal_volume = 1,
-                    max_volume_allowed = 18,
-                    reagent_volume = BEADS_VOLUME_PER_SAMPLE,
-                    placed_in_multi = True,
-                    first_well = 12,
-                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
-                    
+                
     Pk = Reagent(name = 'Pk',
                     flow_rate_aspirate = 3,
                     flow_rate_dispense = 3,
@@ -176,6 +162,20 @@ def run(ctx: protocol_api.ProtocolContext):
                     first_well = 1,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
+    Beads = Reagent(name = 'Beads',
+                    flow_rate_aspirate = 25,
+                    flow_rate_dispense = 100,
+                    flow_rate_aspirate_mix = 0.5,
+                    flow_rate_dispense_mix = 0.5,
+                    air_gap_vol_bottom = 1,
+                    air_gap_vol_top = 0,
+                    disposal_volume = 1,
+                    max_volume_allowed = 18,
+                    reagent_volume = BEADS_VOLUME_PER_SAMPLE,
+                    placed_in_multi = True,
+                    first_well = 12,
+                    v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
+    
     Lysis = Simple_Reagent(name                      = 'Lysis',
                      flow_rate_aspirate        = 50,
                      flow_rate_dispense        = 100,
@@ -546,6 +546,9 @@ def run(ctx: protocol_api.ProtocolContext):
     lysys_source        = lysys_rack.wells_by_name()['B3']
     dests_lysis         = list(divide_destinations(destinations, size_transfer))
     
+    ctx.comment("***************************************************************************")
+    ctx.comment("pk.fristwell: " + str(Pk.first_well))
+
     beads_reservoir = reagent_res.rows()[0][Beads.first_well - 1:Beads.first_well -1 + Beads.num_wells]
     pk_reservoir = reagent_res.rows()[0][Pk.first_well - 1:Pk.first_well - 1 + Pk.num_wells]
 
