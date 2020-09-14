@@ -25,7 +25,7 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_CONTROL_SPACES      = 0  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 16
+NUM_REAL_SAMPLES        = 4
 NUM_BEFORE_MIXES        = 0
 NUM_AFTER_MIXES         = 1
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
@@ -40,7 +40,7 @@ PK_VOLUME_PER_SAMPLE    = 13 # ul per sample.
 recycle_tip             = False
 num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
 num_cols                = math.ceil(num_samples / 8) # Columns we are working on
-air_gap_vol_sample      = 25
+air_gap_vol_sample      = 100
 extra_dispensal         = 1
 run_id                  = 'preparacion_tipo_A'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
@@ -58,9 +58,9 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
         1: {'Execute': True, 'description': 'Dispensar Lysys'},
-        2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
-        3: {'Execute': True, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
-        4: {'Execute': True, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
+        2: {'Execute': False, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
+        3: {'Execute': False, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
+        4: {'Execute': False, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -181,8 +181,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
     
     Lysis = Simple_Reagent(name                      = 'Lysis',
-                     flow_rate_aspirate        = 50,
-                     flow_rate_dispense        = 100,
+                     flow_rate_aspirate        = 0.5,
+                     flow_rate_dispense        = 0.5,
                      flow_rate_aspirate_mix = 0.5,
                      flow_rate_dispense_mix = 0.5,
                      delay                     = 0
@@ -263,7 +263,7 @@ def run(ctx: protocol_api.ProtocolContext):
         pipet.dispense(vol + air_gap_vol, drop,
                        rate = reagent.flow_rate_dispense)  # dispense all
 
-        ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
+        ctx.delay(seconds =reagent.delay) # pause for x seconds depending on reagent
 
         if blow_out == True:
             pipet.blow_out(dest.top(z = drop_height))
@@ -288,11 +288,14 @@ def run(ctx: protocol_api.ProtocolContext):
         pipette.aspirate((len(dest) * volume) +extra_dispensal
                          , src.bottom(pickup_height), rate = reagent.flow_rate_aspirate)
         pipette.move_to(src.top(z=5))
-        pipette.aspirate(air_gap_vol_sample, rate = reagent.flow_rate_aspirate)  # air gap
+        #pipette.aspirate(air_gap_vol_sample, rate = reagent.flow_rate_aspirate)  # air gap
+        ctx.delay(seconds = 2) # pause for x seconds depending on reagent
+        pipette.air_gap(air_gap_vol_sample, height = 5) #air gap
         for d in dest:
             pipette.dispense(volume + air_gap_vol_sample, d.top(), rate = reagent.flow_rate_dispense)
-            pipette.move_to(d.top(z=5))
-            pipette.aspirate(air_gap_vol_sample, rate = reagent.flow_rate_dispense)  # air gap
+            #pipette.move_to(d.top(z=5))
+            #pipette.aspirate(air_gap_vol_sample, rate = reagent.flow_rate_dispense)  # air gap
+            pipette.air_gap(air_gap_vol_sample, height = 5) #air gap
         try:
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
         except:
@@ -590,10 +593,10 @@ def run(ctx: protocol_api.ProtocolContext):
         for dest in dests_lysis:
             if not p1000.hw_pipette['has_tip']:
                  pick_up_tip(p1000)
-            num_mixes = 3
-            ctx.comment("Mezclas-   " + str(num_mixes))
-            custom_mix(p1000, reagent = Lysis, location = lysys_source, vol = LYSIS_VOLUME_PER_SAMPLE, 
-                rounds = num_mixes, blow_out = False, mix_height = 15, x_offset = x_offset)
+            num_mixes = 1
+            #ctx.comment("Mezclas-   " + str(num_mixes))
+            #custom_mix(p1000, reagent = Lysis, location = lysys_source, vol = LYSIS_VOLUME_PER_SAMPLE, 
+            #    rounds = num_mixes, blow_out = False, mix_height = 15, x_offset = x_offset)
 
             used_vol_temp = distribute_custom(p1000, Lysis, volume = LYSIS_VOLUME_PER_SAMPLE,
                 src = lysys_source, dest = dest,
