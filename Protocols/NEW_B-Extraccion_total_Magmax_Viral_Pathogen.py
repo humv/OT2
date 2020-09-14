@@ -22,7 +22,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                         = 96    # Must be multiple of 8
+NUM_SAMPLES                         = 16    # Must be multiple of 8
 USE_300_TIPS                        = True  # Check that TIP_RECYCLING variables have desired values 
 
 VOLUME_SAMPLE                       = 480   # Volume received from station A
@@ -609,7 +609,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
             if not m300.hw_pipette['has_tip']:
                 pick_up_tip(m300)
-            for transfer_vol in supernatant_transfer_vol:
+            for j, transfer_vol in enumerate(supernatant_transfer_vol):
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
                 ctx.comment('La altura de recogida es ' + str(pickup_height) )
 
@@ -728,7 +728,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     m300.dispense(Wash.air_gap_vol_top, work_destinations[i].top(z = 0), rate = Wash.flow_rate_dispense)
                 else:
                     pick_up_tip(m300)
-            for transfer_vol in supernatant_transfer_vol:
+            for j, transfer_vol in enumerate(supernatant_transfer_vol):
                 #Pickup_height is fixed here
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
                 ctx.comment('La altura de recogida es ' + str(pickup_height) )
@@ -847,7 +847,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     m300.dispense(Ethanol.air_gap_vol_top, work_destinations[i].top(z = 0), rate = Ethanol.flow_rate_dispense)
                 else:
                     pick_up_tip(m300)
-            for transfer_vol in supernatant_transfer_vol:
+            for j, transfer_vol in enumerate(supernatant_transfer_vol):
                 #Pickup_height is fixed here
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
                 ctx.comment('La altura de recogida es ' + str(pickup_height) )
