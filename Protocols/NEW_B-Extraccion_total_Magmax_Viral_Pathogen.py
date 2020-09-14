@@ -25,15 +25,12 @@ metadata = {
 NUM_SAMPLES                         = 96    # Must be multiple of 8
 USE_300_TIPS                        = True  # Check that TIP_RECYCLING variables have desired values 
 
-VOLUME_SAMPLE                       = 200   # Volume received from station A
-BEADS_VOLUME_PER_SAMPLE             = 280   # 0 to ignore Lysis transfer
+VOLUME_SAMPLE                       = 480   # Volume received from station A
 WASH_VOLUME_PER_SAMPLE              = 500
 ETHANOL_VOLUME_PER_SAMPLE           = 500
 ELUTION_VOLUME_PER_SAMPLE           = 50
 ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
 
-BEADS_WELL_FIRST_TIME_NUM_MIXES     = 10
-BEADS_WELL_NUM_MIXES                = 3
 BEADS_NUM_MIXES                     = 10    # 20
 WASH_NUM_MIXES                      = 10    # 10  
 EHTANOL_NUM_MIXES                   = 10    # 10
@@ -52,7 +49,7 @@ SOUND_NUM_PLAYS                     = 0
 run_id                      = 'B_Extraccion_total_Magmax_Viral_Pathogen'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 
-recycle_tip                 = True     # Do you want to recycle tips? It shoud only be set True for testing
+recycle_tip                 = False     # Do you want to recycle tips? It shoud only be set True for testing
 mag_height                  = 6         # Height needed for NEST deepwell in magnetic deck
 waste_drop_height           = -5
 multi_well_rack_area        = 8 * 71    #Cross section of the 12 well reservoir
@@ -70,7 +67,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': True, 'description': 'Transferir bolas magnéticas'},
+            1:{'Execute': True, 'description': 'Mezclar en deepwell'},
             2:{'Execute': False, 'description': 'Espera', 'wait_time': 300},         # TODO: Ver si es necesaria
             3:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 600},
             4:{'Execute': True, 'description': 'Desechar sobrenadante'},
@@ -146,8 +143,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
                     max_volume_allowed = pipette_allowed_capacity,
-                    reagent_volume = BEADS_VOLUME_PER_SAMPLE,
-                    placed_in_multi = True,
+                    reagent_volume = 0,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Wash = Reagent(name = 'Wash',
@@ -209,14 +205,11 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Capacidad de puntas: ' + txt_tip_capacity)
     ctx.comment(' ')
     ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
-    ctx.comment('Volumen de solución con bolas magnéticas por muestra: ' + str(BEADS_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen del lavado por muestra: ' + str(WASH_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen del etanol por muestra: ' + str(ETHANOL_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen de elución por muestra: ' + str(ELUTION_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen de elución a retirar del deepwell: ' + str(ELUTION_FINAL_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment(' ')
-    ctx.comment('Número de mezclas en la primera recogida de un canal con bolas magnéticas: ' + str(BEADS_WELL_FIRST_TIME_NUM_MIXES))
-    ctx.comment('Número de mezclas en el resto de recogidas de un canal con bolas magnéticas: ' + str(BEADS_WELL_NUM_MIXES))
     ctx.comment('Número de mezclas con la solución de bolas magnéticas: ' + str(BEADS_NUM_MIXES))
     ctx.comment('Número de mezclas con el lavado: ' + str(WASH_NUM_MIXES))
     ctx.comment('Número de mezclas con el etanol lavado: ' + str(EHTANOL_NUM_MIXES))
@@ -506,12 +499,9 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('###############################################')
     ctx.comment('VOLÚMENES PARA ' + str(NUM_SAMPLES) + ' MUESTRAS')
     ctx.comment(' ')
-    
-    if BEADS_VOLUME_PER_SAMPLE > 0:
-        assign_wells(Beads, 1)
 
-    assign_wells(Wash, 4)
-    assign_wells(Ethanol, 8)
+    assign_wells(Wash, 1)
+    assign_wells(Ethanol, 7)
     assign_wells(Elution, 12)
 
     ctx.comment('###############################################')
@@ -536,49 +526,16 @@ def run(ctx: protocol_api.ProtocolContext):
     magdeck.disengage()
 
     ###############################################################################
-    # STEP 1 Transferir bolas magnéticas
+    # STEP 1 Mezclar en deepwell
     ########
     STEP += 1
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        beads_trips = math.ceil(Beads.reagent_volume / Beads.max_volume_allowed)
-        beads_volume = Beads.reagent_volume / beads_trips
-        beads_transfer_vol = []
-        for i in range(beads_trips):
-            beads_transfer_vol.append(beads_volume + Beads.disposal_volume)
-        x_offset_source = 0
-        x_offset_dest   = 0
-        first_mix_done = False
-
         for i in range(num_cols):
             ctx.comment("Column: " + str(i))
-            if not m300.hw_pipette['has_tip']:
-                pick_up_tip(m300)
-            for j,transfer_vol in enumerate(beads_transfer_vol):
-                #Calculate pickup_height based on remaining volume and shape of container
-                # transfer_vol_extra = transfer_vol if j > 0 else transfer_vol + 100  # Extra 100 isopropanol for calcs
-                # [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol_extra * 8)
-                [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)
-                # if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
-                if change_col == True or (i == 0 and j == 0): #If we switch column because there is not enough volume left in current reservoir column we mix new column
-                    ctx.comment('Mezclando nuevo canal del reservorio: ' + str(Beads.first_well + Beads.col))
-                    custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES,
-                            blow_out = False, mix_height = 1.5, offset = 0)
-                    first_mix_done = True
-                else:
-                    ctx.comment('Mezclando canal del reservorio: ' + str(Beads.first_well + Beads.col))
-                    mix_height = 1.5 if pickup_height > 1.5 else pickup_height
-                    custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                            vol = Beads.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES,
-                            blow_out = False, mix_height = mix_height, offset = 0)
 
-                ctx.comment('Aspirando desde la columna del reservorio: ' + str(Beads.first_well + Beads.col))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
-                move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
-                        dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5)
+            pick_up_tip(m300)
 
             if BEADS_NUM_MIXES > 0:
                 ctx.comment(' ')
@@ -592,7 +549,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         log_step_end(start)
         ###############################################################################
-        # STEP 1 Transferir bolas magnéticas
+        # STEP 1 Mezclar en deepwell
         ########
 
     ###############################################################################
@@ -636,8 +593,6 @@ def run(ctx: protocol_api.ProtocolContext):
         start = log_step_start()
 
         total_supernatant_volume = Sample.reagent_volume
-        if BEADS_VOLUME_PER_SAMPLE > 0:
-            total_supernatant_volume += Beads.reagent_volume
 
         supernatant_trips = math.ceil((total_supernatant_volume) / Sample.max_volume_allowed)
         supernatant_volume = Sample.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
