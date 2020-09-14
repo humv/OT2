@@ -54,7 +54,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': True, 'description': 'Hidratate'},
-        2: {'Execute': False, 'description': 'Wait rest', 'wait_time': 120},
+        2: {'Execute': True, 'description': 'Wait rest', 'wait_time': 120},
         3: {'Execute': True, 'description': 'Transfer samples'},
         4: {'Execute': True, 'description': 'Transfer negative control'},
         5: {'Execute': True, 'description': 'Transfer positive control'}
@@ -299,7 +299,7 @@ def run(ctx: protocol_api.ProtocolContext):
             used_vol_temp = distribute_custom(p300, volume = HYDR_VOL_PER_SAMPLE,
                 src = Hydr.reagent_reservoir, dest = dest,
                 waste_pool = Hydr.reagent_reservoir, pickup_height = 0.2,
-                extra_dispensal = extra_dispensal, dest_x_offset = 0, disp_height = -1)
+                extra_dispensal = extra_dispensal, dest_x_offset = 2, disp_height = -1)
             used_vol.append(used_vol_temp)
 
         p300.drop_tip(home_after = False)
