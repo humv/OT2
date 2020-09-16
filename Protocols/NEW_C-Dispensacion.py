@@ -205,7 +205,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # pipettes
     m20 = ctx.load_instrument(
-        'p20_multi_gen2', mount = 'left', 
+        'p20_multi_gen2', mount = 'right', 
         tip_racks = tips20) # load m20 pipette
 
     # used tip counter and set maximum tips available
