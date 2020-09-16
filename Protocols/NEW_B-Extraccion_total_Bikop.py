@@ -65,6 +65,7 @@ x_offset_rs_mv              = 2 if USE_300_TIPS else 2.5
 x_offset_rs_sn              = 1.5 if USE_300_TIPS else 2
 
 num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
+switch_off_lights           = False # Switch of the lights when the program finishes
 
 def run(ctx: protocol_api.ProtocolContext):
     w1_tip_pos_list             = []
@@ -403,7 +404,7 @@ def run(ctx: protocol_api.ProtocolContext):
             pass
             print()
 
-    def finish_run():
+    def finish_run(switch_off_lights = False):
         ctx.comment('###############################################')
         ctx.comment('Protocolo finalizado')
         ctx.comment(' ')
@@ -424,7 +425,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 time.sleep(0.3)
                 ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
                 time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+        if switch_off_lights:
+            ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
 
         used_tips = tip_track['num_refills'][m300] * 96 * len(m300.tip_racks) + tip_track['counts'][m300]
         ctx.comment('Puntas de ' + txt_tip_capacity + ' utilizadas: ' + str(used_tips) + ' (' + str(round(used_tips / 96, 2)) + ' caja(s))')
@@ -1037,4 +1039,4 @@ def run(ctx: protocol_api.ProtocolContext):
         f.close()
 
     ############################################################################
-    finish_run()
+    finish_run(switch_off_lights)

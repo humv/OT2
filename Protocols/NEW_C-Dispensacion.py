@@ -32,6 +32,7 @@ air_gap_vol                 = 5
 air_gap_sample              = 2
 
 # Tune variables
+switch_off_lights           = True # Switch of the lights when the program finishes
 extra_dispensal             = 1     # Extra volume for master mix in each distribute transfer
 pipette_allowed_capacity    = 180   # Volume allowed in the pipette of 200µl
 x_offset                    = [0,0]
@@ -283,7 +284,8 @@ def run(ctx: protocol_api.ProtocolContext):
         #ctx._hw_manager.hardware.set_lights(rails=True)
         ctx._hw_manager.hardware.set_lights(button=(0, 0 ,1))
         time.sleep(0.3)
-    ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
+    if switch_off_lights:
+        ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
     ctx.comment('Finished! \nMove plate to PCR')
 
     ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]))

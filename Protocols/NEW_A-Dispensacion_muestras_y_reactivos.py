@@ -24,8 +24,8 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 0  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 4
+NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
+NUM_REAL_SAMPLES        = 94
 NUM_BEFORE_MIXES        = 0
 NUM_AFTER_MIXES         = 1
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
@@ -47,6 +47,7 @@ path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
 volume_mix              = 500 # Volume used on mix
 x_offset                = [0,0]
+switch_off_lights           = False # Switch of the lights when the program finishes
 
 lysys_pipette_capacity  = 900 # Volume allowed in the pipette of 1000µl
 size_transfer           = math.floor(lysys_pipette_capacity / LYSIS_VOLUME_PER_SAMPLE) # Number of wells the distribute function will fill
@@ -409,7 +410,7 @@ def run(ctx: protocol_api.ProtocolContext):
         start_time = now.strftime("%Y/%m/%d %H:%M:%S")
         return start_time
 
-    def finish_run():
+    def finish_run(switch_off_lights = False):
         ctx.comment('###############################################')
         ctx.comment('Protocolo finalizado')
         ctx.comment(' ')
@@ -430,7 +431,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 time.sleep(0.3)
                 ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
                 time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+        if switch_off_lights:
+            ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
 
         used_tips = tip_track['num_refills'][p1000] * 96 * len(p1000.tip_racks) + tip_track['counts'][p1000]
         ctx.comment('Puntas de 1000 ul utilizadas: ' + str(used_tips) + ' (' + str(round(used_tips / 96, 2)) + ' caja(s))')
@@ -734,4 +736,4 @@ def run(ctx: protocol_api.ProtocolContext):
     # Light flash end of program
     # from opentrons.drivers.rpi_drivers import gpio
 
-    finish_run()
+    finish_run(switch_off_lights)

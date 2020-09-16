@@ -44,6 +44,7 @@ multi_well_rack_area = 8 * 71 #Cross section of the 12 well reservoir
 deepwell_cross_section_area = L_deepwell ** 2 # deepwell square cross secion area
 
 num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
+switch_off_lights           = False # Switch of the lights when the program finishes
 
 def run(ctx: protocol_api.ProtocolContext):
 
@@ -334,7 +335,7 @@ def run(ctx: protocol_api.ProtocolContext):
             pass
             print()
 
-    def finish_run():
+    def finish_run(switch_off_lights = False):
         ctx.comment('###############################################')
         ctx.comment('Protocolo finalizado')
         ctx.comment(' ')
@@ -355,7 +356,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 time.sleep(0.3)
                 ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
                 time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+        if switch_off_lights:
+            ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
 
         # TODO: Añadir refills a los tip_racks
         # used_tips = tip_track['num_refills'][m300] * 96 * len(m300.tip_racks) + tip_track['counts'][m300]
@@ -669,5 +671,5 @@ def run(ctx: protocol_api.ProtocolContext):
                 f.write(row + '\n')
         f.close()
 
-    finish_run()
+    finish_run(switch_off_lights)
 
