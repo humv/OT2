@@ -24,7 +24,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                 = 2    # Including controls. 94 samples + 2 controls = 96
+NUM_SAMPLES                 = 96    # Including controls. 94 samples + 2 controls = 96
 HYDR_VOL_PER_SAMPLE         = 15
 VOLUME_SAMPLE               = 5     # Volume of the sample
 
@@ -234,8 +234,8 @@ def run(ctx: protocol_api.ProtocolContext):
         if switch_off_lights:
             ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
 
-        ctx.comment('Puntas de 20 uL utilizadas: ' + str(tip_track['counts'][p20]) + ' (' + str(tip_track['counts'][p20]) + ' caja(s))')
-        ctx.comment('Puntas de 200 uL utilizadas: ' + str(tip_track['counts'][p300]) + ' (' + str(tip_track['counts'][p300]) + ' caja(s))')
+        ctx.comment('Puntas de 20 uL utilizadas: ' + str(tip_track['counts'][p20]) + ' (' + str(round(tip_track['counts'][p20] / 96, 2)) + ' caja(s))')
+        ctx.comment('Puntas de 200 uL utilizadas: ' + str(tip_track['counts'][p300]) + ' (' + str(round(tip_track['counts'][p300] / 96, 2)) + ' caja(s))')
         ctx.comment('###############################################')
 
         if not ctx.is_simulating():
