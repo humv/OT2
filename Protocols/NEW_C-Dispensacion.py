@@ -23,7 +23,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                 = 24    # Including controls. 94 samples + 2 controls = 96
+NUM_SAMPLES                 = 32    # Including controls. 94 samples + 2 controls = 96
 VOLUME_SAMPLE               = 5     # Volume of the sample
 ################################################
 
@@ -146,9 +146,9 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -2))
+            pipet.blow_out(dest.top(z = -10))
         if touch_tip == True:
-            pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.5)
+            pipet.touch_tip(speed = 20, v_offset = -10, radius = 0.5)
 
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
@@ -181,9 +181,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ##################################
     # Sample plate - comes from B
     source_plate = ctx.load_labware(
-        'kingfisher_96_aluminumblock_200ul', '3',
-        'Kingfisher 96 Aluminum Block 200 uL')
-
+        'biorad_96_wellplate_200ul_pcr', '3', 
+        'Bio-Rad 96 Well Plate 200 µL PCR')
     ##################################
     # qPCR plate - final plate, goes to PCR
     qpcr_plate = ctx.load_labware(
@@ -247,12 +246,13 @@ def run(ctx: protocol_api.ProtocolContext):
 
             move_vol_multichannel(m20, reagent = Samples, source = s, dest = d,
                     vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                    pickup_height = 0.2, disp_height = 0, rinse = False,
+                    pickup_height = 0.2, disp_height = -10, rinse = False,
                     blow_out=True, touch_tip=True)
 
             tipRack_pos = tipCols[i].top(z = 20)
             
-            m20.drop_tip(home_after = False)
+            #m20.drop_tip(home_after = False)
+            m20.return_tip()
 
             tip_track['counts'][m20]+=1
             i = i + 1

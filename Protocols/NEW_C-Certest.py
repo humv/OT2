@@ -23,7 +23,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                 = 96    # Including controls. 94 samples + 2 controls = 96
+NUM_SAMPLES                 = 2    # Including controls. 94 samples + 2 controls = 96
 HYDR_VOL_PER_SAMPLE         = 15
 VOLUME_SAMPLE               = 5     # Volume of the sample
 ################################################
@@ -109,7 +109,7 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(0, len(l), n):
             yield l[i:i + n]
 
-    def distribute_custom(pipette, volume, src, dest, waste_pool, pickup_height, extra_dispensal, dest_x_offset, disp_height = 0, touch_tip = false):
+    def distribute_custom(pipette, volume, src, dest, waste_pool, pickup_height, extra_dispensal, dest_x_offset, disp_height = 0, touch_tip = False):
         # Custom distribute function that allows for blow_out in different location and adjustement of touch_tip
         pipette.aspirate((len(dest) * volume) + extra_dispensal, src.bottom(pickup_height))
         if touch_tip :
@@ -121,8 +121,7 @@ def run(ctx: protocol_api.ProtocolContext):
             pipette.dispense(5, d.top())
             drop = d.top(z = disp_height).move(Point(x = dest_x_offset))
             pipette.dispense(volume, drop)
-            pipette.move_to(d.top(z = 5))
-            pipette.aspirate(5)  # air gap
+            pipette.aspirate(5, location = d.top(z = disp_height))  # air gap
         try:
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
         except:
@@ -160,9 +159,9 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -2))
+            pipet.blow_out(dest.top(z = -10))
         if touch_tip == True:
-            pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.5)
+            pipet.touch_tip(speed = 20, v_offset = -10, radius = 0.5)
 
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
@@ -275,9 +274,9 @@ def run(ctx: protocol_api.ProtocolContext):
         for dest in dests:
             aspirate_volume = HYDR_VOL_PER_SAMPLE * len(dest) + extra_dispensal
             used_vol_temp = distribute_custom(p300, volume = HYDR_VOL_PER_SAMPLE,
-                src = Hydr.reagent_reservoir, dest = dest, touch_tip = False
+                src = Hydr.reagent_reservoir, dest = dest, touch_tip = False,
                 waste_pool = Hydr.reagent_reservoir, pickup_height = 0.2,
-                extra_dispensal = extra_dispensal, dest_x_offset = 0, disp_height = -1)
+                extra_dispensal = extra_dispensal, dest_x_offset = 0, disp_height = -5)
             used_vol.append(used_vol_temp)
 
         p300.drop_tip(home_after = False)
@@ -307,7 +306,7 @@ def run(ctx: protocol_api.ProtocolContext):
         d = qpcr_plate.wells()[1]   # B1
         move_vol_multichannel(p20, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                pickup_height = 0.2, disp_height = 0, rinse = False,
+                pickup_height = 0.2, disp_height = -10, rinse = False,
                 blow_out=True, touch_tip=True)
 
         p20.drop_tip(home_after = False)
@@ -337,7 +336,7 @@ def run(ctx: protocol_api.ProtocolContext):
         d = qpcr_plate.wells()[0]   # A1
         move_vol_multichannel(p20, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                pickup_height = 0.2, disp_height = 0, rinse = False,
+                pickup_height = 0.2, disp_height = -10, rinse = False,
                 blow_out=True, touch_tip=True)
 
         p20.drop_tip(home_after = False)
