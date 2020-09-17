@@ -536,7 +536,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir,
                         dest = wash_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True)
+                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False)
             ctx.comment(' ')
         if recycle_tip == True:
             m300.return_tip()
@@ -584,7 +584,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Ethanol, source = Ethanol.reagent_reservoir,
                         dest = ethanol_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True)
+                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False)
 
         if recycle_tip == True:
             m300.return_tip()
@@ -635,7 +635,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Elution, source = Elution.reagent_reservoir[Elution.col],
                         dest = elution_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False, touch_tip = True)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False, touch_tip = False)
             ctx.comment(' ')
 
         if recycle_tip == True:
