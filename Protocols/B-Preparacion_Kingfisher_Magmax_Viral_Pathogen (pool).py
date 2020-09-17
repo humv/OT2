@@ -272,7 +272,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
 
         if avoid_droplet == True: # Touch the liquid surface to avoid droplets
-            ctx.comment("Moving to: " + str(pickup_height))
+            ctx.comment("Moving to: " + str(round(pickup_height, 2)) + ' mm')
             pipet.move_to(source.bottom(pickup_height))
 
         # GO TO DESTINATION
@@ -472,7 +472,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
                             vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads_PK_Binding.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm')
                 #if j!=0:
                 #    rinse = False
                 move_vol_multi(m300, reagent = Beads_PK_Binding, source = Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
@@ -629,7 +629,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Elution, multi_well_rack_area, transfer_vol * 8)
                 ctx.comment('Aspirate from reservoir column: ' + str(Elution.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm')
                 #if j!=0:
                 #    rinse = False
                 move_vol_multi(m300, reagent = Elution, source = Elution.reagent_reservoir[Elution.col],

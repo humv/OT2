@@ -473,10 +473,10 @@ def run(ctx: protocol_api.ProtocolContext):
         else:
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - (aspirate_volume - (reagent.disposal_volume * 8))
-            ctx.comment('La altura calculada es ' + str(height))
+            ctx.comment('La altura calculada es ' + str(round(height, 2)) + ' mm')
             if height < min_height:
                 height = min_height
-            ctx.comment('La altura usada es ' + str(height))
+            ctx.comment('La altura utilizada es ' + str(round(height, 2)) + ' mm')
             col_change = False
         return height, col_change
     
@@ -672,7 +672,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 [pickup_height, change_col] = calc_height(Pk, multi_well_rack_area, transfer_vol * 8)
                 
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Pk.first_well + Pk.col))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
                 move_vol_multichannel(m20, reagent = Pk, source = pk_reservoir[Pk.col],
                         dest = destinations_full[i], vol = transfer_vol, 
                         pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5, 
@@ -709,7 +709,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 [pickup_height, change_col] = calc_height(Beads, multi_well_rack_area, transfer_vol * 8)
                 
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Beads.first_well + Beads.col))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
                 move_vol_multichannel(m20, reagent = Beads, source = beads_reservoir[Beads.col],
                         dest = destinations_full[i], vol = transfer_vol, 
                         pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5, 

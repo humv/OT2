@@ -307,7 +307,7 @@ def run(ctx: protocol_api.ProtocolContext):
             
             m20.drop_tip(home_after = False)
 
-            tip_track['counts'][m20]+=1
+            tip_track['counts'][m20] += 8
             i = i + 1
 
         end = datetime.now()
