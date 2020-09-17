@@ -45,7 +45,8 @@ extra_dispensal         = 1
 run_id                  = 'preparacion_tipo_A'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
-volume_mix              = 500 # Volume used on mix
+volume_mix_tuberack     = 500
+volume_mix_deepwell     = (LYSIS_VOLUME_PER_SAMPLE + VOLUME_SAMPLE) * 0.75 # Volume used on mix
 x_offset                = [0,0]
 switch_off_lights           = False # Switch of the lights when the program finishes
 
@@ -103,7 +104,7 @@ def run(ctx: protocol_api.ProtocolContext):
                      flow_rate_aspirate_mix = 0.5,
                      flow_rate_dispense_mix = 0.5,
                      delay                     = 0,
-                     air_gap_vol_bottom    = 100
+                     air_gap_vol_bottom    = 0
                      ) 
     ctx.comment(' ')
     ctx.comment('###############################################')
@@ -126,8 +127,6 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('VOLUMENES PARA ' + str(num_samples) + ' muestras.')
     ctx.comment('')
     ctx.comment('Volumen de lysys necesario en B3 :' + str(LYSIS_VOLUME_PER_SAMPLE * NUM_REAL_SAMPLES) + " ul")
-    Beads.comment_vol_info()
-    Pk.comment_vol_info()
     ctx.comment('')
 
     ##################
@@ -467,9 +466,7 @@ def run(ctx: protocol_api.ProtocolContext):
     destinations_full   = dest_plate.rows()[0][:num_samples]
     lysys_source        = lysys_rack.wells_by_name()['B3']
     dests_lysis         = list(divide_destinations(destinations, size_transfer))
-    
-    ctx.comment("***************************************************************************")
-    ctx.comment("pk.fristwell: " + str(Pk.first_well))
+
 
     p1000 = ctx.load_instrument(
         'p1000_single_gen2', 'right', 
@@ -498,7 +495,7 @@ def run(ctx: protocol_api.ProtocolContext):
         for dest in dests_lysis:
             if not p1000.hw_pipette['has_tip']:
                  pick_up_tip(p1000)
-            num_mixes = 1
+            #num_mixes = 1
             #ctx.comment("Mezclas-   " + str(num_mixes))
             #custom_mix(p1000, reagent = Lysis, location = lysys_source, vol = LYSIS_VOLUME_PER_SAMPLE, 
             #    rounds = num_mixes, blow_out = False, mix_height = 15, x_offset = x_offset)
@@ -528,7 +525,7 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample BEFORE dispensing
             if NUM_BEFORE_MIXES > 0:
                 ctx.comment("Mezclas en origen " + str(NUM_BEFORE_MIXES))
-                custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, 
+                custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix_tuberack, 
                     rounds = NUM_BEFORE_MIXES, blow_out = False, mix_height = 15, x_offset = x_offset)
 
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
@@ -539,8 +536,8 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample BEFORE dispensing
             if NUM_AFTER_MIXES > 0:
                 ctx.comment("Mezclas en destino " + str(NUM_AFTER_MIXES))
-                custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix, 
-                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1, x_offset = x_offset, air_gap_vol = 2 )
+                custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix_deepwell 
+                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1, source_height = 1, x_offset = x_offset, air_gap_vol = 2 )
 
             p1000.drop_tip(home_after = False)
             tip_track['counts'][p1000] += 1

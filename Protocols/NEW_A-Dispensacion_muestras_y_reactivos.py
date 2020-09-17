@@ -24,8 +24,8 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 94
+NUM_CONTROL_SPACES      = 0  # The control spaces are being ignored at the first cycles
+NUM_REAL_SAMPLES        = 8
 NUM_BEFORE_MIXES        = 0
 NUM_AFTER_MIXES         = 1
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
@@ -45,7 +45,8 @@ extra_dispensal         = 1
 run_id                  = 'preparacion_tipo_A'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
-volume_mix              = 500 # Volume used on mix
+volume_mix_tuberack     = 500
+volume_mix_deepwell     = (LYSIS_VOLUME_PER_SAMPLE + VOLUME_SAMPLE) * 0.75 # Volume used on mix
 x_offset                = [0,0]
 switch_off_lights           = False # Switch of the lights when the program finishes
 
@@ -53,14 +54,14 @@ lysys_pipette_capacity  = 900 # Volume allowed in the pipette of 1000µl
 size_transfer           = math.floor(lysys_pipette_capacity / LYSIS_VOLUME_PER_SAMPLE) # Number of wells the distribute function will fill
 multi_well_rack_area    = 8 * 71    #Cross section of the 12 well reservoir
 next_well_index         = 0         # First reagent well to use
-
+recycle_tip             = True
 
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': True, 'description': 'Dispensar Lysys'},
-        2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
-        3: {'Execute': True, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
+        1: {'Execute': False, 'description': 'Dispensar Lysys'},
+        2: {'Execute': False, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
+        3: {'Execute': False, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
         4: {'Execute': True, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
@@ -76,7 +77,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # Define Reagents as objects with their properties
     class Simple_Reagent:
-        def __init__(self, name, flow_rate_aspirate, flow_rate_dispense,flow_rate_aspirate_mix, flow_rate_dispense_mix, delay, air_gap_vol_bottom = 2):
+        def __init__(self, name, flow_rate_aspirate, flow_rate_dispense,flow_rate_aspirate_mix, flow_rate_dispense_mix, delay, air_gap_vol_bottom = 2, air_gap_vol_top = 0):
             self.name               = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -84,6 +85,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.flow_rate_dispense_mix = flow_rate_dispense_mix
             self.delay              = delay 
             self.air_gap_vol_bottom = air_gap_vol_bottom
+            self.air_gap_vol_top = air_gap_vol_top
     
     def str_rounded(num):
         return str(int(num + 0.5))
@@ -123,15 +125,15 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(self.name + ': ' + str(self.num_wells) +  (' canal' if self.num_wells == 1 else ' canales') + ' desde el canal '+ str(self.first_well) +' en el reservorio de 12 canales con un volumen de ' + str_rounded(self.vol_well_original) + ' uL cada uno')
         
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense,  
-            flow_rate_aspirate_mix, flow_rate_dispense_mix, air_gap_vol_bottom, air_gap_vol_top, disposal_volume, max_volume_allowed, reagent_volume, 
-            v_fondo, dead_vol = 700, first_well = None, placed_in_multi = False):
+            flow_rate_aspirate_mix, flow_rate_dispense_mix, air_gap_vol_bottom, disposal_volume, max_volume_allowed, reagent_volume, 
+            v_fondo, air_gap_vol_top = 0, dead_vol = 700, first_well = None, placed_in_multi = False):
             self.name               = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
             self.flow_rate_aspirate_mix = 0.5
             self.flow_rate_dispense_mix = 0.5
             self.air_gap_vol_bottom = 2
-            self.air_gap_vol_top = 0
+            self.air_gap_vol_top = air_gap_vol_top
             self.disposal_volume = 1
             self.max_volume_allowed = 18
             self.col = 0
@@ -175,7 +177,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     flow_rate_aspirate_mix = 0.5,
                     flow_rate_dispense_mix = 0.5,
                     air_gap_vol_bottom = 1,
-                    air_gap_vol_top = 0,
+                    air_gap_vol_top = 4,
                     disposal_volume = 1,
                     max_volume_allowed = 18,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
@@ -189,7 +191,7 @@ def run(ctx: protocol_api.ProtocolContext):
                      flow_rate_aspirate_mix = 0.5,
                      flow_rate_dispense_mix = 0.5,
                      delay                     = 0,
-                     air_gap_vol_bottom    = 100
+                     air_gap_vol_bottom    = 0
                      ) 
     ctx.comment(' ')
     ctx.comment('###############################################')
@@ -241,7 +243,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment(' ')
 
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, drop_height, blow_out, touch_tip, x_offset,
-                       pickup_height = 0, rinse = False, skipFinalAirGap = False):
+                       pickup_height = 0, rinse = False, skipFinalAirGap = False, touch_tip_offset = -10, shake = False):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -257,6 +259,10 @@ def run(ctx: protocol_api.ProtocolContext):
 
         # SOURCE
         s = source.bottom(pickup_height).move(Point(x = x_offset[0]))
+        if reagent.air_gap_vol_top > 0:
+            ctx.comment ("Airgap top: " + str(reagent.air_gap_vol_top) + " ul")
+            pipet.aspirate(reagent.air_gap_vol_top, source.top(z = -2),
+                           rate = reagent.flow_rate_aspirate)  # air gap
         pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate)  # aspirate liquid
         if air_gap_vol != 0:  # If there is air_gap_vol, switch pipette to slow speed
             pipet.aspirate(air_gap_vol, source.top(z = -2),
@@ -264,17 +270,22 @@ def run(ctx: protocol_api.ProtocolContext):
 
         # GO TO DESTINATION
         drop = dest.top(z = drop_height).move(Point(x = x_offset[1]))
-        pipet.dispense(vol + air_gap_vol, drop,
+        pipet.dispense(vol + air_gap_vol + reagent.air_gap_vol_top, drop,
                        rate = reagent.flow_rate_dispense)  # dispense all
 
         ctx.delay(seconds =reagent.delay) # pause for x seconds depending on reagent
 
+        if shake == True:
+            ctx.comment("Shaking it..")
+            for i in range(3):
+                pipet.touch_tip(speed = 100, radius = 0.1, v_offset = drop_height)
+
         if blow_out == True:
+            ctx.comment("Blowing out.") 
             pipet.blow_out(dest.top(z = drop_height))
-            pipet.dispense(10, dest.top(z = drop_height))  # FIXME: ¿quitar? ¿solo para bolas y pk?
         
         if touch_tip == True:
-            pipet.touch_tip(speed = 20, v_offset = -10)
+            pipet.touch_tip(speed = 20, radius = 0.8, v_offset = touch_tip_offset)
 
         if air_gap_vol != 0 and not skipFinalAirGap:
             #pipet.move_to(dest.top(z = drop_height))
@@ -296,7 +307,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = 2) # pause for x seconds depending on reagent
         pipette.air_gap(reagent.air_gap_vol_bottom, height = 5) #air gap
         for d in dest:
-            pipette.dispense(volume + reagent.air_gap_vol_bottom, d.top(), rate = reagent.flow_rate_dispense)
+            pipette.dispense(volume + reagent.air_gap_vol_bottom, d.top(drop_height), rate = reagent.flow_rate_dispense)
             #pipette.move_to(d.top(z=5))
             #pipette.aspirate(reagent.air_gap_vol_bottom, rate = reagent.flow_rate_dispense)  # air gap
             pipette.air_gap(reagent.air_gap_vol_bottom, height = 5) #air gap
@@ -605,8 +616,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
             used_vol_temp = distribute_custom(p1000, Lysis, volume = LYSIS_VOLUME_PER_SAMPLE,
                 src = lysys_source, dest = dest,
-                waste_pool = lysys_source, pickup_height = 1,
-                extra_dispensal = extra_dispensal, dest_x_offset = 2, drop_height = -1)
+                waste_pool = lysys_source, pickup_height = 2,
+                extra_dispensal = extra_dispensal, dest_x_offset = 2, drop_height = 10)
             used_vol.append(used_vol_temp)
 
         p1000.drop_tip(home_after = False)
@@ -628,7 +639,7 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample BEFORE dispensing
             if NUM_BEFORE_MIXES > 0:
                 ctx.comment("Mezclas en origen " + str(NUM_BEFORE_MIXES))
-                custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, 
+                custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix_tuberack, 
                     rounds = NUM_BEFORE_MIXES, blow_out = False, mix_height = 15, x_offset = x_offset)
 
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
@@ -639,8 +650,8 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample BEFORE dispensing
             if NUM_AFTER_MIXES > 0:
                 ctx.comment("Mezclas en destino " + str(NUM_AFTER_MIXES))
-                custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix, 
-                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1, x_offset = x_offset, air_gap_vol = 2 )
+                custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix_deepwell, 
+                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1,source_height = 1, x_offset = x_offset, air_gap_vol = 2 )
 
             p1000.drop_tip(home_after = False)
             tip_track['counts'][p1000] += 1
@@ -674,13 +685,16 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Pk.first_well + Pk.col))
                 ctx.comment('La altura de recogida es ' + str(pickup_height))
                 move_vol_multichannel(m20, reagent = Pk, source = pk_reservoir[Pk.col],
-                        dest = destinations_full[i], vol = transfer_vol, 
+                        dest = destinations_full[i], vol = transfer_vol, shake = True,
                         pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5, 
                         air_gap_vol = Pk.air_gap_vol_bottom, x_offset = x_offset, skipFinalAirGap = True)
 
             # m20.air_gap(Pk.air_gap_vol_bottom, height = 5) #air gap
 
-        drop_tip(m20)
+        if recycle_tip:
+            m20.return_tip()
+        else :
+            drop_tip(m20)
 
         log_step_end(start)
 
@@ -712,12 +726,16 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('La altura de recogida es ' + str(pickup_height))
                 move_vol_multichannel(m20, reagent = Beads, source = beads_reservoir[Beads.col],
                         dest = destinations_full[i], vol = transfer_vol, 
-                        pickup_height = pickup_height, blow_out = True, touch_tip = False, drop_height = 5, 
+                        touch_tip = False, touch_tip_offset = -20, shake = True,
+                        pickup_height = pickup_height, blow_out = True, drop_height = 5, 
                         air_gap_vol = Beads.air_gap_vol_bottom, x_offset = x_offset, skipFinalAirGap = True)
 
             # m20.air_gap(Beads.air_gap_vol_bottom, height = 5) #air gap
 
-        drop_tip(m20)
+        if recycle_tip:
+            m20.return_tip()
+        else :
+            drop_tip(m20)
 
         log_step_end(start)
 
