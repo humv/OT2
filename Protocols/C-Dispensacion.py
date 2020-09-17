@@ -1,6 +1,7 @@
 import math
 from opentrons.types import Point
 from opentrons import protocol_api
+import subprocess
 import time
 import os
 import numpy as np
@@ -23,11 +24,16 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                 = 32    # Including controls. 94 samples + 2 controls = 96
+NUM_SAMPLES                 = 96    # Including controls. 94 samples + 2 controls = 96
 VOLUME_SAMPLE               = 5     # Volume of the sample
+
+PHOTOSENSITIVE              = True # True if it has photosensitive reagents
+SOUND_NUM_PLAYS             = 1
 ################################################
 
 run_id                      = 'C_Dispensacion'
+path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
+
 air_gap_vol                 = 5
 air_gap_sample              = 2
 
@@ -179,6 +185,53 @@ def run(ctx: protocol_api.ProtocolContext):
         if blow_out == True:
             pipet.blow_out(location.top(z = -2))  # Blow out
 
+    def run_quiet_process(command):
+        subprocess.check_output('{} &> /dev/null'.format(command), shell=True)
+    
+    def play_sound(filename):
+        print('Speaker')
+        print('Next\t--> CTRL-C')
+        try:
+            run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
+        except KeyboardInterrupt:
+            pass
+            print()
+
+    def finish_run(switch_off_lights = False):
+        ctx.comment('###############################################')
+        ctx.comment('Protocolo finalizado')
+        ctx.comment(' ')
+        #Set light color to blue
+        ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+        now = datetime.now()
+        # dd/mm/YY H:M:S
+        finish_time = now.strftime("%Y/%m/%d %H:%M:%S")
+        if PHOTOSENSITIVE==False:
+            for i in range(10):
+                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
+                time.sleep(0.3)
+                ctx._hw_manager.hardware.set_lights(button = True, rails =  True)
+                time.sleep(0.3)
+        else:
+            for i in range(10):
+                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
+                time.sleep(0.3)
+                ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+                time.sleep(0.3)
+        if switch_off_lights:
+            ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+
+        ctx.comment('Puntas de 20 uL utilizadas: ' + str(tip_track['counts'][m20]) + ' (' + str(round(tip_track['counts'][m20] / 96, 2)) + ' caja(s))')
+        ctx.comment('###############################################')
+
+        if not ctx.is_simulating():
+            for i in range(SOUND_NUM_PLAYS):
+                if i > 0:
+                    time.sleep(60)
+                play_sound('finalizado')
+
+        return finish_time
+
     ##################################
     # Sample plate - comes from B
     source_plate = ctx.load_labware(
@@ -252,8 +305,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
             tipRack_pos = tipCols[i].top(z = 20)
             
-            #m20.drop_tip(home_after = False)
-            m20.return_tip()
+            m20.drop_tip(home_after = False)
 
             tip_track['counts'][m20]+=1
             i = i + 1
@@ -276,17 +328,4 @@ def run(ctx: protocol_api.ProtocolContext):
         f.close()
 
     ############################################################################
-    # Light flash end of program
-    for i in range(3):
-        #ctx._hw_manager.hardware.set_lights(rails=False)
-        ctx._hw_manager.hardware.set_lights(button=(1, 0 ,0))
-        time.sleep(0.3)
-        #ctx._hw_manager.hardware.set_lights(rails=True)
-        ctx._hw_manager.hardware.set_lights(button=(0, 0 ,1))
-        time.sleep(0.3)
-    if switch_off_lights:
-        ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
-    ctx.comment('Finished! \nMove plate to PCR')
-
-    ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]))
-    ctx.comment('20 ul Used racks in total: ' + str(tip_track['counts'][m20] / 96))
+    finish_run()

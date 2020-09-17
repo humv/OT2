@@ -54,7 +54,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': True, 'description': 'Hidratate'},
-        2: {'Execute': True, 'description': 'Wait rest', 'wait_time': 120},
+        2: {'Execute': False, 'description': 'Wait rest', 'wait_time': 120},
         3: {'Execute': True, 'description': 'Transfer samples'},
         4: {'Execute': True, 'description': 'Transfer negative control'},
         5: {'Execute': True, 'description': 'Transfer positive control'}
@@ -197,6 +197,43 @@ def run(ctx: protocol_api.ProtocolContext):
         if blow_out == True:
             pipet.blow_out(location.top(z = -2))  # Blow out
 
+    def finish_run(switch_off_lights = False):
+        ctx.comment('###############################################')
+        ctx.comment('Protocolo finalizado')
+        ctx.comment(' ')
+        #Set light color to blue
+        ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+        now = datetime.now()
+        # dd/mm/YY H:M:S
+        finish_time = now.strftime("%Y/%m/%d %H:%M:%S")
+        if PHOTOSENSITIVE==False:
+            for i in range(10):
+                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
+                time.sleep(0.3)
+                ctx._hw_manager.hardware.set_lights(button = True, rails =  True)
+                time.sleep(0.3)
+        else:
+            for i in range(10):
+                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
+                time.sleep(0.3)
+                ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+                time.sleep(0.3)
+        if switch_off_lights:
+            ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
+
+        # TODO: Añadir refills a los tip_racks
+        # used_tips = tip_track['num_refills'][m300] * 96 * len(m300.tip_racks) + tip_track['counts'][m300]
+        ctx.comment('Puntas de 200 uL utilizadas: ' + str(tip_track['counts'][m300]) + ' (' + str(round(tip_track['counts'][m300] / 96, 2)) + ' caja(s))')
+        ctx.comment('###############################################')
+
+        if not ctx.is_simulating():
+            for i in range(SOUND_NUM_PLAYS):
+                if i > 0:
+                    time.sleep(60)
+                play_sound('finalizado')
+
+        return finish_time
+
     ####################################
     # load labware and modules
     # 24 well rack
@@ -299,7 +336,7 @@ def run(ctx: protocol_api.ProtocolContext):
             used_vol_temp = distribute_custom(p300, volume = HYDR_VOL_PER_SAMPLE,
                 src = Hydr.reagent_reservoir, dest = dest,
                 waste_pool = Hydr.reagent_reservoir, pickup_height = 0.2,
-                extra_dispensal = extra_dispensal, dest_x_offset = 2, disp_height = -1)
+                extra_dispensal = extra_dispensal, dest_x_offset = 0, disp_height = -1)
             used_vol.append(used_vol_temp)
 
         p300.drop_tip(home_after = False)
