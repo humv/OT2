@@ -31,7 +31,7 @@ BEADS_WELL_NUM_MIXES            = 3
 BEADS_NUM_MIXES                 = 2
 
 PHOTOSENSITIVE                  = False # True if it has photosensitive reagents
-SOUND_NUM_PLAYS                 = 1
+SOUND_NUM_PLAYS                 = 0
 ################################################
 
 run_id                      = 'B_Extraccion_total'
@@ -44,6 +44,7 @@ multi_well_rack_area = 8 * 71 #Cross section of the 12 well reservoir
 deepwell_cross_section_area = L_deepwell ** 2 # deepwell square cross secion area
 
 num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
+switch_off_lights = False
 
 def run(ctx: protocol_api.ProtocolContext):
 
