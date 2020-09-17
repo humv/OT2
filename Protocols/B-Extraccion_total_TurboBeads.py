@@ -294,7 +294,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
 
         if avoid_droplet == True: # Touch the liquid surface to avoid droplets
-            ctx.comment("Moving to: " + str(pickup_height))
+            ctx.comment("Moving to: " + str(round(pickup_height, 2)) + ' mm')
             pipet.move_to(source.bottom(pickup_height))
 
         # GO TO DESTINATION
@@ -446,7 +446,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Lysis, multi_well_rack_area, transfer_vol * 8)
                 ctx.comment('Aspirate from reservoir column: ' + str(Lysis.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm')
                 move_vol_multi(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False, drop_height = 1)
@@ -544,7 +544,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         blow_out = False, mix_height = 1.5, offset = 0)
 
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm')
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True, drop_height = 1)
@@ -656,7 +656,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 pick_up(m300)
             for transfer_vol in supernatant_transfer_vol:
                 ctx.comment('Aspirate from deep well column: ' + str(i+1))
-                ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm' +' (fixed)')
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
@@ -813,7 +813,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #Pickup_height is fixed here
                 pickup_height = 0.5 # Original 0.5
                 ctx.comment('Aspirate from deep well column: ' + str(i+1))
-                ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm' +' (fixed)')
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                     dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                     pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False,
@@ -969,7 +969,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #Pickup_height is fixed here
                 pickup_height = 0.5 # Original 0.5
                 ctx.comment('Aspirate from deep well column: ' + str(i+1))
-                ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm' +' (fixed)')
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                     dest = waste, vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                     pickup_height = pickup_height, rinse = False, avoid_droplet = False, wait_time = 2, blow_out = False,
@@ -1071,7 +1071,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Elution, multi_well_rack_area, transfer_vol*8)
                 ctx.comment('Aspirate from Reservoir column: ' + str(Elution.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm')
 
                 move_vol_multi(m300, reagent = Elution, source = Elution.reagent_reservoir[Elution.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
@@ -1175,7 +1175,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #Pickup_height is fixed here
                 pickup_height = 1
                 ctx.comment('Aspirate from deep well column: ' + str(i+1))
-                ctx.comment('Pickup height is ' + str(pickup_height) +' (fixed)')
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm' +' (fixed)')
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i],
                         dest = final_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,

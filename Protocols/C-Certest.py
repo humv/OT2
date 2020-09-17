@@ -126,7 +126,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
         for d in dest:
             pipette.dispense(5, d.top())
-            drop = d.top(z = disp_height).move(Point(x = dest_x_offset))
+            # drop = d.top(z = disp_height).move(Point(x = dest_x_offset))
+            drop = d.top(z = disp_height)
             pipette.dispense(volume, drop)
             pipette.aspirate(5, location = d.top(z = disp_height))  # air gap
         try:

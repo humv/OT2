@@ -31,7 +31,7 @@ BEADS_WELL_NUM_MIXES            = 3
 BEADS_NUM_MIXES                 = 2
 
 PHOTOSENSITIVE                  = False # True if it has photosensitive reagents
-SOUND_NUM_PLAYS                 = 1
+SOUND_NUM_PLAYS                 = 0
 ################################################
 
 run_id                      = 'B_Extraccion_total'
@@ -44,6 +44,7 @@ multi_well_rack_area = 8 * 71 #Cross section of the 12 well reservoir
 deepwell_cross_section_area = L_deepwell ** 2 # deepwell square cross secion area
 
 num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
+switch_off_lights = False
 
 def run(ctx: protocol_api.ProtocolContext):
 
@@ -272,7 +273,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.delay(seconds=wait_time, msg='Waiting for ' + str(wait_time) + ' seconds.')
 
         if avoid_droplet == True: # Touch the liquid surface to avoid droplets
-            ctx.comment("Moving to: " + str(pickup_height))
+            ctx.comment("Moving to: " + str(round(pickup_height, 2)) + ' mm')
             pipet.move_to(source.bottom(pickup_height))
 
         # GO TO DESTINATION
@@ -472,7 +473,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
                             vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads_PK_Binding.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm')
                 #if j!=0:
                 #    rinse = False
                 move_vol_multi(m300, reagent = Beads_PK_Binding, source = Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
@@ -535,7 +536,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir,
                         dest = wash_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True)
+                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False)
             ctx.comment(' ')
         if recycle_tip == True:
             m300.return_tip()
@@ -583,7 +584,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Ethanol, source = Ethanol.reagent_reservoir,
                         dest = ethanol_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True)
+                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False)
 
         if recycle_tip == True:
             m300.return_tip()
@@ -629,12 +630,12 @@ def run(ctx: protocol_api.ProtocolContext):
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Elution, multi_well_rack_area, transfer_vol * 8)
                 ctx.comment('Aspirate from reservoir column: ' + str(Elution.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
+                ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm')
                 #if j!=0:
                 #    rinse = False
                 move_vol_multi(m300, reagent = Elution, source = Elution.reagent_reservoir[Elution.col],
                         dest = elution_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False, touch_tip = True)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False, touch_tip = False)
             ctx.comment(' ')
 
         if recycle_tip == True:

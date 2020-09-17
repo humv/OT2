@@ -41,6 +41,8 @@ extra_dispensal             = 1     # Extra volume for master mix in each distri
 pipette_allowed_capacity    = 180   # Volume allowed in the pipette of 200µl
 x_offset                    = [0,0]
 
+switch_off_lights           = False
+
 size_transfer = math.floor(pipette_allowed_capacity / HYDR_VOL_PER_SAMPLE) # Number of wells the distribute function will fill
 
 def run(ctx: protocol_api.ProtocolContext):

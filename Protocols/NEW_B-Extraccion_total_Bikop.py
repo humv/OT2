@@ -282,10 +282,10 @@ def run(ctx: protocol_api.ProtocolContext):
         else:
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - (aspirate_volume - (reagent.disposal_volume * 8))
-            ctx.comment('La altura calculada es ' + str(height))
+            ctx.comment('La altura calculada es ' + str(round(height, 2)) + ' mm')
             if height < min_height:
                 height = min_height
-            ctx.comment('La altura usada es ' + str(height))
+            ctx.comment('La altura utilizada es ' + str(round(height, 2)) + ' mm')
             col_change = False
         return height, col_change
 
@@ -573,7 +573,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         blow_out = False, mix_height = mix_height, offset = 0)
 
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Beads.col + 1))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, blow_out = True, drop_height = 1)
@@ -616,7 +616,7 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute']==True:
         start = log_step_start()
 
-        total_supernatant_volume = Sample.reagent_volume
+        total_supernatant_volume = Sample.reagent_volume + Beads.reagent_volume
 
         supernatant_trips = math.ceil((total_supernatant_volume) / Sample.max_volume_allowed)
         supernatant_volume = Sample.max_volume_allowed # We try to remove an exceeding amount of supernatant to make sure it is empty
@@ -634,7 +634,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 pick_up_tip(m300)
             for j, transfer_vol in enumerate(supernatant_transfer_vol):
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
 
                 move_vol_multi(m300, reagent = Beads, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
@@ -688,7 +688,7 @@ def run(ctx: protocol_api.ProtocolContext):
             for transfer_vol in wash_transfer_vol:
                 [pickup_height, change_col] = calc_height(Wash_1, multi_well_rack_area, transfer_vol*8)
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Wash_1.first_well + Wash_1.col))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
 
                 move_vol_multi(m300, reagent = Wash_1, source = Wash_1.reagent_reservoir[Wash_1.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
@@ -749,7 +749,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     pick_up_tip(m300)
             for j, transfer_vol in enumerate(supernatant_transfer_vol):
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
@@ -804,7 +804,7 @@ def run(ctx: protocol_api.ProtocolContext):
             for transfer_vol in wash_transfer_vol:
                 [pickup_height, change_col] = calc_height(Wash_2, multi_well_rack_area, transfer_vol*8)
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Wash_2.first_well + Wash_2.col))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
 
                 move_vol_multi(m300, reagent = Wash_2, source = Wash_2.reagent_reservoir[Wash_2.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
@@ -865,7 +865,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     pick_up_tip(m300)
             for j, transfer_vol in enumerate(supernatant_transfer_vol):
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = waste, vol = transfer_vol,
                         x_offset_source = x_offset_source, x_offset_dest = x_offset_dest, pickup_height = pickup_height,
@@ -938,7 +938,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Elution, multi_well_rack_area, transfer_vol*8)
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Elution.first_well + Elution.col))
-                ctx.comment('La altura de recogida es ' + str(pickup_height))
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
 
                 move_vol_multi(m300, reagent = Elution, source = Elution.reagent_reservoir[Elution.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
@@ -1000,7 +1000,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #Pickup_height is fixed here
                 pickup_height = 1
                 ctx.comment('Aspirando de la columna del deepwell: ' + str(i+1))
-                ctx.comment('La altura de recogida es ' + str(pickup_height) )
+                ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm' )
 
                 move_vol_multi(m300, reagent = Sample, source = work_destinations[i], dest = final_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
