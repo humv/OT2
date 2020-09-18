@@ -536,7 +536,7 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample BEFORE dispensing
             if NUM_AFTER_MIXES > 0:
                 ctx.comment("Mezclas en destino " + str(NUM_AFTER_MIXES))
-                custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix_deepwell 
+                custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix_deepwell, 
                     rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1, source_height = 1, x_offset = x_offset, air_gap_vol = 2 )
 
             p1000.drop_tip(home_after = False)

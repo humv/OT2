@@ -25,7 +25,7 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_CONTROL_SPACES      = 0  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 8
+NUM_REAL_SAMPLES        = 16
 NUM_BEFORE_MIXES        = 0
 NUM_AFTER_MIXES         = 1
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
@@ -54,14 +54,14 @@ lysys_pipette_capacity  = 900 # Volume allowed in the pipette of 1000µl
 size_transfer           = math.floor(lysys_pipette_capacity / LYSIS_VOLUME_PER_SAMPLE) # Number of wells the distribute function will fill
 multi_well_rack_area    = 8 * 71    #Cross section of the 12 well reservoir
 next_well_index         = 0         # First reagent well to use
-recycle_tip             = True
+recycle_tip             = False
 
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': False, 'description': 'Dispensar Lysys'},
-        2: {'Execute': False, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
-        3: {'Execute': False, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
+        1: {'Execute': True, 'description': 'Dispensar Lysys'},
+        2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'},
+        3: {'Execute': True, 'description': 'Transferir proteinasa K ('+str(PK_VOLUME_PER_SAMPLE)+'ul)'},
         4: {'Execute': True, 'description': 'Transferir bolas magnéticas ('+str(BEADS_VOLUME_PER_SAMPLE)+'ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
