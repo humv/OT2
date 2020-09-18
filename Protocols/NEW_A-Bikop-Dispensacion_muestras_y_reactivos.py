@@ -503,7 +503,7 @@ def run(ctx: protocol_api.ProtocolContext):
             used_vol_temp = distribute_custom(p1000, Lysis, volume = LYSIS_VOLUME_PER_SAMPLE,
                 src = lysys_source, dest = dest,
                 waste_pool = lysys_source, pickup_height = 1,
-                extra_dispensal = extra_dispensal, dest_x_offset = 2, drop_height = -1)
+                extra_dispensal = extra_dispensal, dest_x_offset = 2, drop_height = 10)
             used_vol.append(used_vol_temp)
 
         p1000.drop_tip(home_after = False)
