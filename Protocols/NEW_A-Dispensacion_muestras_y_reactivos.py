@@ -242,8 +242,14 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Paso ' + str(STEP) + ': ' +STEPS[STEP]['description'] + ' hizo un tiempo de ' + str(time_taken))
         ctx.comment(' ')
 
+    def shake_pipet (pipet, rounds = 2, speed = 100, v_offset = 0):
+        ctx.comment("Shaking " + str(rounds) + " rounds.")
+        for i in range(rounds):
+                pipet.touch_tip(speed = speed, radius = 0.1, v_offset = v_offset)
+
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, drop_height, blow_out, touch_tip, x_offset,
-                       pickup_height = 0, rinse = False, skipFinalAirGap = False, touch_tip_offset = -10, shake = False):
+                       pickup_height = 0, rinse = False, rinse_rounds = 2, mix_height = 0,
+                       skipFinalAirGap = False, touch_tip_offset = -10, shake = False):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -254,7 +260,7 @@ def run(ctx: protocol_api.ProtocolContext):
         # Rinse before aspirating
         if rinse == True:
             custom_mix(pipet, reagent, location = source, vol = vol,
-                       rounds = 2, blow_out = True, mix_height = 0,
+                       rounds = rinse_rounds, blow_out = True, mix_height = mix_height,
                        x_offset = x_offset)
 
         # SOURCE
@@ -276,9 +282,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds =reagent.delay) # pause for x seconds depending on reagent
 
         if shake == True:
-            ctx.comment("Shaking it..")
-            for i in range(3):
-                pipet.touch_tip(speed = 100, radius = 0.1, v_offset = drop_height)
+            shake_pipet(pipet, rounds = 2, speed = 100, v_offset = drop_height)
 
         if blow_out == True:
             ctx.comment("Blowing out.") 
@@ -712,10 +716,13 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(beads_trips):
             beads_transfer_vol.append(beads_volume)
         
+        rinse = True # Rinse first time
+        rinse_rounds = 5
         for i in range(num_cols):
             ctx.comment("Column: " + str(i))
             if not m20.hw_pipette['has_tip']:
                 pick_up_tip(m20)
+
             for j,transfer_vol in enumerate(beads_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
                 # transfer_vol_extra = transfer_vol if j > 0 else transfer_vol + 100  # Extra 100 isopropanol for calcs
@@ -725,10 +732,11 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Beads.first_well + Beads.col))
                 ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
                 move_vol_multichannel(m20, reagent = Beads, source = beads_reservoir[Beads.col],
-                        dest = destinations_full[i], vol = transfer_vol, rinse = true,
+                        dest = destinations_full[i], vol = transfer_vol, rinse = rinse, rinse_rounds = rinse_rounds,
                         touch_tip = False, touch_tip_offset = -20, shake = True,
                         pickup_height = pickup_height, blow_out = True, drop_height = 5, 
                         air_gap_vol = Beads.air_gap_vol_bottom, x_offset = x_offset, skipFinalAirGap = True)
+                rinse_rounds = 1 # Disable Rinse
 
             # m20.air_gap(Beads.air_gap_vol_bottom, height = 5) #air gap
 
