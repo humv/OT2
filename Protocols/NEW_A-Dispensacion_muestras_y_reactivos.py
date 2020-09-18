@@ -725,7 +725,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Beads.first_well + Beads.col))
                 ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
                 move_vol_multichannel(m20, reagent = Beads, source = beads_reservoir[Beads.col],
-                        dest = destinations_full[i], vol = transfer_vol, 
+                        dest = destinations_full[i], vol = transfer_vol, rinse = true,
                         touch_tip = False, touch_tip_offset = -20, shake = True,
                         pickup_height = pickup_height, blow_out = True, drop_height = 5, 
                         air_gap_vol = Beads.air_gap_vol_bottom, x_offset = x_offset, skipFinalAirGap = True)
