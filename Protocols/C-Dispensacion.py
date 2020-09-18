@@ -123,8 +123,13 @@ def run(ctx: protocol_api.ProtocolContext):
 
         return (len(dest) * volume)
 
+    def shake_pipet (pipet, rounds = 2, speed = 100, v_offset = 0):
+        ctx.comment("Shaking " + str(rounds) + " rounds.")
+        for i in range(rounds):
+                pipet.touch_tip(speed = speed, radius = 0.1, v_offset = v_offset)
+
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
-                       pickup_height, rinse, disp_height, blow_out, touch_tip):
+                       pickup_height, rinse, disp_height, blow_out, touch_tip, num_shakes = 0):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -149,9 +154,12 @@ def run(ctx: protocol_api.ProtocolContext):
         drop = dest.top(z = disp_height).move(Point(x = x_offset[1]))
         pipet.dispense(vol + air_gap_vol, drop,
                        rate = reagent.flow_rate_dispense)  # dispense all
+        
 
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
+        shake_pipet(pipet, rounds = num_shakes, v_offset = disp_height)
+        
         if blow_out == True:
             pipet.blow_out(dest.top(z = -10))
         if touch_tip == True:
@@ -301,9 +309,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(m20, reagent = Samples, source = s, dest = d,
                     vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
                     pickup_height = 0.2, disp_height = -10, rinse = False,
-                    blow_out=True, touch_tip=True)
-
-            tipRack_pos = tipCols[i].top(z = 20)
+                    blow_out=True, touch_tip=False)
             
             m20.drop_tip(home_after = False)
 

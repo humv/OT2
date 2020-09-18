@@ -116,22 +116,21 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(0, len(l), n):
             yield l[i:i + n]
 
-    def distribute_custom(pipette, volume, src, dest, waste_pool, pickup_height, extra_dispensal, dest_x_offset, disp_height = 0, touch_tip = False):
-        # Custom distribute function that allows for blow_out in different location and adjustement of touch_tip
+    def shake_pipet (pipet, rounds = 2, speed = 100, v_offset = 0):
+        ctx.comment("Shaking " + str(rounds) + " rounds.")
+        for i in range(rounds):
+                pipet.touch_tip(speed = speed, radius = 0.1, v_offset = v_offset)
+
+    def distribute_custom(pipette, volume, src, dest, waste_pool, pickup_height, extra_dispensal, dest_x_offset, disp_height = 0, touch_tip = False, num_shakes = 0):
         pipette.aspirate((len(dest) * volume) + extra_dispensal, src.bottom(pickup_height))
         if touch_tip :
             pipette.touch_tip(speed = 20, v_offset = -5)
-        # pipette.move_to(src.top(z = 5))
-        # pipette.aspirate(5)  # air gap
 
         for d in dest:
-            # pipette.dispense(5, d.top())
-            # drop = d.top(z = disp_height).move(Point(x = dest_x_offset))
             drop = d.top(z = disp_height)
             pipette.dispense(volume, drop)
-            for i in range(2):
-                pipette.touch_tip(speed = 100, radius = 0.1, v_offset = disp_height)
-            # pipette.aspirate(5, location = d.top(z = disp_height))  # air gap
+
+            shake_pipet(pipette, rounds = num_shakes, v_offset = disp_height)
         try:
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
         except:
@@ -334,11 +333,12 @@ def run(ctx: protocol_api.ProtocolContext):
             used_vol_temp = distribute_custom(p300, volume = HYDR_VOL_PER_SAMPLE,
                 src = Hydr.reagent_reservoir, dest = dest, touch_tip = False,
                 waste_pool = Hydr.reagent_reservoir, pickup_height = 0.2,
-                extra_dispensal = extra_dispensal, dest_x_offset = 0, disp_height = -15)
+                extra_dispensal = extra_dispensal, dest_x_offset = 0, 
+                disp_height = -15, num_shakes = 1)
             used_vol.append(used_vol_temp)
 
         p300.drop_tip(home_after = False)
-        tip_track['counts'][p300]+=1
+        tip_track['counts'][p300] += 1
 
         end = datetime.now()
         time_taken = (end - start)
