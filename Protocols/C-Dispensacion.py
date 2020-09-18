@@ -159,11 +159,11 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
         shake_pipet(pipet, rounds = num_shakes, v_offset = disp_height)
-        
+
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -10))
+            pipet.blow_out(dest.top(z = -disp_height))
         if touch_tip == True:
-            pipet.touch_tip(speed = 20, v_offset = -10, radius = 0.5)
+            pipet.touch_tip(speed = 20, v_offset = disp_height, radius = 0.5)
 
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
@@ -309,7 +309,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(m20, reagent = Samples, source = s, dest = d,
                     vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
                     pickup_height = 0.2, disp_height = -10, rinse = False,
-                    blow_out=True, touch_tip=False)
+                    blow_out=True, touch_tip=False, num_shakes = 1)
             
             m20.drop_tip(home_after = False)
 
