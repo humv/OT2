@@ -207,10 +207,10 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = 2) # pause for x seconds depending on reagent
         pipette.air_gap(reagent.air_gap_vol_bottom, height = 5) #air gap
         for d in dest:
-            pipette.dispense(volume + reagent.air_gap_vol_bottom, d.top(), rate = reagent.flow_rate_dispense)
+            pipette.dispense(volume + reagent.air_gap_vol_bottom, d.top(z = drop_height), rate = reagent.flow_rate_dispense)
             #pipette.move_to(d.top(z=5))
             #pipette.aspirate(reagent.air_gap_vol_bottom, rate = reagent.flow_rate_dispense)  # air gap
-            pipette.air_gap(reagent.air_gap_vol_bottom, height = 5) #air gap
+            pipette.air_gap(reagent.air_gap_vol_bottom, height = 15) #air gap
         try:
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
         except:
