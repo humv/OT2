@@ -33,8 +33,8 @@ LYSIS_VOLUME_PER_SAMPLE = 210   # ul per sample
 NUM_BEFORE_MIXES        = 0
 NUM_AFTER_MIXES         = 1
 
-SOUND_NUM_PLAYS         = 0
 PHOTOSENSITIVE          = False # True if it has photosensitive reagents
+SOUND_NUM_PLAYS         = 0
 ################################################
 
 recycle_tip             = False
@@ -42,7 +42,7 @@ num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
 num_cols                = math.ceil(num_samples / 8) # Columns we are working on
 
 extra_dispensal         = 1
-run_id                  = 'A-Bikop-Dispensacion'
+run_id                  = 'A-Dispensacion_muestras_y_reactivos-Bikop'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
 volume_mix_tuberack     = 500
@@ -89,23 +89,24 @@ def run(ctx: protocol_api.ProtocolContext):
 
    
     # Reagents and their characteristics
-    Samples = Simple_Reagent(name                  = 'Samples',
-                      flow_rate_aspirate    = 25,
-                      flow_rate_dispense    = 100,
-                      flow_rate_aspirate_mix = 0.5,
-                      flow_rate_dispense_mix = 0.5,
-                      delay                 = 0,
-                      air_gap_vol_bottom    = 25
-                      ) 
+    Samples = Simple_Reagent(name               = 'Samples',
+                    flow_rate_aspirate          = 25,
+                    flow_rate_dispense          = 100,
+                    flow_rate_aspirate_mix      = 0.5,
+                    flow_rate_dispense_mix      = 0.5,
+                    delay                       = 0,
+                    air_gap_vol_bottom          = 25
+                    ) 
     
-    Lysis = Simple_Reagent(name                      = 'Lysis',
-                     flow_rate_aspirate        = 0.5,
-                     flow_rate_dispense        = 0.5,
-                     flow_rate_aspirate_mix = 0.5,
-                     flow_rate_dispense_mix = 0.5,
-                     delay                     = 0,
-                     air_gap_vol_bottom    = 0
-                     ) 
+    Lysis = Simple_Reagent(name                 = 'Lysis',
+                    flow_rate_aspirate          = 0.5,
+                    flow_rate_dispense          = 0.5,
+                    flow_rate_aspirate_mix      = 0.5,
+                    flow_rate_dispense_mix      = 0.5,
+                    delay                       = 0,
+                    air_gap_vol_bottom          = 0
+                    )
+
     ctx.comment(' ')
     ctx.comment('###############################################')
     ctx.comment('VALORES DE VARIABLES')
@@ -113,12 +114,13 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Número de muestras: ' + str(NUM_REAL_SAMPLES) + ' (' + str(num_cols) + ' columnas)')
     ctx.comment('Número de controles: ' + str(NUM_CONTROL_SPACES))
     ctx.comment(' ')
-    ctx.comment('Número de mezclas en la Muestra: ' + str(NUM_BEFORE_MIXES))
+    ctx.comment('Número de mezclas en la muestra: ' + str(NUM_BEFORE_MIXES))
     ctx.comment('Número de mezclas en el deepwell: ' + str(NUM_AFTER_MIXES))
     ctx.comment(' ')
     ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
     ctx.comment('Volumen de lysys por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment(' ')
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
     ctx.comment(' ')
 

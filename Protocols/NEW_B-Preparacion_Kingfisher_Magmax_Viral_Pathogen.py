@@ -34,7 +34,7 @@ PHOTOSENSITIVE                  = False # True if it has photosensitive reagents
 SOUND_NUM_PLAYS                 = 0
 ################################################
 
-run_id                      = 'B_Extraccion_total'
+run_id                      = 'B-Preparacion_Kingfisher-Magmax_Viral_Pathogen'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 
 recycle_tip     = False #

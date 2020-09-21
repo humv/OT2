@@ -31,7 +31,7 @@ PHOTOSENSITIVE              = True # True if it has photosensitive reagents
 SOUND_NUM_PLAYS             = 1
 ################################################
 
-run_id                      = 'C_Dispensacion'
+run_id                      = 'C-Dispensacion'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 
 air_gap_vol                 = 5
@@ -98,9 +98,9 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
     ctx.comment('Número de muestras: ' + str(NUM_SAMPLES) + ' las dos primeras son controles.')
     ctx.comment(' ')
-    ctx.comment('Volumen de muestra: ' + str(VOLUME_SAMPLE))
-    ctx.comment('Fotosensible: ' + str(PHOTOSENSITIVE) )
+    ctx.comment('Volumen de muestra: ' + str(VOLUME_SAMPLE) + ' uL')
     ctx.comment(' ')
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
     ctx.comment(' ')
 

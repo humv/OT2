@@ -47,7 +47,7 @@ num_cols                = math.ceil(num_samples / 8) # Columns we are working on
 
 
 extra_dispensal         = 1
-run_id                  = 'A-Magmax-Dispensacion'
+run_id                  = 'A-Dispensacion_muestras_y_reactivos-Magmax'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
 volume_mix_tuberack     = 500
@@ -204,15 +204,17 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Número de muestras: ' + str(NUM_REAL_SAMPLES) + ' (' + str(num_cols) + ' columnas)')
     ctx.comment('Número de controles: ' + str(NUM_CONTROL_SPACES))
     ctx.comment(' ')
-    ctx.comment('Número de mezclas en la Muestra: ' + str(NUM_BEFORE_MIXES))
+    ctx.comment('Número de mezclas en la muestra: ' + str(NUM_BEFORE_MIXES))
     ctx.comment('Número de mezclas en el deepwell: ' + str(NUM_AFTER_MIXES))
     ctx.comment(' ')
     ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
     ctx.comment('Volumen de solución con bolas magnéticas por muestra: ' + str(BEADS_VOLUME_PER_SAMPLE) + ' ul')
-    ctx.comment('Volumen del proteinasa K por muestra: ' + str(PK_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment('Volumen de proteinasa K por muestra: ' + str(PK_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen de lysys por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment(' ')
     ctx.comment('Número máximo de dispensaciones de lysys con la misma punta: ' + str(MAX_LYSYS_DISPENSE_PER_TIP) + ' muestras')
     ctx.comment(' ')
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
     ctx.comment(' ')
 

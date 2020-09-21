@@ -49,7 +49,7 @@ PHOTOSENSITIVE                      = False # True if it has photosensitive reag
 SOUND_NUM_PLAYS                     = 3
 ################################################
 
-run_id                      = 'B_Extraccion_total_Generico'
+run_id                      = 'B-Extraccion_total-TurboBeads'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 
 recycle_tip                 = False     # Do you want to recycle tips? It shoud only be set True for testing
