@@ -47,11 +47,6 @@ x_offset                    = [0,0]
 size_transfer = math.floor(pipette_allowed_capacity / HYDR_VOL_PER_SAMPLE) # Number of wells the distribute function will fill
 
 def run(ctx: protocol_api.ProtocolContext):
-    ctx.comment(' ')
-    ctx.comment('###############################################')
-    ctx.comment('NUM SAMPLES: ' + str(NUM_SAMPLES) + ' (first 2 are controls)') 
-    ctx.comment('###############################################')
-    ctx.comment(' ')
 
     # Define the STEPS of the protocol
     STEP = 0
@@ -108,6 +103,20 @@ def run(ctx: protocol_api.ProtocolContext):
 
     Hydr.vol_well       = Hydr.vol_well_original
     Samples.vol_well    = Samples.vol_well_original
+
+    
+    ctx.comment(' ')
+    ctx.comment('###############################################')
+    ctx.comment('VALORES DE VARIABLES')
+    ctx.comment(' ')
+    ctx.comment('Número de muestras: ' + str(NUM_SAMPLES) + ' las dos primeras son controles.')
+    ctx.comment(' ')
+    ctx.comment('Volumen de Hidratante por muestra: ' + str(HYDR_VOL_PER_SAMPLE))
+    ctx.comment('Volumen de muestra: ' + str(VOLUME_SAMPLE))
+    ctx.comment('Fotosensible: ' + str(PHOTOSENSITIVE) )
+    ctx.comment(' ')
+    ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
+    ctx.comment(' ')
 
     ##################
     # Custom functions

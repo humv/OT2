@@ -45,11 +45,6 @@ x_offset                    = [0,0]
 num_cols                    = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
-    ctx.comment(' ')
-    ctx.comment('###############################################')
-    ctx.comment('NUM SAMPLES: ' + str(NUM_SAMPLES) + ' (first 2 are controls)') 
-    ctx.comment('###############################################')
-    ctx.comment(' ')
 
     # Define the STEPS of the protocol
     STEP = 0
@@ -95,6 +90,19 @@ def run(ctx: protocol_api.ProtocolContext):
                       )
 
     Samples.vol_well    = Samples.vol_well_original
+
+    
+    ctx.comment(' ')
+    ctx.comment('###############################################')
+    ctx.comment('VALORES DE VARIABLES')
+    ctx.comment(' ')
+    ctx.comment('Número de muestras: ' + str(NUM_SAMPLES) + ' las dos primeras son controles.')
+    ctx.comment(' ')
+    ctx.comment('Volumen de muestra: ' + str(VOLUME_SAMPLE))
+    ctx.comment('Fotosensible: ' + str(PHOTOSENSITIVE) )
+    ctx.comment(' ')
+    ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
+    ctx.comment(' ')
 
     ##################
     # Custom functions
