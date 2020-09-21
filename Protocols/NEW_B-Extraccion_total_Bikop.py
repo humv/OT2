@@ -26,11 +26,11 @@ NUM_SAMPLES                         = 96     # Must be multiple of 8
 USE_300_TIPS                        = False  # Check that TIP_RECYCLING variables have desired values 
 
 VOLUME_SAMPLE                       = 410    # Volume received from station A
-BEADS_VOLUME_PER_SAMPLE             = 200
+BEADS_VOLUME_PER_SAMPLE             = 400
 WASH_1_VOLUME_PER_SAMPLE            = 200
 WASH_2_VOLUME_PER_SAMPLE            = 200
-ELUTION_VOLUME_PER_SAMPLE           = 100
-ELUTION_FINAL_VOLUME_PER_SAMPLE     = 100    # Volume transfered to final plates
+ELUTION_VOLUME_PER_SAMPLE           = 50
+ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
 
 BEADS_WELL_FIRST_TIME_NUM_MIXES     = 5
 BEADS_WELL_NUM_MIXES                = 1
@@ -85,7 +85,7 @@ def run(ctx: protocol_api.ProtocolContext):
             9:{'Execute': True, 'description': 'Transferir segundo lavado'},
             10:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 300},
             11:{'Execute': True, 'description': 'Desechar sobrenadante'},
-            12:{'Execute': True, 'description': 'Secado', 'wait_time': 180},
+            12:{'Execute': True, 'description': 'Secado', 'wait_time': 300},
             13:{'Execute': True, 'description': 'Imán OFF'},
             14:{'Execute': True, 'description': 'Transferir elución'},
             15:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 180},
