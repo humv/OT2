@@ -35,6 +35,8 @@ PHOTOSENSITIVE          = False # True if it has photosensitive reagents
 LYSIS_VOLUME_PER_SAMPLE = 210 # ul per sample.
 BEADS_VOLUME_PER_SAMPLE = 13 # ul per sample.
 PK_VOLUME_PER_SAMPLE    = 13 # ul per sample.
+
+MAX_LYSYS_DISPENSE_PER_TIP = 48 # max number of samples dispensed with the same lysys tip. ex: 48, means two tips used to dispense lysys to 96 samples.
 ################################################
 
 recycle_tip             = False
@@ -118,6 +120,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
     ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
     ctx.comment('Volumen de lysys por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment(' ')
+    ctx.comment('Cambiar la punta de la lysys cada: ' + str(MAX_LYSYS_DISPENSE_PER_TIP) + ' muestras')
     ctx.comment(' ')
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
     ctx.comment(' ')
@@ -332,19 +336,19 @@ def run(ctx: protocol_api.ProtocolContext):
         finish_time = now.strftime("%Y/%m/%d %H:%M:%S")
         if PHOTOSENSITIVE==False:
             for i in range(10):
-                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
+                ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
                 time.sleep(0.3)
-                ctx._hw_manager.hardware.set_lights(button = True, rails =  True)
+                ctx._hw_manager.hardware.set_lights(button = False, rails =  True)
                 time.sleep(0.3)
         else:
             for i in range(10):
-                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
-                time.sleep(0.3)
                 ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
                 time.sleep(0.3)
+                ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
+                time.sleep(0.3)
         if switch_off_lights:
-            ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
-
+            ctx._hw_manager.hardware.set_lights(button = False, rails =  False)
+        
         used_tips = tip_track['num_refills'][p1000] * 96 * len(p1000.tip_racks) + tip_track['counts'][p1000]
         ctx.comment('Puntas de 1000 ul utilizadas: ' + str(used_tips) + ' (' + str(round(used_tips / 96, 2)) + ' caja(s))')
         ctx.comment('###############################################')
@@ -492,9 +496,12 @@ def run(ctx: protocol_api.ProtocolContext):
         start = log_step_start()
 
         used_vol = []
+        dest_count = 0 # number of pipet uses
+        
         for dest in dests_lysis:
             if not p1000.hw_pipette['has_tip']:
                  pick_up_tip(p1000)
+            dest_count = dest_count + len(dest)
             #num_mixes = 1
             #ctx.comment("Mezclas-   " + str(num_mixes))
             #custom_mix(p1000, reagent = Lysis, location = lysys_source, vol = LYSIS_VOLUME_PER_SAMPLE, 
@@ -505,6 +512,12 @@ def run(ctx: protocol_api.ProtocolContext):
                 waste_pool = lysys_source, pickup_height = 1,
                 extra_dispensal = extra_dispensal, dest_x_offset = 2, drop_height = 10)
             used_vol.append(used_vol_temp)
+            
+            # Check if it's time to change tip
+            if dest_count >= MAX_LYSYS_DISPENSE_PER_TIP:
+                ctx.comment("Changing tip, used " + str(dest_count) +" times.")
+                drop_tip (p1000,recycle= recycle_tip)
+                dest_count = 0
 
         p1000.drop_tip(home_after = False)
         tip_track['counts'][p1000] += 1
