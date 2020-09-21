@@ -22,7 +22,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                         = 8     # Must be multiple of 8
+NUM_SAMPLES                         = 16     # Must be multiple of 8
 USE_300_TIPS                        = False  # Check that TIP_RECYCLING variables have desired values 
 
 VOLUME_SAMPLE                       = 410    # Volume received from station A
@@ -88,7 +88,7 @@ def run(ctx: protocol_api.ProtocolContext):
             12:{'Execute': True, 'description': 'Secado', 'wait_time': 300},
             13:{'Execute': True, 'description': 'Imán OFF'},
             14:{'Execute': True, 'description': 'Transferir elución'},
-            15:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 180},
+            15:{'Execute': True, 'description': 'Incubación con el imán ON', 'wait_time': 300},
             16:{'Execute': True, 'description': 'Transferir elución a la placa'},
             }
 
@@ -581,7 +581,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, blow_out = True, drop_height = 1)
+                        pickup_height = pickup_height, blow_out = True, drop_height = 10)
             
 
             if BEADS_NUM_MIXES > 0:
@@ -697,7 +697,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multi(m300, reagent = Wash_1, source = Wash_1.reagent_reservoir[Wash_1.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, drop_height = 5, blow_out = False)
+                        pickup_height = pickup_height, drop_height = 10, blow_out = False)
 
             if WASH_NUM_MIXES > 0:
                 custom_mix(m300, Wash_1, location = work_destinations[i], vol = Wash_1.max_volume_allowed, two_thirds_mix_bottom = True,
@@ -813,7 +813,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multi(m300, reagent = Wash_2, source = Wash_2.reagent_reservoir[Wash_2.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, drop_height = 5, blow_out = False)
+                        pickup_height = pickup_height, drop_height = 10, blow_out = False)
 
             if EHTANOL_NUM_MIXES > 0:
                 custom_mix(m300, Wash_2, location = work_destinations[i], vol = Wash_2.max_volume_allowed, two_thirds_mix_bottom = True,
