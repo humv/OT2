@@ -24,17 +24,17 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 0  # The control spaces are being ignored at the first cycles
+NUM_CONTROL_SPACES      = 0     # The control spaces are being ignored at the first cycles
 NUM_REAL_SAMPLES        = 16
+
+VOLUME_SAMPLE           = 200   # Sample volume to place in deepwell
+LYSIS_VOLUME_PER_SAMPLE = 210   # ul per sample
+
 NUM_BEFORE_MIXES        = 0
 NUM_AFTER_MIXES         = 1
-VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
 
 SOUND_NUM_PLAYS         = 0
 PHOTOSENSITIVE          = False # True if it has photosensitive reagents
-LYSIS_VOLUME_PER_SAMPLE = 210 # ul per sample.
-BEADS_VOLUME_PER_SAMPLE = 13 # ul per sample.
-PK_VOLUME_PER_SAMPLE    = 13 # ul per sample.
 ################################################
 
 recycle_tip             = False
@@ -42,7 +42,7 @@ num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
 num_cols                = math.ceil(num_samples / 8) # Columns we are working on
 
 extra_dispensal         = 1
-run_id                  = 'preparacion_tipo_A'
+run_id                  = 'A-Bikop-Dispensacion'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
 volume_mix_tuberack     = 500
@@ -365,14 +365,14 @@ def run(ctx: protocol_api.ProtocolContext):
     
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4 ):
         nonlocal ctx
-        ctx.comment('Volumen útil restante ' + str(reagent.vol_well - reagent.dead_vol) +
-                    ' < volumen necesario ' + str(aspirate_volume - reagent.disposal_volume * 8) + '?')
+        ctx.comment('¿Volumen útil restante ' + str(reagent.vol_well - reagent.dead_vol) +
+                    ' uL < volumen necesario ' + str(aspirate_volume - reagent.disposal_volume * 8) + ' uL?')
         if (reagent.vol_well - reagent.dead_vol + 1) < (aspirate_volume - reagent.disposal_volume * 8):
             ctx.comment('Se debe utilizar el siguiente canal')
             ctx.comment('Canal anterior: ' + str(reagent.col))
             # column selector position; intialize to required number
             reagent.col = reagent.col + 1
-            ctx.comment(str('Nuevo canal: ' + str(reagent.col)))
+            ctx.comment('Nuevo canal: ' + str(reagent.col))
             reagent.vol_well = reagent.vol_well_original
             ctx.comment('Nuevo volumen: ' + str(reagent.vol_well) + ' uL')
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area

@@ -257,14 +257,14 @@ def run(ctx: protocol_api.ProtocolContext):
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4):
         nonlocal ctx
-        ctx.comment('Volumen útil restante ' + str(reagent.vol_well - reagent.dead_vol) +
-                    ' < volumen necesario ' + str(aspirate_volume - reagent.disposal_volume * 8) + '?')
+        ctx.comment('¿Volumen útil restante ' + str(reagent.vol_well - reagent.dead_vol) +
+                    ' uL < volumen necesario ' + str(aspirate_volume - reagent.disposal_volume * 8) + ' uL?')
         if (reagent.vol_well - reagent.dead_vol + 1) < (aspirate_volume - reagent.disposal_volume * 8):
             ctx.comment('Se debe utilizar el siguiente canal')
             ctx.comment('Canal anterior: ' + str(reagent.col))
             # column selector position; intialize to required number
             reagent.col = reagent.col + 1
-            ctx.comment(str('Nuevo canal: ' + str(reagent.col)))
+            ctx.comment('Nuevo canal: ' + str(reagent.col))
             reagent.vol_well = reagent.vol_well_original
             ctx.comment('Nuevo volumen: ' + str(reagent.vol_well) + ' uL')
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
