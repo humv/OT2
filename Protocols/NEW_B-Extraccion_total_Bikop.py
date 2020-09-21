@@ -49,7 +49,7 @@ PHOTOSENSITIVE                      = False # True if it has photosensitive reag
 SOUND_NUM_PLAYS                     = 0
 ################################################
 
-run_id                      = 'B_Extraccion_total_Magmax_Viral_Pathogen'
+run_id                      = 'B_Extraccion_total_Bikop'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 
 recycle_tip                 = False     # Do you want to recycle tips? It shoud only be set True for testing
