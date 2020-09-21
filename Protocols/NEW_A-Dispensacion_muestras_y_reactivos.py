@@ -212,7 +212,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Volumen de proteinasa K por muestra: ' + str(PK_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment('Volumen de lysys por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment(' ')
-    ctx.comment('Número máximo de dispensaciones de lysys con la misma punta: ' + str(MAX_LYSYS_DISPENSE_PER_TIP) + ' muestras')
+    ctx.comment('Cambiar la punta de la lysys cada: ' + str(MAX_LYSYS_DISPENSE_PER_TIP) + ' muestras')
     ctx.comment(' ')
     ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
