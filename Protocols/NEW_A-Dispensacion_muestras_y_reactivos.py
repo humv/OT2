@@ -24,19 +24,21 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 0  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 16
-NUM_BEFORE_MIXES        = 0
-NUM_AFTER_MIXES         = 1
-VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
+NUM_CONTROL_SPACES          = 0  # The control spaces are being ignored at the first cycles
+NUM_REAL_SAMPLES            = 16
 
-SOUND_NUM_PLAYS         = 0
-PHOTOSENSITIVE          = False # True if it has photosensitive reagents
-LYSIS_VOLUME_PER_SAMPLE = 265 # ul per sample.
-BEADS_VOLUME_PER_SAMPLE = 13 # ul per sample.
-PK_VOLUME_PER_SAMPLE    = 13 # ul per sample.
+VOLUME_SAMPLE               = 200 # Sample volume to place in deepwell
+LYSIS_VOLUME_PER_SAMPLE     = 265 # ul per sample.
+PK_VOLUME_PER_SAMPLE        = 13 # ul per sample.
+BEADS_VOLUME_PER_SAMPLE     = 13 # ul per sample.
 
-MAX_LYSYS_DISPENSE_PER_TIP = 48 # max number of samples dispensed with the same lysys tip. ex: 48, means two tips used to dispense lysys to 96 samples.
+NUM_BEFORE_MIXES            = 0
+NUM_AFTER_MIXES             = 1
+
+MAX_LYSYS_DISPENSE_PER_TIP  = 48 # max number of samples dispensed with the same lysys tip. ex: 48, means two tips used to dispense lysys to 96 samples.
+
+SOUND_NUM_PLAYS             = 0
+PHOTOSENSITIVE              = False # True if it has photosensitive reagents
 ################################################
 
 recycle_tip             = False
@@ -45,7 +47,7 @@ num_cols                = math.ceil(num_samples / 8) # Columns we are working on
 
 
 extra_dispensal         = 1
-run_id                  = 'preparacion_tipo_A'
+run_id                  = 'A-Magmax-Dispensacion'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
 volume_mix_tuberack     = 500
@@ -95,7 +97,6 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def calc_vol_well(self):
             global num_cols
-            global rows
 
             if(self.name == 'Sample'):
                 self.num_wells = num_cols
@@ -109,8 +110,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 return math.ceil(total_trips / self.num_wells) * vol_trip + self.dead_vol
             else:
                 self.num_wells = 1
-                return self.reagent_volume * NUM_SAMPLES
-
+                return self.reagent_volume * num_samples
 
         def set_first_well(self, first_well_pos = None):
             global next_well_index
@@ -127,9 +127,9 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment(self.name + ': ' + str(self.num_wells) +  (' canal' if self.num_wells == 1 else ' canales') + ' desde el canal '+ str(self.first_well) +' en el reservorio de 12 canales con un volumen de ' + str_rounded(self.vol_well_original) + ' uL cada uno')
         
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense,  
-            air_gap_vol_bottom, disposal_volume, max_volume_allowed, reagent_volume, v_fondo, 
-            flow_rate_aspirate_mix = 0.5, flow_rate_dispense_mix = 0.5, air_gap_vol_top = 0, 
-            dead_vol = 700, first_well = None, placed_in_multi = False):
+                air_gap_vol_bottom, disposal_volume, max_volume_allowed, reagent_volume, v_fondo, 
+                flow_rate_aspirate_mix = 0.5, flow_rate_dispense_mix = 0.5, air_gap_vol_top = 0, 
+                dead_vol = 700, first_well = None, placed_in_multi = False):
             self.name               = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -151,7 +151,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.delay = 0
 
     # Reagents and their characteristics
-    Samples = Simple_Reagent(name                  = 'Samples',
+    Samples = Simple_Reagent(name = 'Samples',
                       flow_rate_aspirate    = 25,
                       flow_rate_dispense    = 100,
                       flow_rate_aspirate_mix = 0.5,
@@ -195,7 +195,8 @@ def run(ctx: protocol_api.ProtocolContext):
                      flow_rate_dispense_mix = 0.5,
                      delay                  = 0,
                      air_gap_vol_bottom     = 0
-                     ) 
+                     )
+
     ctx.comment(' ')
     ctx.comment('###############################################')
     ctx.comment('VALORES DE VARIABLES')
@@ -473,19 +474,19 @@ def run(ctx: protocol_api.ProtocolContext):
     
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4 ):
         nonlocal ctx
-        ctx.comment('Volumen útil restante ' + str(reagent.vol_well - reagent.dead_vol) +
-                    ' < volumen necesario ' + str(aspirate_volume - reagent.disposal_volume * 8) + '?')
+        ctx.comment('¿Volumen útil restante ' + str(reagent.vol_well - reagent.dead_vol) +
+                    ' uL < volumen necesario ' + str(aspirate_volume - reagent.disposal_volume * 8) + ' uL?')
         if (reagent.vol_well - reagent.dead_vol + 1) < (aspirate_volume - reagent.disposal_volume * 8):
             ctx.comment('Se debe utilizar el siguiente canal')
             ctx.comment('Canal anterior: ' + str(reagent.col))
             # column selector position; intialize to required number
             reagent.col = reagent.col + 1
-            ctx.comment(str('Nuevo canal: ' + str(reagent.col)))
+            ctx.comment('Nuevo canal: ' + str(reagent.col))
             reagent.vol_well = reagent.vol_well_original
-            ctx.comment('Nuevo volumen:' + str(reagent.vol_well))
+            ctx.comment('Nuevo volumen: ' + str(reagent.vol_well) + ' uL')
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - (aspirate_volume - reagent.disposal_volume * 8)
-            ctx.comment('Volumen restante:' + str(reagent.vol_well))
+            ctx.comment('Volumen restante: ' + str(reagent.vol_well) + ' uL')
             if height < min_height:
                 height = min_height
             col_change = True
