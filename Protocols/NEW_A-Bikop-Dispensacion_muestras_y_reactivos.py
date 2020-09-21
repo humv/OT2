@@ -374,10 +374,10 @@ def run(ctx: protocol_api.ProtocolContext):
             reagent.col = reagent.col + 1
             ctx.comment(str('Nuevo canal: ' + str(reagent.col)))
             reagent.vol_well = reagent.vol_well_original
-            ctx.comment('Nuevo volumen:' + str(reagent.vol_well))
+            ctx.comment('Nuevo volumen: ' + str(reagent.vol_well) + ' uL')
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - (aspirate_volume - reagent.disposal_volume * 8)
-            ctx.comment('Volumen restante:' + str(reagent.vol_well))
+            ctx.comment('Volumen restante: ' + str(reagent.vol_well) + ' uL')
             if height < min_height:
                 height = min_height
             col_change = True

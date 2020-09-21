@@ -22,7 +22,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                         = 96     # Must be multiple of 8
+NUM_SAMPLES                         = 8     # Must be multiple of 8
 USE_300_TIPS                        = False  # Check that TIP_RECYCLING variables have desired values 
 
 VOLUME_SAMPLE                       = 410    # Volume received from station A
@@ -248,18 +248,23 @@ def run(ctx: protocol_api.ProtocolContext):
         '''
         if mix_height <= 0:
             mix_height = 1
+
         pipet.aspirate(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
+
         for i in range(rounds):
             pipet.aspirate(vol, location = location.bottom(z = mix_height), rate = reagent.flow_rate_aspirate_mix)
             if two_thirds_mix_bottom and i < ((rounds / 3) * 2):
                 pipet.dispense(vol, location = location.bottom(z = 5).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
             else:
                 pipet.dispense(vol, location = location.top(z = drop_height).move(Point(x = offset)), rate = reagent.flow_rate_dispense_mix)
+        
         pipet.dispense(1, location = location.bottom(z = mix_height), rate = reagent.flow_rate_dispense_mix)
+        
         if blow_out == True:
             pipet.blow_out(location.top(z = -2)) # Blow out
+        
         if wait_time != 0:
-            ctx.delay(seconds=wait_time, msg='Esperando durante ' + str(wait_time) + ' segundos.')
+            ctx.delay(seconds = wait_time, msg = 'Esperando durante ' + str(wait_time) + ' segundos.')
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4):
         nonlocal ctx
@@ -272,10 +277,10 @@ def run(ctx: protocol_api.ProtocolContext):
             reagent.col = reagent.col + 1
             ctx.comment(str('Nuevo canal: ' + str(reagent.col)))
             reagent.vol_well = reagent.vol_well_original
-            ctx.comment('Nuevo volumen:' + str(reagent.vol_well))
+            ctx.comment('Nuevo volumen: ' + str(reagent.vol_well) + ' uL')
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - (aspirate_volume - reagent.disposal_volume * 8)
-            ctx.comment('Volumen restante:' + str(reagent.vol_well))
+            ctx.comment('Volumen restante: ' + str(reagent.vol_well) + ' uL')
             if height < min_height:
                 height = min_height
             col_change = True
@@ -946,7 +951,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
             if ELUTION_NUM_MIXES > 0:
                 ctx.comment(' ')
-                ctx.comment('Mezclando muestra with Elution')
+                ctx.comment('Mezclando muestra con Elution')
                 custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = ELUTION_NUM_MIXES,
                         blow_out = False, mix_height = 1, offset = x_offset_dest, drop_height = -35)
 

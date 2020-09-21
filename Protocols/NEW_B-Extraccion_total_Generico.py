@@ -309,10 +309,10 @@ def run(ctx: protocol_api.ProtocolContext):
             reagent.col = reagent.col + 1
             ctx.comment(str('Nuevo canal: ' + str(reagent.col)))
             reagent.vol_well = reagent.vol_well_original
-            ctx.comment('Nuevo volumen:' + str(reagent.vol_well))
+            ctx.comment('Nuevo volumen: ' + str(reagent.vol_well) + ' uL')
             height = (reagent.vol_well - aspirate_volume - reagent.v_cono) / cross_section_area
             reagent.vol_well = reagent.vol_well - (aspirate_volume - reagent.disposal_volume * 8)
-            ctx.comment('Volumen restante:' + str(reagent.vol_well))
+            ctx.comment('Volumen restante: ' + str(reagent.vol_well) + ' uL')
             if height < min_height:
                 height = min_height
             col_change = True
@@ -1219,7 +1219,7 @@ def run(ctx: protocol_api.ProtocolContext):
             
             if ELUTION_NUM_MIXES > 0:
                 ctx.comment(' ')
-                ctx.comment('Mezclando muestra with Elution')
+                ctx.comment('Mezclando muestra con Elution')
                 custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = ELUTION_NUM_MIXES,
                         blow_out = False, mix_height = 1, offset = x_offset_dest, drop_height = -35)
             
