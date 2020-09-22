@@ -22,15 +22,15 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                         = 16     # Must be multiple of 8
+NUM_SAMPLES                         = 8     # Must be multiple of 8
 USE_300_TIPS                        = False  # Check that TIP_RECYCLING variables have desired values 
 
 VOLUME_SAMPLE                       = 410    # Volume received from station A
-BEADS_VOLUME_PER_SAMPLE             = 400
+BEADS_VOLUME_PER_SAMPLE             = 200
 WASH_1_VOLUME_PER_SAMPLE            = 200
 WASH_2_VOLUME_PER_SAMPLE            = 200
-ELUTION_VOLUME_PER_SAMPLE           = 50
-ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
+ELUTION_VOLUME_PER_SAMPLE           = 100
+ELUTION_FINAL_VOLUME_PER_SAMPLE     = 100    # Volume transfered to final plates
 
 BEADS_WELL_FIRST_TIME_NUM_MIXES     = 5
 BEADS_WELL_NUM_MIXES                = 1
@@ -39,8 +39,8 @@ WASH_NUM_MIXES                      = 10    # 10
 EHTANOL_NUM_MIXES                   = 10    # 10
 ELUTION_NUM_MIXES                   = 10    # 5
 
-TIP_RECYCLING_IN_WASH               = True
-TIP_RECYCLING_IN_ELUTION            = True
+TIP_RECYCLING_IN_WASH               = False
+TIP_RECYCLING_IN_ELUTION            = False
 
 SET_TEMP_ON                         = False  # Do you want to start temperature module?
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
