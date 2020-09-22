@@ -31,16 +31,18 @@ VOLUME_SAMPLE               = 5     # Volume of the sample
 PHOTOSENSITIVE              = True # True if it has photosensitive reagents
 SOUND_NUM_PLAYS             = 1
 
-REACTIVE_LIST = [
-                {'source': 'A1', 'volume': 15, 'rate': 1, 'name': 'Hydratante', 'active': False},
+REACTIVE_STEP_LIST = [
+                {'source': 'A1', 'volume': 15, 'rate': 1, 'name': 'Hydratante', 'active': True},
                 {'source': 'B1', 'volume': 5, 'rate': 1, 'name': 'Reactivo 1', 'active': True},
-                {'source': 'C1', 'volume': 5, 'rate': 1, 'name': 'Reactivo 2', 'active': False},
-                {'source': 'D1', 'volume': 5, 'rate': 1, 'name': 'Reactivo 2', 'active': False},
+                {'source': 'C1', 'volume': 10, 'rate': 1, 'name': 'Reactivo 2', 'active': True},
+                {'source': 'D1', 'volume': 9, 'rate': 1, 'name': 'Reactivo 2', 'active': True},
                 ]
 ################################################
 
-run_id                      = 'C-Certest'
+recycle_tip                 = False
+run_id                      = 'C-Certest-Multi_reactivos'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
+recycle_tip                 = False
 
 air_gap_vol                 = 5
 air_gap_sample              = 2
@@ -120,7 +122,13 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
     ctx.comment('Número de muestras: ' + str(NUM_SAMPLES) + ' las dos primeras son controles.')
     ctx.comment(' ')
-    ctx.comment('Volumen de Hidratante por muestra: ' + str(HYDR_VOL_PER_SAMPLE) + ' uL')
+    ctx.comment('Dispensción de reactivos: ') 
+
+    for step in REACTIVE_STEP_LIST:
+        if step['active'] == True:
+            ctx.comment('     '+step['name']+': ' + str(step['volume']) + ' ul from ' + step['source'] )
+
+    ctx.comment(' ')
     ctx.comment('Volumen de muestra: ' + str(VOLUME_SAMPLE) + ' uL')
     ctx.comment(' ')
     ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
@@ -267,9 +275,45 @@ def run(ctx: protocol_api.ProtocolContext):
                 play_sound('finalizado')
 
         return finish_time
-        
+    
+    ##########
+    # pick up tip and if there is none left, prompt user for a new rack
+    def pick_up_tip(pip, position = None):
+        nonlocal tip_track
+        #if not ctx.is_simulating():
+        if recycle_tip:
+            pip.pick_up_tip(pip.tip_racks[0].wells()[0])
+        else:
+            if tip_track['counts'][pip] >= tip_track['maxes'][pip]:
+                for i in range(3):
+                    ctx._hw_manager.hardware.set_lights(rails=False)
+                    ctx._hw_manager.hardware.set_lights(button=(1, 0 ,0))
+                    time.sleep(0.3)
+                    ctx._hw_manager.hardware.set_lights(rails=True)
+                    ctx._hw_manager.hardware.set_lights(button=(0, 0 ,1))
+                    time.sleep(0.3)
+                ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
+                ctx.pause('Reemplaza las cajas de puntas de ' + str(pip.max_volume) + 'µl antes de continuar.')
+                pip.reset_tipracks()
+                tip_track['counts'][pip] = 0
+                tip_track['num_refills'][pip] += 1
+            if position is None:
+                pip.pick_up_tip()
+            else:
+                pip.pick_up_tip(position)
+
+    def drop_tip(pip, recycle = False, increment_count = True):
+        nonlocal tip_track
+        #if not ctx.is_simulating():
+        if recycle or recycle_tip:
+            pip.return_tip()
+        else:
+            pip.drop_tip(home_after = False)
+        if increment_count:
+            tip_track['counts'][pip] += 8
+
     def dispense_reagent(pipette, source, dest_groups, volume, rate):
-        pick_up(pipette)
+        pick_up_tip(pipette)
         used_vol = []
 
         for dest in dest_groups:
@@ -334,21 +378,6 @@ def run(ctx: protocol_api.ProtocolContext):
                    p20: 96 * len(p20.tip_racks)}
     }
 
-    ##########
-    # pick up tip and if there is none left, prompt user for a new rack
-    def pick_up(pip):
-        nonlocal tip_track
-        if not ctx.is_simulating():
-            if tip_track['counts'][pip] == tip_track['maxes'][pip]:
-                ctx.pause('Replace ' + str(pip.max_volume) + 'µl tipracks before \
-                resuming.')
-                pip.reset_tipracks()
-                tip_track['counts'][pip] = 0
-
-        if not pip.hw_pipette['has_tip']:
-            pip.pick_up_tip()
-    ##########
-
     ############################################################################
     # STEP 1: HIDRATATE
     ############################################################################
@@ -361,7 +390,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
-        pick_up(p300)
+        pick_up_tip(p300)
         used_vol = []
 
         for dest in dests:
@@ -373,7 +402,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 disp_height = -15, num_shakes = 1)
             used_vol.append(used_vol_temp)
 
-        p300.drop_tip(home_after = False)
+        drop_tip(p300)
         tip_track['counts'][p300] += 1
 
         end = datetime.now()
@@ -394,11 +423,11 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
-        for reagent in REACTIVE_LIST:
+        for reagent in REACTIVE_STEP_LIST:
             if reagent['active'] == True:
                 ctx.comment(' ')
                 ctx.comment('-----------------------------------------------')
-                ctx.comment('Reagent '+reagent['name']+': ' + str(reagent['volume']) + ' ul ' + reagent['source'] + ' ,' + reagent['name'])
+                ctx.comment('Dispensing reagent '+reagent['name']+': ' + str(reagent['volume']) + ' ul from ' + reagent['source'] )
                 ctx.comment('-----------------------------------------------')
                 ctx.comment(' ')
 
@@ -436,7 +465,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
-        pick_up(p20)
+        pick_up_tip(p20)
 
         s = tuberack.rows()[0][1]   # A2
         d = qpcr_plate.wells()[1]   # B1
@@ -445,7 +474,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 pickup_height = 0.2, disp_height = -10, rinse = False,
                 blow_out = True, touch_tip = False, num_shakes = 1)
 
-        p20.drop_tip(home_after = False)
+        drop_tip(p20)
         tip_track['counts'][p20]+=1
 
         end = datetime.now()
@@ -466,7 +495,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
-        pick_up(p20)
+        pick_up_tip(p20)
 
         s = tuberack.rows()[0][2]   # A3
         d = qpcr_plate.wells()[0]   # A1
@@ -475,7 +504,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 pickup_height = 0.2, disp_height = -10, rinse = False,
                 blow_out = True, touch_tip = False, num_shakes = 1)
 
-        p20.drop_tip(home_after = False)
+        drop_tip(p20)
         tip_track['counts'][p20]+=1
 
         end = datetime.now()
