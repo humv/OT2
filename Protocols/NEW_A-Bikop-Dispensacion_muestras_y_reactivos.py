@@ -24,8 +24,8 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 0     # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 16
+NUM_CONTROL_SPACES      = 2     # The control spaces are being ignored at the first cycles
+NUM_REAL_SAMPLES        = 94
 
 VOLUME_SAMPLE           = 200   # Sample volume to place in deepwell
 LYSIS_VOLUME_PER_SAMPLE = 210   # ul per sample
@@ -267,38 +267,7 @@ def run(ctx: protocol_api.ProtocolContext):
         return s
 
     ##########
-    # pick up tip and if there is none left, prompt user for a new rack
-    def pick_up(pip):
-        nonlocal tip_track
-        if not ctx.is_simulating():
-            if tip_track['counts'][pip] == tip_track['maxes'][pip]:
-                ctx.pause('Replace ' + str(pip.max_volume) + 'µl tipracks before \
-                resuming.')
-                pip.reset_tipracks()
-                tip_track['counts'][pip] = 0
-        pip.pick_up_tip()
-    
-    def pick_up_tip(pip, tips = None):
-        nonlocal tip_track
-        #if not ctx.is_simulating():
-        if recycle_tip:
-            pip.pick_up_tip(tips[0].wells()[0])
-        else:
-            if tip_track['counts'][pip] >= tip_track['maxes'][pip]:
-                for i in range(3):
-                    ctx._hw_manager.hardware.set_lights(rails=False)
-                    ctx._hw_manager.hardware.set_lights(button=(1, 0 ,0))
-                    time.sleep(0.3)
-                    ctx._hw_manager.hardware.set_lights(rails=True)
-                    ctx._hw_manager.hardware.set_lights(button=(0, 0 ,1))
-                    time.sleep(0.3)
-                ctx._hw_manager.hardware.set_lights(button=(0, 1 ,0))
-                ctx.pause('Cambiar ' + str(pip.max_volume) + ' µl tipracks antes del pulsar Resume.')
-                pip.reset_tipracks()
-                tip_track['counts'][pip] = 0
-                tip_track['num_refills'][pip] += 1
-            pip.pick_up_tip()
-
+    # pick up tip and if there is none left, prompt user for a new rack    
     def run_quiet_process(command):
         subprocess.check_output('{} &> /dev/null'.format(command), shell=True)
 
@@ -431,7 +400,7 @@ def run(ctx: protocol_api.ProtocolContext):
         else:
             pip.drop_tip(home_after = False)
         if increment_count:
-            tip_track['counts'][pip] += 8
+            tip_track['counts'][pip] += 1
 
 
     ####################################
@@ -521,8 +490,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 drop_tip (p1000,recycle= recycle_tip)
                 dest_count = 0
 
-        p1000.drop_tip(home_after = False)
-        tip_track['counts'][p1000] += 1
+        drop_tip(p1000)
 
         log_step_end(start)
 
@@ -535,7 +503,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         for s, d in zip(sample_sources, destinations):
             if not p1000.hw_pipette['has_tip']:
-                pick_up(p1000)
+                pick_up_tip(p1000)
 
             # Mix the sample BEFORE dispensing
             if NUM_BEFORE_MIXES > 0:
@@ -554,8 +522,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix_deepwell, 
                     rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1, source_height = 1, x_offset = x_offset, air_gap_vol = 2 )
 
-            p1000.drop_tip(home_after = False)
-            tip_track['counts'][p1000] += 1
+            drop_tip(p1000)
 
         log_step_end(start)
 

@@ -54,7 +54,8 @@ path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 
 recycle_tip                 = False     # Do you want to recycle tips? It shoud only be set True for testing
 mag_height                  = 6         # Height needed for NEST deepwell in magnetic deck
-waste_drop_height           = -5
+waste_drop_height           = 0
+deepwell_top_drop_height    = 10
 multi_well_rack_area        = 8 * 71    #Cross section of the 12 well reservoir
 next_well_index             = 0         # First reservoir well to use
 
@@ -581,7 +582,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('La altura de recogida es ' + str(round(pickup_height, 2)) + ' mm')
                 move_vol_multi(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
                         dest = work_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, blow_out = True, drop_height = 10)
+                        pickup_height = pickup_height, blow_out = True, drop_height = deepwell_top_drop_height)
             
 
             if BEADS_NUM_MIXES > 0:
@@ -697,7 +698,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multi(m300, reagent = Wash_1, source = Wash_1.reagent_reservoir[Wash_1.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, drop_height = 10, blow_out = False)
+                        pickup_height = pickup_height, drop_height = deepwell_top_drop_height, blow_out = False)
 
             if WASH_NUM_MIXES > 0:
                 custom_mix(m300, Wash_1, location = work_destinations[i], vol = Wash_1.max_volume_allowed, two_thirds_mix_bottom = True,
@@ -813,7 +814,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multi(m300, reagent = Wash_2, source = Wash_2.reagent_reservoir[Wash_2.col], dest = work_destinations[i],
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, drop_height = 10, blow_out = False)
+                        pickup_height = pickup_height, drop_height = deepwell_top_drop_height, blow_out = False)
 
             if EHTANOL_NUM_MIXES > 0:
                 custom_mix(m300, Wash_2, location = work_destinations[i], vol = Wash_2.max_volume_allowed, two_thirds_mix_bottom = True,
