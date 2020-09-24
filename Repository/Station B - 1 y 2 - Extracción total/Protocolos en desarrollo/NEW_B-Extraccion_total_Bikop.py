@@ -22,15 +22,15 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                         = 8     # Must be multiple of 8
+NUM_SAMPLES                         = 96     # Must be multiple of 8
 USE_300_TIPS                        = False  # Check that TIP_RECYCLING variables have desired values 
 
 VOLUME_SAMPLE                       = 410    # Volume received from station A
 BEADS_VOLUME_PER_SAMPLE             = 200
 WASH_1_VOLUME_PER_SAMPLE            = 200
 WASH_2_VOLUME_PER_SAMPLE            = 200
-ELUTION_VOLUME_PER_SAMPLE           = 100
-ELUTION_FINAL_VOLUME_PER_SAMPLE     = 100    # Volume transfered to final plates
+ELUTION_VOLUME_PER_SAMPLE           = 50
+ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
 
 BEADS_WELL_FIRST_TIME_NUM_MIXES     = 5
 BEADS_WELL_NUM_MIXES                = 1
