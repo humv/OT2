@@ -95,8 +95,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
     #Reagents and their characteristics
     Wash = Reagent(name = 'Wash',
-                    flow_rate_aspirate = 5, # Original = 0.5
-                    flow_rate_dispense = 5, # Original = 1
+                    flow_rate_aspirate = 25, # Original = 0.5
+                    flow_rate_dispense = 100, # Original = 1
                     flow_rate_aspirate_mix = 1, # Liquid density very high, needs slow aspiration
                     flow_rate_dispense_mix = 1, # Liquid density very high, needs slow dispensation
                     air_gap_vol_bottom = 5,
@@ -111,8 +111,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Ethanol = Reagent(name = 'Ethanol',
-                    flow_rate_aspirate = 5,
-                    flow_rate_dispense = 5,
+                    flow_rate_aspirate = 25,
+                    flow_rate_dispense = 100,
                     flow_rate_aspirate_mix = 1,
                     flow_rate_dispense_mix = 1,
                     air_gap_vol_bottom = 5,
@@ -143,8 +143,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Elution = Reagent(name = 'Elution',
-                    flow_rate_aspirate = 3, # Original 0.5
-                    flow_rate_dispense = 3, # Original 1
+                    flow_rate_aspirate = 25, # Original 0.5
+                    flow_rate_dispense = 100, # Original 1
                     flow_rate_aspirate_mix = 15,
                     flow_rate_dispense_mix = 25,
                     air_gap_vol_bottom = 5,
@@ -535,7 +535,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Wash, source = Wash.reagent_reservoir,
                         dest = wash_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True)
+                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False)
             ctx.comment(' ')
         if recycle_tip == True:
             m300.return_tip()
@@ -583,7 +583,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Ethanol, source = Ethanol.reagent_reservoir,
                         dest = ethanol_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = True)
+                        pickup_height = 2, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False)
 
         if recycle_tip == True:
             m300.return_tip()
@@ -634,7 +634,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #    rinse = False
                 move_vol_multi(m300, reagent = Elution, source = Elution.reagent_reservoir[Elution.col],
                         dest = elution_destinations[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False, touch_tip = True)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False, touch_tip = False)
             ctx.comment(' ')
 
         if recycle_tip == True:
