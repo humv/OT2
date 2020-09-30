@@ -64,9 +64,9 @@ pipette_allowed_capacity    = 280 if USE_300_TIPS else 180
 txt_tip_capacity            = '300 uL' if USE_300_TIPS else '200 uL'
 
 x_offset_rs_mv              = 2 if USE_300_TIPS else 2.5
-x_offset_rs_sn              = 1.5 if USE_300_TIPS else 2
+x_offset_rs_sn              = 1.1 if USE_300_TIPS else 2
 
-num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
+num_cols                    = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
 switch_off_lights           = False # Switch of the lights when the program finishes
 
 max_tips_in_trash           = 96 * 3
