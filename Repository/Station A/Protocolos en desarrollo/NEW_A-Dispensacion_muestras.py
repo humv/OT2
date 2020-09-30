@@ -34,14 +34,12 @@ PHOTOSENSITIVE          = False # True if it has photosensitive reagents
 
 ################################################
 
-num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
 air_gap_vol_sample      = 25
 run_id                  = 'preparacion_tipo_A'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
 volume_mix              = 500 # Volume used on mix
 x_offset                = [0,0]
-OPENTRONS_TIPS          = True
 switch_off_lights       = False # Switch of the lights when the program finishes
 
 
@@ -156,7 +154,7 @@ def run(ctx: protocol_api.ProtocolContext):
         '''
         Concatenate the wells frome the different origin racks
         '''
-        num_cols = math.ceil(num_samples / 8)
+        num_cols = math.ceil(NUM_REAL_SAMPLES / 8)
         s = []
         for i  in range(num_cols):
             if i < 6:
@@ -191,7 +189,7 @@ def run(ctx: protocol_api.ProtocolContext):
         except KeyboardInterrupt:
             pass
             print()
-            
+
     def start_run():
         ctx.comment(' ')
         ctx.comment('###############################################')
@@ -242,12 +240,21 @@ def run(ctx: protocol_api.ProtocolContext):
 
             return finish_time
 
+    def validate_parameters():
+        result = True
+
+        if NUM_REAL_SAMPLES + NUM_CONTROL_SPACES > 96:
+            ctx.comment ("ERROR: La suma del número de muestras ("+ str(NUM_REAL_SAMPLES) +") y el número de controles ("+ str(NUM_CONTROL_SPACES) +") es mayor que 96, verifique los valores y vuelva a cargar el protocolo.")
+            result = False
+
+        return result
+
     ####################################
     # load labware and modules
 
     ####################################
     # Load Sample racks
-    if num_samples <= 48:
+    if NUM_REAL_SAMPLES <= 48:
         rack_num = 2
         ctx.comment('Used source racks are ' + str(rack_num))
     else:
@@ -267,7 +274,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ####################################
     # Load tip_racks
     tips1000 = [ctx.load_labware(
-        'opentrons_96_filtertiprack_1000ul' if OPENTRONS_TIPS else 'geb_96_tiprack_1000ul',
+        'opentrons_96_filtertiprack_1000ul',
         slot, '1000µl filter tiprack') for slot in ['8']]
 
     ################################################################################
@@ -288,56 +295,57 @@ def run(ctx: protocol_api.ProtocolContext):
         'tips': { p1000: [tip for rack in tips1000 for tip in rack.rows()[0]]}
     }
 
+    if validate_parameters():
 
-    start_run()
+        start_run()
 
-    ############################################################################
-    # STEP 1: MIX AND MOVE SAMPLES
-    ############################################################################
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
-        ctx.comment('###############################################')
+        ############################################################################
+        # STEP 1: MIX AND MOVE SAMPLES
+        ############################################################################
+        STEP += 1
+        if STEPS[STEP]['Execute'] == True:
+            ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
+            ctx.comment('###############################################')
 
-        start = datetime.now()
-        for s, d in zip(sample_sources, destinations):
-            if not p1000.hw_pipette['has_tip']:
-                pick_up(p1000)
+            start = datetime.now()
+            for s, d in zip(sample_sources, destinations):
+                if not p1000.hw_pipette['has_tip']:
+                    pick_up(p1000)
 
-            # Mix the sample BEFORE dispensing
-            if NUM_MIXES > 0:
-                custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, 
-                    rounds = NUM_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
+                # Mix the sample BEFORE dispensing
+                if NUM_MIXES > 0:
+                    custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, 
+                        rounds = NUM_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
 
-            move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
-                vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
-                pickup_height = 3, rinse = Samples.rinse, disp_height = -10,
-                blow_out = True, touch_tip = False)
+                move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
+                    vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
+                    pickup_height = 3, rinse = Samples.rinse, disp_height = -10,
+                    blow_out = True, touch_tip = False)
 
-            p1000.drop_tip(home_after = False)
-            tip_track['counts'][p1000] += 1
+                p1000.drop_tip(home_after = False)
+                tip_track['counts'][p1000] += 1
 
-        # Time statistics
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] +
-                    ' took ' + str(time_taken))
-        STEPS[STEP]['Time:'] = str(time_taken)
+            # Time statistics
+            end = datetime.now()
+            time_taken = (end - start)
+            ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] +
+                        ' took ' + str(time_taken))
+            STEPS[STEP]['Time:'] = str(time_taken)
 
 
-    # Export the time log to a tsv file
-    if not ctx.is_simulating():
-        with open(file_path, 'w') as f:
-            f.write('STEP\texecution\tdescription\twait_time\texecution_time\n')
-            for key in STEPS.keys():
-                row = str(key)
-                for key2 in STEPS[key].keys():
-                    row += '\t' + format(STEPS[key][key2])
-                f.write(row + '\n')
-        f.close()
+        # Export the time log to a tsv file
+        if not ctx.is_simulating():
+            with open(file_path, 'w') as f:
+                f.write('STEP\texecution\tdescription\twait_time\texecution_time\n')
+                for key in STEPS.keys():
+                    row = str(key)
+                    for key2 in STEPS[key].keys():
+                        row += '\t' + format(STEPS[key][key2])
+                    f.write(row + '\n')
+            f.close()
 
-    ############################################################################
-    # Light flash end of program
-    # from opentrons.drivers.rpi_drivers import gpio
+        ############################################################################
+        # Light flash end of program
+        # from opentrons.drivers.rpi_drivers import gpio
 
-    finish_run(switch_off_lights)
+        finish_run(switch_off_lights)

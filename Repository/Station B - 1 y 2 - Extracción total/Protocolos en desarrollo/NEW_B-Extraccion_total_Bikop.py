@@ -695,7 +695,7 @@ def run(ctx: protocol_api.ProtocolContext):
             if not m300.hw_pipette['has_tip']:
                 pick_up_tip(m300)
                 if TIP_RECYCLING_IN_WASH:
-                    w1_tip_pos_list += [tip_track['tips'][m300][int(tip_track['counts'][m300] / 8)]]
+                    w1_tip_pos_list += [tip_track['tips'][m300][int((tip_track['counts'][m300] / 8) + i)]]
             for transfer_vol in wash_transfer_vol:
                 [pickup_height, change_col] = calc_height(Wash_1, multi_well_rack_area, transfer_vol*8)
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Wash_1.first_well + Wash_1.col))
@@ -812,7 +812,7 @@ def run(ctx: protocol_api.ProtocolContext):
             if not m300.hw_pipette['has_tip']:
                 pick_up_tip(m300)
                 if TIP_RECYCLING_IN_WASH:
-                    w2_tip_pos_list += [tip_track['tips'][m300][int(tip_track['counts'][m300] / 8)]]
+                    w2_tip_pos_list += [tip_track['tips'][m300][int((tip_track['counts'][m300] / 8) + i)]]
             for transfer_vol in wash_transfer_vol:
                 [pickup_height, change_col] = calc_height(Wash_2, multi_well_rack_area, transfer_vol*8)
                 ctx.comment('Aspirando desde la columna del reservorio: ' + str(Wash_2.first_well + Wash_2.col))
@@ -946,7 +946,7 @@ def run(ctx: protocol_api.ProtocolContext):
             if not m300.hw_pipette['has_tip']:
                 pick_up_tip(m300)
                 if TIP_RECYCLING_IN_ELUTION:
-                    elution_tip_pos_list += [tip_track['tips'][m300][int(tip_track['counts'][m300] / 8)]]
+                    elution_tip_pos_list += [tip_track['tips'][m300][int((tip_track['counts'][m300] / 8) + i)]]
             for transfer_vol in elution_wash_vol:
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Elution, multi_well_rack_area, transfer_vol*8)

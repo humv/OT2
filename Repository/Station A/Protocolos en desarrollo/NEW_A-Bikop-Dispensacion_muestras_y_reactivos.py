@@ -24,7 +24,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 2     # The control spaces are being ignored at the first cycles
+NUM_CONTROL_SPACES      = 2     # The control spaces are being ignored at the last cycles
 NUM_REAL_SAMPLES        = 94
 
 VOLUME_SAMPLE           = 200   # Sample volume to place in deepwell
@@ -40,8 +40,7 @@ SOUND_NUM_PLAYS         = 0
 ################################################
 
 recycle_tip             = False
-num_samples             = NUM_CONTROL_SPACES + NUM_REAL_SAMPLES
-num_cols                = math.ceil(num_samples / 8) # Columns we are working on
+num_cols                = math.ceil(NUM_REAL_SAMPLES / 8) # Columns we are working on
 
 extra_dispensal         = 1
 run_id                  = 'A-Dispensacion_muestras_y_reactivos-Bikop'
@@ -130,9 +129,9 @@ def run(ctx: protocol_api.ProtocolContext):
 
     
     ctx.comment('###############################################')
-    ctx.comment('VOLUMENES PARA ' + str(num_samples) + ' muestras.')
+    ctx.comment('VOLUMENES PARA ' + str(NUM_REAL_SAMPLES) + ' muestras.')
     ctx.comment('')
-    ctx.comment('Volumen de lysys necesario en B3 :' + str(LYSIS_VOLUME_PER_SAMPLE * NUM_REAL_SAMPLES) + " ul")
+    ctx.comment('Volumen de lysys necesario en B3: ' + str(LYSIS_VOLUME_PER_SAMPLE * NUM_REAL_SAMPLES + 500) + " ul")
     ctx.comment('')
 
     ##################
@@ -257,7 +256,7 @@ def run(ctx: protocol_api.ProtocolContext):
         '''
         Concatenate the wells frome the different origin racks
         '''
-        num_cols = math.ceil(num_samples / 8)
+        num_cols = math.ceil(NUM_REAL_SAMPLES / 8)
         s = []
         for i  in range(num_cols):
             if i < 6:
@@ -402,13 +401,22 @@ def run(ctx: protocol_api.ProtocolContext):
         if increment_count:
             tip_track['counts'][pip] += 1
 
+    def validate_parameters():
+        result = True
+
+        if NUM_REAL_SAMPLES + NUM_CONTROL_SPACES > 96:
+            ctx.comment ("ERROR: La suma del número de muestras ("+ str(NUM_REAL_SAMPLES) +") y el número de controles ("+ str(NUM_CONTROL_SPACES) +") es mayor que 96, verifique los valores y vuelva a cargar el protocolo.")
+            result = False
+
+        return result
+
 
     ####################################
     # load labware and modules
 
     ####################################
     # Load Sample racks
-    if num_samples <= 48:
+    if NUM_REAL_SAMPLES <= 48:
         rack_num = 2
         ctx.comment('Used source racks are ' + str(rack_num))
     else:
@@ -456,89 +464,89 @@ def run(ctx: protocol_api.ProtocolContext):
 
     }
 
+    if validate_parameters():
+        start_run()
+        ############################################################################
+        # STEP 1: ADD LYSIS 
+        ############################################################################
+        STEP += 1
+        if STEPS[STEP]['Execute'] == True:
+            start = log_step_start()
 
-    start_run()
-    ############################################################################
-    # STEP 1: ADD LYSIS 
-    ############################################################################
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        start = log_step_start()
-
-        used_vol = []
-        dest_count = 0 # number of pipet uses
-        
-        for dest in dests_lysis:
-            if not p1000.hw_pipette['has_tip']:
-                 pick_up_tip(p1000)
-            dest_count = dest_count + len(dest)
-            #num_mixes = 1
-            #ctx.comment("Mezclas-   " + str(num_mixes))
-            #custom_mix(p1000, reagent = Lysis, location = lysys_source, vol = LYSIS_VOLUME_PER_SAMPLE, 
-            #    rounds = num_mixes, blow_out = False, mix_height = 15, x_offset = x_offset)
-
-            used_vol_temp = distribute_custom(p1000, Lysis, volume = LYSIS_VOLUME_PER_SAMPLE,
-                src = lysys_source, dest = dest,
-                waste_pool = lysys_source, pickup_height = 1,
-                extra_dispensal = extra_dispensal, dest_x_offset = 2, drop_height = 10)
-            used_vol.append(used_vol_temp)
+            used_vol = []
+            dest_count = 0 # number of pipet uses
             
-            # Check if it's time to change tip
-            if dest_count >= MAX_LYSYS_DISPENSE_PER_TIP:
-                ctx.comment("Changing tip, used " + str(dest_count) +" times.")
-                drop_tip (p1000,recycle= recycle_tip)
-                dest_count = 0
+            for dest in dests_lysis:
+                if not p1000.hw_pipette['has_tip']:
+                    pick_up_tip(p1000)
+                dest_count = dest_count + len(dest)
+                #num_mixes = 1
+                #ctx.comment("Mezclas-   " + str(num_mixes))
+                #custom_mix(p1000, reagent = Lysis, location = lysys_source, vol = LYSIS_VOLUME_PER_SAMPLE, 
+                #    rounds = num_mixes, blow_out = False, mix_height = 15, x_offset = x_offset)
 
-        drop_tip(p1000)
-
-        log_step_end(start)
-
-    ############################################################################
-    # STEP 2: MIX AND MOVE SAMPLES
-    ############################################################################
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        start = log_step_start()
-
-        for s, d in zip(sample_sources, destinations):
-            if not p1000.hw_pipette['has_tip']:
-                pick_up_tip(p1000)
-
-            # Mix the sample BEFORE dispensing
-            if NUM_BEFORE_MIXES > 0:
-                ctx.comment("Mezclas en origen " + str(NUM_BEFORE_MIXES))
-                custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix_tuberack, 
-                    rounds = NUM_BEFORE_MIXES, blow_out = False, mix_height = 15, x_offset = x_offset)
-
-            move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
-                vol = VOLUME_SAMPLE, air_gap_vol = Samples.air_gap_vol_bottom, x_offset = x_offset,
-                pickup_height = 3, rinse = False, drop_height = -10,
-                blow_out = NUM_AFTER_MIXES < 1, touch_tip = False, skipFinalAirGap = True)
-
-            # Mix the sample BEFORE dispensing
-            if NUM_AFTER_MIXES > 0:
-                ctx.comment("Mezclas en destino " + str(NUM_AFTER_MIXES))
-                custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix_deepwell, 
-                    rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1, source_height = 1, x_offset = x_offset, air_gap_vol = 2 )
+                used_vol_temp = distribute_custom(p1000, Lysis, volume = LYSIS_VOLUME_PER_SAMPLE,
+                    src = lysys_source, dest = dest,
+                    waste_pool = lysys_source, pickup_height = 1,
+                    extra_dispensal = extra_dispensal, dest_x_offset = 2, drop_height = 10)
+                used_vol.append(used_vol_temp)
+                
+                # Check if it's time to change tip
+                if dest_count >= MAX_LYSYS_DISPENSE_PER_TIP:
+                    ctx.comment("Changing tip, used " + str(dest_count) +" times.")
+                    drop_tip (p1000,recycle= recycle_tip)
+                    dest_count = 0
 
             drop_tip(p1000)
 
-        log_step_end(start)
+            log_step_end(start)
+
+        ############################################################################
+        # STEP 2: MIX AND MOVE SAMPLES
+        ############################################################################
+        STEP += 1
+        if STEPS[STEP]['Execute'] == True:
+            start = log_step_start()
+
+            for s, d in zip(sample_sources, destinations):
+                if not p1000.hw_pipette['has_tip']:
+                    pick_up_tip(p1000)
+
+                # Mix the sample BEFORE dispensing
+                if NUM_BEFORE_MIXES > 0:
+                    ctx.comment("Mezclas en origen " + str(NUM_BEFORE_MIXES))
+                    custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix_tuberack, 
+                        rounds = NUM_BEFORE_MIXES, blow_out = False, mix_height = 15, x_offset = x_offset)
+
+                move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
+                    vol = VOLUME_SAMPLE, air_gap_vol = Samples.air_gap_vol_bottom, x_offset = x_offset,
+                    pickup_height = 3, rinse = False, drop_height = -10,
+                    blow_out = NUM_AFTER_MIXES < 1, touch_tip = False, skipFinalAirGap = True)
+
+                # Mix the sample BEFORE dispensing
+                if NUM_AFTER_MIXES > 0:
+                    ctx.comment("Mezclas en destino " + str(NUM_AFTER_MIXES))
+                    custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix_deepwell, 
+                        rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1, source_height = 1, x_offset = x_offset, air_gap_vol = 2 )
+
+                drop_tip(p1000)
+
+            log_step_end(start)
 
 
-    # Export the time log to a tsv file
-    if not ctx.is_simulating():
-        with open(file_path, 'w') as f:
-            f.write('STEP\texecution\tdescription\twait_time\texecution_time\n')
-            for key in STEPS.keys():
-                row = str(key)
-                for key2 in STEPS[key].keys():
-                    row += '\t' + format(STEPS[key][key2])
-                f.write(row + '\n')
-        f.close()
+        # Export the time log to a tsv file
+        if not ctx.is_simulating():
+            with open(file_path, 'w') as f:
+                f.write('STEP\texecution\tdescription\twait_time\texecution_time\n')
+                for key in STEPS.keys():
+                    row = str(key)
+                    for key2 in STEPS[key].keys():
+                        row += '\t' + format(STEPS[key][key2])
+                    f.write(row + '\n')
+            f.close()
 
-    ############################################################################
-    # Light flash end of program
-    # from opentrons.drivers.rpi_drivers import gpio
+        ############################################################################
+        # Light flash end of program
+        # from opentrons.drivers.rpi_drivers import gpio
 
-    finish_run(switch_off_lights)
+        finish_run(switch_off_lights)
