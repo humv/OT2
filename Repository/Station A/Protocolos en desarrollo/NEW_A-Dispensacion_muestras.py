@@ -191,6 +191,7 @@ def run(ctx: protocol_api.ProtocolContext):
         except KeyboardInterrupt:
             pass
             print()
+            
     def start_run():
         ctx.comment(' ')
         ctx.comment('###############################################')

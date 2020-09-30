@@ -32,15 +32,15 @@ WASH_2_VOLUME_PER_SAMPLE            = 200
 ELUTION_VOLUME_PER_SAMPLE           = 50
 ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
 
-BEADS_WELL_FIRST_TIME_NUM_MIXES     = 5
-BEADS_WELL_NUM_MIXES                = 1
+BEADS_WELL_FIRST_TIME_NUM_MIXES     = 10
+BEADS_WELL_NUM_MIXES                = 3
 BEADS_NUM_MIXES                     = 10    # 20
 WASH_NUM_MIXES                      = 10    # 10  
 EHTANOL_NUM_MIXES                   = 10    # 10
 ELUTION_NUM_MIXES                   = 10    # 5
 
-TIP_RECYCLING_IN_WASH               = False
-TIP_RECYCLING_IN_ELUTION            = False
+TIP_RECYCLING_IN_WASH               = True
+TIP_RECYCLING_IN_ELUTION            = True
 
 SET_TEMP_ON                         = False  # Do you want to start temperature module?
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
@@ -51,6 +51,7 @@ SOUND_NUM_PLAYS                     = 0
 
 run_id                      = 'B-Extraccion_total-Bikop'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
+sonido_defecto              = 'finalizado.mp3'
 
 recycle_tip                 = False     # Do you want to recycle tips? It shoud only be set True for testing
 mag_height                  = 6         # Height needed for NEST deepwell in magnetic deck
@@ -67,6 +68,8 @@ x_offset_rs_sn              = 1.5 if USE_300_TIPS else 2
 
 num_cols = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
 switch_off_lights           = False # Switch of the lights when the program finishes
+
+max_tips_in_trash           = 96 * 3
 
 def run(ctx: protocol_api.ProtocolContext):
     w1_tip_pos_list             = []
@@ -119,8 +122,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 return self.reagent_volume * NUM_SAMPLES
 
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, flow_rate_aspirate_mix, flow_rate_dispense_mix,
-        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, max_volume_allowed, reagent_volume, v_fondo,
-        dead_vol = 700, first_well = None, placed_in_multi = False):
+        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, reagent_volume, v_fondo, max_volume_allowed = pipette_allowed_capacity,
+        dead_vol = 1400, first_well = None, placed_in_multi = False):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -149,9 +152,9 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
-                    max_volume_allowed = pipette_allowed_capacity,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
                     placed_in_multi = True,
+                    dead_vol = 2000,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
     Wash_1 = Reagent(name = 'Wash 1',
@@ -162,7 +165,6 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
-                    max_volume_allowed = pipette_allowed_capacity,
                     reagent_volume = WASH_1_VOLUME_PER_SAMPLE,
                     placed_in_multi = True,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic)
@@ -175,7 +177,6 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
-                    max_volume_allowed = pipette_allowed_capacity,              
                     reagent_volume = WASH_2_VOLUME_PER_SAMPLE,
                     placed_in_multi = True,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic)
@@ -188,7 +189,6 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
-                    max_volume_allowed = pipette_allowed_capacity,
                     reagent_volume = ELUTION_VOLUME_PER_SAMPLE,
                     placed_in_multi = True,
                     v_fondo = 695) #1.95*multi_well_rack_area/2) #Prismatic
@@ -201,7 +201,6 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
-                    max_volume_allowed = pipette_allowed_capacity,
                     reagent_volume = VOLUME_SAMPLE,
                     v_fondo = 4 * math.pi * 4**3 / 3) #Sphere
 
@@ -383,6 +382,9 @@ def run(ctx: protocol_api.ProtocolContext):
             pip.drop_tip(home_after = False)
         if increment_count:
             tip_track['counts'][pip] += 8
+            if tip_track['counts'][pip] % max_tips_in_trash == 0:
+                play_sound('empty_trash_esp')
+
 
     def start_run():
         ctx.comment(' ')
@@ -405,6 +407,8 @@ def run(ctx: protocol_api.ProtocolContext):
         print('Speaker')
         print('Next\t--> CTRL-C')
         try:
+            run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
+            run_quiet_process('mpg123 {}'.format(path_sounds + sonido_defecto))
             run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
         except KeyboardInterrupt:
             pass
@@ -442,7 +446,7 @@ def run(ctx: protocol_api.ProtocolContext):
             for i in range(SOUND_NUM_PLAYS):
                 if i > 0:
                     time.sleep(60)
-                play_sound('finalizado')
+                play_sound('finished_process_esp')
 
         return finish_time
 
@@ -588,7 +592,8 @@ def run(ctx: protocol_api.ProtocolContext):
             if BEADS_NUM_MIXES > 0:
                 ctx.comment(' ')
                 ctx.comment('Mezclando muestra ')
-                custom_mix(m300, Beads, location = work_destinations[i], vol =  Beads.max_volume_allowed,
+                mix_volume = min(Beads.max_volume_allowed, Sample.reagent_volume + Beads.reagent_volume)
+                custom_mix(m300, Beads, location = work_destinations[i], vol = mix_volume, 
                         rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 1, offset = 0, wait_time = 2)
 
             m300.air_gap(Beads.air_gap_vol_bottom, height = 0) #air gap
@@ -701,12 +706,13 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, drop_height = deepwell_top_drop_height, blow_out = False)
 
             if WASH_NUM_MIXES > 0:
-                custom_mix(m300, Wash_1, location = work_destinations[i], vol = Wash_1.max_volume_allowed, two_thirds_mix_bottom = True,
+                mix_volume = min(Wash_1.max_volume_allowed, Wash_1.reagent_volume)
+                custom_mix(m300, Wash_1, location = work_destinations[i], vol = mix_volume, two_thirds_mix_bottom = True,
                         rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
 
             m300.air_gap(Wash_1.air_gap_vol_bottom, height = 0) #air gap
 
-            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH, increment_count = not TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -764,7 +770,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 m300.air_gap(Sample.air_gap_vol_bottom, height = 0)
 
-            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_WASH)
+            drop_tip(m300)
 
         log_step_end(start)
         ###############################################################################
@@ -817,12 +823,13 @@ def run(ctx: protocol_api.ProtocolContext):
                         pickup_height = pickup_height, drop_height = deepwell_top_drop_height, blow_out = False)
 
             if EHTANOL_NUM_MIXES > 0:
-                custom_mix(m300, Wash_2, location = work_destinations[i], vol = Wash_2.max_volume_allowed, two_thirds_mix_bottom = True,
+                mix_volume = min(Wash_2.max_volume_allowed, Wash_2.reagent_volume)
+                custom_mix(m300, Wash_2, location = work_destinations[i], vol = mix_volume, two_thirds_mix_bottom = True,
                         rounds = EHTANOL_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
 
             m300.air_gap(Wash_2.air_gap_vol_bottom, height = 0) #air gap
 
-            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH, increment_count = not TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -880,7 +887,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 m300.air_gap(Sample.air_gap_vol_bottom, height = 0)
 
-            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_WASH)
+            drop_tip(m300)
 
         log_step_end(start)
         ###############################################################################
@@ -953,12 +960,13 @@ def run(ctx: protocol_api.ProtocolContext):
             if ELUTION_NUM_MIXES > 0:
                 ctx.comment(' ')
                 ctx.comment('Mezclando muestra con Elution')
-                custom_mix(m300, Elution, work_destinations[i], vol = Elution.reagent_volume, rounds = ELUTION_NUM_MIXES,
+                mix_volume = min(Elution.max_volume_allowed, Elution.reagent_volume)
+                custom_mix(m300, Elution, work_destinations[i], vol = mix_volume, rounds = ELUTION_NUM_MIXES,
                         blow_out = False, mix_height = 1, offset = x_offset_dest, drop_height = -35)
 
             m300.air_gap(Elution.air_gap_vol_bottom, height = 0) #air gap
 
-            drop_tip(m300, recycle = TIP_RECYCLING_IN_ELUTION)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_ELUTION, increment_count = not TIP_RECYCLING_IN_ELUTION)
 
         log_step_end(start)
         ###############################################################################
@@ -1014,7 +1022,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
             m300.air_gap(Sample.air_gap_vol_bottom, height = 0) #air gap
 
-            drop_tip(m300, increment_count = not TIP_RECYCLING_IN_ELUTION)
+            drop_tip(m300)
 
         if SET_TEMP_ON == True:
             tempdeck.set_temperature(TEMPERATURE)
