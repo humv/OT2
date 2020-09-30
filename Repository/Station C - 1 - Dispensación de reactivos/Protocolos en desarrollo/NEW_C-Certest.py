@@ -371,7 +371,7 @@ def run(ctx: protocol_api.ProtocolContext):
         pick_up(p20)
 
         s = tuberack.rows()[0][1]   # A2
-        d = qpcr_plate.wells()[NUM_SAMPLES + 2]   # B1
+        d = qpcr_plate.wells()[NUM_SAMPLES - 1]
         move_vol_multichannel(p20, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
                 pickup_height = 0.2, disp_height = -10, rinse = False,
@@ -401,7 +401,7 @@ def run(ctx: protocol_api.ProtocolContext):
         pick_up(p20)
 
         s = tuberack.rows()[0][2]   # A3
-        d = qpcr_plate.wells()[NUM_SAMPLES + 1]   # A1
+        d = qpcr_plate.wells()[NUM_SAMPLES - 2]
         move_vol_multichannel(p20, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
                 pickup_height = 0.2, disp_height = -10, rinse = False,
