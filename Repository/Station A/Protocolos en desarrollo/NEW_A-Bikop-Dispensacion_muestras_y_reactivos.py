@@ -436,9 +436,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ################################################################################
     # setup samples and destinations
     sample_sources_full = generate_source_table(source_racks)
-    sample_sources      = sample_sources_full[NUM_CONTROL_SPACES:num_samples]
-    destinations        = dest_plate.wells()[NUM_CONTROL_SPACES:num_samples]
-    destinations_full   = dest_plate.rows()[0][:num_samples]
+    sample_sources      = sample_sources_full[:NUM_REAL_SAMPLES]
+    destinations        = dest_plate.wells()[:NUM_REAL_SAMPLES]
     lysys_source        = lysys_rack.wells_by_name()['B3']
     dests_lysis         = list(divide_destinations(destinations, size_transfer))
 
