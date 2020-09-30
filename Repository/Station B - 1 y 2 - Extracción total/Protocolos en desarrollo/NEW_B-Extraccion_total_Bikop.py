@@ -373,16 +373,16 @@ def run(ctx: protocol_api.ProtocolContext):
             else:
                 pip.pick_up_tip(position)
 
-    def drop_tip(pip, recycle = False, increment_count = True):
+    def drop_tip(pip, recycle = False):
         nonlocal tip_track
         #if not ctx.is_simulating():
         if recycle or recycle_tip:
             pip.return_tip()
         else:
             pip.drop_tip(home_after = False)
-        if increment_count:
+        if not recycle:
             tip_track['counts'][pip] += 8
-            if tip_track['counts'][pip] % max_tips_in_trash == 0:
+            if not ctx.is_simulating() and not recycle_tip and tip_track['counts'][pip] % max_tips_in_trash == 0:
                 play_sound('empty_trash_esp')
 
 
@@ -712,7 +712,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
             m300.air_gap(Wash_1.air_gap_vol_bottom, height = 0) #air gap
 
-            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH, increment_count = not TIP_RECYCLING_IN_WASH)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -829,7 +829,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
             m300.air_gap(Wash_2.air_gap_vol_bottom, height = 0) #air gap
 
-            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH, increment_count = not TIP_RECYCLING_IN_WASH)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_WASH)
 
         log_step_end(start)
         ###############################################################################
@@ -966,7 +966,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
             m300.air_gap(Elution.air_gap_vol_bottom, height = 0) #air gap
 
-            drop_tip(m300, recycle = TIP_RECYCLING_IN_ELUTION, increment_count = not TIP_RECYCLING_IN_ELUTION)
+            drop_tip(m300, recycle = TIP_RECYCLING_IN_ELUTION)
 
         log_step_end(start)
         ###############################################################################
