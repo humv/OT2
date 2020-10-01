@@ -9,11 +9,11 @@ import subprocess
 
 # metadata
 metadata = {
-    'protocolName': 'Station A - Sample dispensing',
-    'author': 'Aitor Gastaminza, Alex Gasulla & José Luis Villanueva (Hospital Clinic Barcelona),  Manuel Alba & Daniel Peñil',
-    'source': 'Hospital Clínic Barcelona & HU Marqués de Valdecilla',
+    'protocolName': 'Station A - Bikop - Sample and lysis dispensing',
+    'author': 'Aitor Gastaminza, Alex Gasulla & José Luis Villanueva (Hospital Clinic Barcelona), Manuel Alba, Daniel Peñil & David Martínez',
+    'source': 'HU Marqués de Valdecilla',
     'apiLevel': '2.6',
-    'description': 'Protocol for sample dispensing'
+    'description': 'Protocol for Bikop sample and lysis dispensing'
 }
 
 '''
@@ -24,44 +24,42 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 2     # The control spaces are being ignored at the last cycles
-NUM_REAL_SAMPLES        = 94
+NUM_REAL_SAMPLES            = 94
+NUM_CONTROL_SPACES          = 2     # The control spaces are being ignored at the last cycles
 
-VOLUME_SAMPLE           = 200   # Sample volume to place in deepwell
-LYSIS_VOLUME_PER_SAMPLE = 210   # ul per sample
+VOLUME_SAMPLE               = 200   # Sample volume to place in deepwell
+LYSIS_VOLUME_PER_SAMPLE     = 210
 
-NUM_BEFORE_MIXES        = 0
-NUM_AFTER_MIXES         = 1
+MAX_LYSIS_DISPENSE_PER_TIP  = 48    # Max number of samples dispensed with the same lysis tip. Ex: 48, means two tips used to dispense lysis to 96 samples.
 
-MAX_LYSYS_DISPENSE_PER_TIP = 48 # max number of samples dispensed with the same lysys tip. ex: 48, means two tips used to dispense lysys to 96 samples.
+TUBE_NUM_MIXES              = 0
+DEEPWELL_NUM_MIXES          = 1
 
-PHOTOSENSITIVE          = False # True if it has photosensitive reagents
-SOUND_NUM_PLAYS         = 0
+SOUND_NUM_PLAYS             = 1
+PHOTOSENSITIVE              = False # True if it has photosensitive reagents
 ################################################
 
 recycle_tip             = False
 num_cols                = math.ceil(NUM_REAL_SAMPLES / 8) # Columns we are working on
 
 extra_dispensal         = 1
-run_id                  = 'A-Dispensacion_muestras_y_reactivos-Bikop'
+run_id                  = 'A-Bikop-Dispensacion_muestras_y_lisis'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
 volume_mix_tuberack     = 500
 volume_mix_deepwell     = (LYSIS_VOLUME_PER_SAMPLE + VOLUME_SAMPLE) * 0.75 # Volume used on mix
 x_offset                = [0,0]
-switch_off_lights           = False # Switch of the lights when the program finishes
+switch_off_lights       = False # Switch of the lights when the program finishes
 
 lysys_pipette_capacity  = 900 # Volume allowed in the pipette of 1000µl
 size_transfer           = math.floor(lysys_pipette_capacity / LYSIS_VOLUME_PER_SAMPLE) # Number of wells the distribute function will fill
-multi_well_rack_area    = 8 * 71    #Cross section of the 12 well reservoir
-next_well_index         = 0         # First reagent well to use
 
 
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': True, 'description': 'Dispensar Lysys'},
-        2: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'}
+        1: {'Execute': True, 'description': 'Dispensar lisis'},
+        2: {'Execute': True, 'description': 'Dispensar muestras'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -72,7 +70,7 @@ def run(ctx: protocol_api.ProtocolContext):
         folder_path = '/var/lib/jupyter/notebooks/' + run_id
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
-        file_path = folder_path + '/StationA_time_log.txt'
+        file_path = folder_path + '/time_log.txt'
 
     # Define Reagents as objects with their properties
     class Simple_Reagent:
@@ -84,10 +82,6 @@ def run(ctx: protocol_api.ProtocolContext):
             self.flow_rate_dispense_mix = flow_rate_dispense_mix
             self.delay              = delay 
             self.air_gap_vol_bottom = air_gap_vol_bottom
-    
-    def str_rounded(num):
-        return str(int(num + 0.5))
-
    
     # Reagents and their characteristics
     Samples = Simple_Reagent(name               = 'Samples',
@@ -115,30 +109,28 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Número de muestras: ' + str(NUM_REAL_SAMPLES) + ' (' + str(num_cols) + ' columnas)')
     ctx.comment('Número de controles: ' + str(NUM_CONTROL_SPACES))
     ctx.comment(' ')
-    ctx.comment('Número de mezclas en la muestra: ' + str(NUM_BEFORE_MIXES))
-    ctx.comment('Número de mezclas en el deepwell: ' + str(NUM_AFTER_MIXES))
+    ctx.comment('Volumen de muestra a mover al deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
+    ctx.comment('Volumen de lisis por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
     ctx.comment(' ')
-    ctx.comment('Volumen de muestra en el deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
-    ctx.comment('Volumen de lysys por muestra: ' + str(LYSIS_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment('Cambiar la punta de la lisis cada: ' + str(MAX_LYSIS_DISPENSE_PER_TIP) + ' muestras')
     ctx.comment(' ')
-    ctx.comment('Cambiar la punta de la lysys cada: ' + str(MAX_LYSYS_DISPENSE_PER_TIP) + ' muestras')
+    ctx.comment('Número de mezclas en la muestra: ' + str(TUBE_NUM_MIXES))
+    ctx.comment('Número de mezclas en el deepwell: ' + str(DEEPWELL_NUM_MIXES))
     ctx.comment(' ')
-    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment(' ')
-
     
     ctx.comment('###############################################')
-    ctx.comment('VOLUMENES PARA ' + str(NUM_REAL_SAMPLES) + ' muestras.')
+    ctx.comment('VOLÚMENES PARA ' + str(NUM_REAL_SAMPLES) + ' muestras.')
     ctx.comment('')
-    ctx.comment('Volumen de lysys necesario en B3: ' + str(LYSIS_VOLUME_PER_SAMPLE * NUM_REAL_SAMPLES + 500) + " ul")
+    ctx.comment('Volumen de lisis necesario en B3: ' + str(LYSIS_VOLUME_PER_SAMPLE * NUM_REAL_SAMPLES + 500) + ' ul')
     ctx.comment('')
+
 
     ##################
     # Custom functions
     ##################
-
-    
     def log_step_start():
         ctx.comment(' ')
         ctx.comment('###############################################')
@@ -256,7 +248,6 @@ def run(ctx: protocol_api.ProtocolContext):
         '''
         Concatenate the wells frome the different origin racks
         '''
-        num_cols = math.ceil(NUM_REAL_SAMPLES / 8)
         s = []
         for i  in range(num_cols):
             if i < 6:
@@ -281,6 +272,7 @@ def run(ctx: protocol_api.ProtocolContext):
         except KeyboardInterrupt:
             pass
             print()
+            
     def start_run():
         ctx.comment(' ')
         ctx.comment('###############################################')
@@ -439,7 +431,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Load tip_racks
     tips1000 = [ctx.load_labware(
         'opentrons_96_filtertiprack_1000ul', slot, 
-        '1000µl filter tiprack') for slot in ['10']]
+        '1000µl filter tiprack') for slot in ['8']]
 
     ################################################################################
     # setup samples and destinations
@@ -492,7 +484,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 used_vol.append(used_vol_temp)
                 
                 # Check if it's time to change tip
-                if dest_count >= MAX_LYSYS_DISPENSE_PER_TIP:
+                if dest_count >= MAX_LYSIS_DISPENSE_PER_TIP:
                     ctx.comment("Changing tip, used " + str(dest_count) +" times.")
                     drop_tip (p1000,recycle= recycle_tip)
                     dest_count = 0
@@ -513,21 +505,21 @@ def run(ctx: protocol_api.ProtocolContext):
                     pick_up_tip(p1000)
 
                 # Mix the sample BEFORE dispensing
-                if NUM_BEFORE_MIXES > 0:
-                    ctx.comment("Mezclas en origen " + str(NUM_BEFORE_MIXES))
+                if TUBE_NUM_MIXES > 0:
+                    ctx.comment("Mezclas en origen " + str(TUBE_NUM_MIXES))
                     custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix_tuberack, 
-                        rounds = NUM_BEFORE_MIXES, blow_out = False, mix_height = 15, x_offset = x_offset)
+                        rounds = TUBE_NUM_MIXES, blow_out = False, mix_height = 15, x_offset = x_offset)
 
                 move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                     vol = VOLUME_SAMPLE, air_gap_vol = Samples.air_gap_vol_bottom, x_offset = x_offset,
                     pickup_height = 3, rinse = False, drop_height = -10,
-                    blow_out = NUM_AFTER_MIXES < 1, touch_tip = False, skipFinalAirGap = True)
+                    blow_out = DEEPWELL_NUM_MIXES < 1, touch_tip = False, skipFinalAirGap = True)
 
                 # Mix the sample BEFORE dispensing
-                if NUM_AFTER_MIXES > 0:
-                    ctx.comment("Mezclas en destino " + str(NUM_AFTER_MIXES))
+                if DEEPWELL_NUM_MIXES > 0:
+                    ctx.comment("Mezclas en destino " + str(DEEPWELL_NUM_MIXES))
                     custom_mix(p1000, reagent = Samples, location = d, vol = volume_mix_deepwell, 
-                        rounds = NUM_AFTER_MIXES, blow_out = True, mix_height = 1, source_height = 1, x_offset = x_offset, air_gap_vol = 2 )
+                        rounds = DEEPWELL_NUM_MIXES, blow_out = True, mix_height = 1, source_height = 1, x_offset = x_offset, air_gap_vol = 2 )
 
                 drop_tip(p1000)
 

@@ -10,11 +10,11 @@ from datetime import datetime
 
 # metadata
 metadata = {
-    'protocolName': 'Station C - Dispensacion setup',
+    'protocolName': 'Station C - Sample dispensing',
     'author': 'Aitor Gastaminza, José Luis Villanueva (Hospital Clinic Barcelona) & Alex Gasulla, Manuel Alba, Daniel Peñil & David Martínez',
-    'source': 'Hospital Clínic Barcelona & HU Marqués de Valdecilla',
-    'apiLevel': '2.3',
-    'description': 'Protocol for sample setup (C) prior to qPCR'
+    'source': 'HU Marqués de Valdecilla',
+    'apiLevel': '2.6',
+    'description': 'Protocol for sample dispensing prior to qPCR'
     }
 
 '''
@@ -27,12 +27,13 @@ metadata = {
 NUM_SAMPLES                 = 96    # Including controls. 94 samples + 2 controls = 96
 VOLUME_SAMPLE               = 5     # Volume of the sample
 
-PHOTOSENSITIVE              = True # True if it has photosensitive reagents
 SOUND_NUM_PLAYS             = 1
+PHOTOSENSITIVE              = True # True if it has photosensitive reagents
 ################################################
 
 run_id                      = 'C-Dispensacion'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
+sonido_defecto              = 'finalizado.mp3'
 
 air_gap_vol                 = 5
 air_gap_sample              = 2
@@ -57,11 +58,11 @@ def run(ctx: protocol_api.ProtocolContext):
             STEPS[s]['wait_time'] = 0
 
     #Folder and file_path for log time
-    folder_path = '/var/lib/jupyter/notebooks' + run_id
+    folder_path = '/var/lib/jupyter/notebooks/' + run_id
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
-        file_path = folder_path + '/Station_C_qPCR_time_log.txt'
+        file_path = folder_path + '/Station_C_Dispensacion_time_log.txt'
 
     # Define Reagents as objects with their properties
     class Reagent:
@@ -100,8 +101,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
     ctx.comment('Volumen de muestra: ' + str(VOLUME_SAMPLE) + ' uL')
     ctx.comment(' ')
-    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment(' ')
 
     ##################
@@ -209,6 +210,8 @@ def run(ctx: protocol_api.ProtocolContext):
         print('Next\t--> CTRL-C')
         try:
             run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
+            run_quiet_process('mpg123 {}'.format(path_sounds + sonido_defecto))
+            run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
         except KeyboardInterrupt:
             pass
             print()
@@ -244,7 +247,7 @@ def run(ctx: protocol_api.ProtocolContext):
             for i in range(SOUND_NUM_PLAYS):
                 if i > 0:
                     time.sleep(60)
-                play_sound('finalizado')
+                play_sound('finished_process_esp')
 
         return finish_time
 

@@ -10,8 +10,8 @@ import subprocess
 # metadata
 metadata = {
     'protocolName': 'Station A - Sample dispensing',
-    'author': 'Aitor Gastaminza, Alex Gasulla & José Luis Villanueva (Hospital Clinic Barcelona),  Manuel Alba & Daniel Peñil',
-    'source': 'Hospital Clínic Barcelona & HU Marqués de Valdecilla',
+    'author': 'Aitor Gastaminza, Alex Gasulla & José Luis Villanueva (Hospital Clinic Barcelona), Manuel Alba, Daniel Peñil & David Martínez',
+    'source': 'HU Marqués de Valdecilla',
     'apiLevel': '2.6',
     'description': 'Protocol for sample dispensing'
 }
@@ -24,29 +24,31 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the last cycles
 NUM_REAL_SAMPLES        = 94   
-NUM_MIXES               = 0
-VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
+NUM_CONTROL_SPACES      = 2     # The control spaces are being ignored at the last cycles
+
+VOLUME_SAMPLE           = 200   # Sample volume to place in deepwell
+
+TUBE_NUM_MIXES          = 0
 
 SOUND_NUM_PLAYS         = 1
 PHOTOSENSITIVE          = False # True if it has photosensitive reagents
-
 ################################################
 
 air_gap_vol_sample      = 25
-run_id                  = 'preparacion_tipo_A'
+run_id                  = 'A-Dispensacion_muestras'
 path_sounds             = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto          = 'finalizado.mp3'
 volume_mix              = 500 # Volume used on mix
 x_offset                = [0,0]
 switch_off_lights       = False # Switch of the lights when the program finishes
 
+num_cols = math.ceil(NUM_REAL_SAMPLES / 8)
 
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': True, 'description': 'Mezclar y dispensar muestras ('+str(VOLUME_SAMPLE)+'ul)'}
+        1: {'Execute': True, 'description': 'Dispensar muestras'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -57,7 +59,7 @@ def run(ctx: protocol_api.ProtocolContext):
         folder_path = '/var/lib/jupyter/notebooks/' + run_id
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
-        file_path = folder_path + '/StationA_time_log.txt'
+        file_path = folder_path + '/time_log.txt'
 
     # Define Reagents as objects with their properties
     class Reagent:
@@ -78,9 +80,17 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ctx.comment(' ')
     ctx.comment('###############################################')
-    ctx.comment('CONTROLES: ' + str(NUM_CONTROL_SPACES))  
-    ctx.comment('MUESTRAS: ' + str(NUM_REAL_SAMPLES)) 
-    ctx.comment('###############################################')
+    ctx.comment('VALORES DE VARIABLES')
+    ctx.comment(' ')
+    ctx.comment('Número de muestras: ' + str(NUM_REAL_SAMPLES) + ' (' + str(num_cols) + ' columnas)')
+    ctx.comment('Número de controles: ' + str(NUM_CONTROL_SPACES))
+    ctx.comment(' ')
+    ctx.comment('Volumen de muestra a mover al deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
+    ctx.comment(' ')
+    ctx.comment('Número de mezclas en la muestra: ' + str(TUBE_NUM_MIXES))
+    ctx.comment(' ')
+    ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment(' ')
 
     ##################
@@ -154,7 +164,6 @@ def run(ctx: protocol_api.ProtocolContext):
         '''
         Concatenate the wells frome the different origin racks
         '''
-        num_cols = math.ceil(NUM_REAL_SAMPLES / 8)
         s = []
         for i  in range(num_cols):
             if i < 6:
@@ -313,9 +322,9 @@ def run(ctx: protocol_api.ProtocolContext):
                     pick_up(p1000)
 
                 # Mix the sample BEFORE dispensing
-                if NUM_MIXES > 0:
+                if TUBE_NUM_MIXES > 0:
                     custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, 
-                        rounds = NUM_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
+                        rounds = TUBE_NUM_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
 
                 move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                     vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
@@ -345,7 +354,5 @@ def run(ctx: protocol_api.ProtocolContext):
             f.close()
 
         ############################################################################
-        # Light flash end of program
-        # from opentrons.drivers.rpi_drivers import gpio
 
         finish_run(switch_off_lights)

@@ -11,31 +11,34 @@ import csv
 
 # metadata
 metadata = {
-    'protocolName': 'Station B - Kingfisher preparation',
+    'protocolName': 'Station B - Magmax Viral Pathogen - Kingfisher preparation',
     'author': 'Aitor Gastaminza & José Luis Villanueva & Alex Gasulla & Manuel Alba & Daniel Peñil',
-    'source': 'Hospital Clínic Barcelona & HU Vall Hebrón & HU Marqués de Valdecilla',
-    'apiLevel': '2.1',
-    'description': 'Protocol for Kingfisher preparation'
+    'source': 'HU Marqués de Valdecilla',
+    'apiLevel': '2.6',
+    'description': 'Protocol for Magmax Viral Pathogen Kingfisher preparation'
 }
 
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_SAMPLES                     = 96
+
 BEADS_VOLUME_PER_SAMPLE         = 280
 WASH_VOLUME_PER_SAMPLE          = 500
 ETHANOL_VOLUME_PER_SAMPLE       = 500
 ELUTION_VOLUME_PER_SAMPLE       = 50
+
 BEADS_WELL_FIRST_TIME_NUM_MIXES = 10
 BEADS_WELL_NUM_MIXES            = 3
 BEADS_NUM_MIXES                 = 2
 
-PHOTOSENSITIVE                  = False # True if it has photosensitive reagents
 SOUND_NUM_PLAYS                 = 1
+PHOTOSENSITIVE                  = False # True if it has photosensitive reagents
 ################################################
 
-run_id                      = 'B_Extraccion_total'
+run_id                      = 'B-Magmax_Viral_Pathogen-Preparacion_Kingfisher'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
+sonido_defecto              = 'finalizado.mp3'
 
 recycle_tip     = False #
 L_deepwell = 8 # Deepwell lenght (NEST deepwell)
@@ -54,10 +57,10 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: '+str(num_cols))
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
-            1:{'Execute': True, 'description': 'Transfer beads + PK + binding'},
-            2:{'Execute': True, 'description': 'Transfer wash'},
-            3:{'Execute': True, 'description': 'Transfer ethanol'},
-            4:{'Execute': True, 'description': 'Transfer elution'}
+            1:{'Execute': True, 'description': 'Transferir solución con bolas magnéticas'},
+            2:{'Execute': True, 'description': 'Transferir solución de lavado'},
+            3:{'Execute': True, 'description': 'Transferir etanol'},
+            4:{'Execute': True, 'description': 'Transferir elución'}
             }
 
     #Folder and file_path for log time
@@ -66,7 +69,7 @@ def run(ctx: protocol_api.ProtocolContext):
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
-        file_path = folder_path + '/Station_B_Preparacion_Kingfisher_time_log.txt'
+        file_path = folder_path + '/time_log.txt'
 
     #Define Reagents as objects with their properties
     class Reagent:
@@ -183,14 +186,34 @@ def run(ctx: protocol_api.ProtocolContext):
     def str_rounded(num):
         return str(int(num + 0.5))
 
+    
     ctx.comment(' ')
     ctx.comment('###############################################')
-    ctx.comment('VOLUMES FOR ' + str(NUM_SAMPLES) + ' SAMPLES')
+    ctx.comment('VALORES DE VARIABLES')
     ctx.comment(' ')
-    ctx.comment('Beads + PK + Binding: ' + str(Beads_PK_Binding.num_wells) + ' wells from well 2 in multi reservoir with volume ' + str_rounded(Beads_PK_Binding.vol_well_original) + ' uL each one')
-    ctx.comment('Elution: ' + str(Elution.num_wells) + ' wells from well 7 in multi reservoir with volume ' + str_rounded(Elution.vol_well_original) + ' uL each one')
-    ctx.comment('Wash: in reservoir 1 with volume ' + str_rounded(Wash.vol_well_original) + ' uL')
-    ctx.comment('Etanol: in reservoir 2 with volume ' + str_rounded(Ethanol.vol_well_original) + ' uL')
+    ctx.comment('Número de muestras: ' + str(NUM_SAMPLES) + ' (' + str(num_cols) + ' ' + ('columna' if num_cols == 1 else 'columnas') + ')')
+    ctx.comment(' ')
+    ctx.comment('Volumen de beads por muestra: ' + str(BEADS_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment('Volumen del lavado por muestra: ' + str(WASH_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment('Volumen del etanol por muestra: ' + str(ETHANOL_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment('Volumen de elución por muestra: ' + str(ELUTION_VOLUME_PER_SAMPLE) + ' ul')
+    ctx.comment(' ')
+    ctx.comment('Número de mezclas en la primera recogida de un canal con bolas magnéticas: ' + str(BEADS_WELL_FIRST_TIME_NUM_MIXES))
+    ctx.comment('Número de mezclas en el resto de recogidas de un canal con bolas magnéticas: ' + str(BEADS_WELL_NUM_MIXES)) 	
+    ctx.comment('Número de mezclas con la solución de bolas magnéticas: ' + str(BEADS_NUM_MIXES))
+    ctx.comment(' ')
+    ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
+    ctx.comment(' ')
+
+    ctx.comment(' ')
+    ctx.comment('###############################################')
+    ctx.comment('VOLÚMENES PARA ' + str(NUM_SAMPLES) + ' MUESTRAS')
+    ctx.comment(' ')
+    ctx.comment('Beads + PK + Binding: ' + str(Beads_PK_Binding.num_wells) + (' canal' if Elution.num_wells == 1 else ' canales') + ' desde el canal 2 en el reservorio de 12 canales con un volumen de ' + str_rounded(Beads_PK_Binding.vol_well_original) + ' uL cada uno')
+    ctx.comment('Elution: ' + str(Elution.num_wells) + (' canal' if Elution.num_wells == 1 else ' canales') + ' desde el canal 7 en el reservorio de 12 canales con un volumen de ' + str_rounded(Elution.vol_well_original) + ' uL cada uno')
+    ctx.comment('Wash: en el reservorio 1 (slot 2) con un volumen de ' + str_rounded(Wash.vol_well_original) + ' uL')
+    ctx.comment('Etanol: en el reservorio 2 (slot 3) con un volumen de ' + str_rounded(Ethanol.vol_well_original) + ' uL')
     ctx.comment('###############################################')
     ctx.comment(' ')
 
@@ -331,6 +354,8 @@ def run(ctx: protocol_api.ProtocolContext):
         print('Next\t--> CTRL-C')
         try:
             run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
+            run_quiet_process('mpg123 {}'.format(path_sounds + sonido_defecto))
+            run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
         except KeyboardInterrupt:
             pass
             print()
@@ -368,7 +393,7 @@ def run(ctx: protocol_api.ProtocolContext):
             for i in range(SOUND_NUM_PLAYS):
                 if i > 0:
                     time.sleep(60)
-                play_sound('finalizado')
+                play_sound('finished_process_esp')
 
         return finish_time
 
