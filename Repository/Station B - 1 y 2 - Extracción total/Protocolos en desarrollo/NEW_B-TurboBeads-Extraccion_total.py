@@ -12,11 +12,11 @@ import csv
 
 # metadata
 metadata = {
-    'protocolName': 'Station B - Bikop - RNA extraction',
+    'protocolName': 'Station B - TurboBeads - RNA extraction',
     'author': 'Aitor Gastaminza & José Luis Villanueva & Alex Gasulla & Manuel Alba, Daniel Peñil & David Martínez',
     'source': 'HU Marqués de Valdecilla',
     'apiLevel': '2.6',
-    'description': 'Protocol for Bikop RNA extraction'
+    'description': 'Protocol for TurboBeads RNA extraction'
 }
 
 ################################################
@@ -49,7 +49,7 @@ SOUND_NUM_PLAYS                     = 1
 PHOTOSENSITIVE                      = False # True if it has photosensitive reagents
 ################################################
 
-run_id                      = 'B-Bikop_y_TurboBeads-Extraccion_total'
+run_id                      = 'B-TurboBeads-Extraccion_total'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto              = 'finalizado.mp3'
 

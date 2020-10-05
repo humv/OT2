@@ -49,7 +49,7 @@ SOUND_NUM_PLAYS                     = 1
 PHOTOSENSITIVE                      = False # True if it has photosensitive reagents
 ################################################
 
-run_id                      = 'B-Bikop_y_TurboBeads-Extraccion_total'
+run_id                      = 'B-Bikop-Extraccion_total'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto              = 'finalizado.mp3'
 
