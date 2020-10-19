@@ -21,7 +21,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                     = 96
+NUM_SAMPLES                     = 64
 
 BEADS_VOLUME_PER_SAMPLE         = 280
 WASH_VOLUME_PER_SAMPLE          = 500
@@ -210,7 +210,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('###############################################')
     ctx.comment('VOLÚMENES PARA ' + str(NUM_SAMPLES) + ' MUESTRAS')
     ctx.comment(' ')
-    ctx.comment('Beads + PK + Binding: ' + str(Beads_PK_Binding.num_wells) + (' canal' if Elution.num_wells == 1 else ' canales') + ' desde el canal 2 en el reservorio de 12 canales con un volumen de ' + str_rounded(Beads_PK_Binding.vol_well_original) + ' uL cada uno')
+    ctx.comment('Beads + PK + Binding: ' + str(Beads_PK_Binding.num_wells) + (' canal' if Beads_PK_Binding.num_wells == 1 else ' canales') + ' desde el canal 2 en el reservorio de 12 canales con un volumen de ' + str_rounded(Beads_PK_Binding.vol_well_original) + ' uL cada uno')
     ctx.comment('Elution: ' + str(Elution.num_wells) + (' canal' if Elution.num_wells == 1 else ' canales') + ' desde el canal 7 en el reservorio de 12 canales con un volumen de ' + str_rounded(Elution.vol_well_original) + ' uL cada uno')
     ctx.comment('Wash: en el reservorio 1 (slot 2) con un volumen de ' + str_rounded(Wash.vol_well_original) + ' uL')
     ctx.comment('Etanol: en el reservorio 2 (slot 3) con un volumen de ' + str_rounded(Ethanol.vol_well_original) + ' uL')
