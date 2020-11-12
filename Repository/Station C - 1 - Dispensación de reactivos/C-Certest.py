@@ -25,11 +25,12 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_SAMPLES                 = 96    # Including controls. 94 samples + 2 controls = 96
+
 HYDR_VOL_PER_SAMPLE         = 15
 VOLUME_SAMPLE               = 5     # Volume of the sample
 
-PHOTOSENSITIVE              = True # True if it has photosensitive reagents
 SOUND_NUM_PLAYS             = 1
+PHOTOSENSITIVE              = True # True if it has photosensitive reagents
 ################################################
 
 run_id                      = 'C-Certest'
