@@ -21,7 +21,7 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                     = 8
+NUM_SAMPLES                     = 96
 
 BEADS_VOLUME_PER_SAMPLE         = 280
 WASH_VOLUME_PER_SAMPLE          = 500
@@ -39,6 +39,8 @@ PHOTOSENSITIVE                  = False # True if it has photosensitive reagents
 run_id                      = 'B-Magmax_Viral_Pathogen-Preparacion_Kingfisher'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto              = 'finalizado.mp3'
+
+DEFAULT_DEAD_VOL            = 700
 
 recycle_tip     = False #
 L_deepwell = 8 # Deepwell lenght (NEST deepwell)
@@ -74,7 +76,7 @@ def run(ctx: protocol_api.ProtocolContext):
     #Define Reagents as objects with their properties
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, flow_rate_aspirate_mix, flow_rate_dispense_mix,
-        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none', dead_vol = 700):
+        air_gap_vol_bottom, air_gap_vol_top, disposal_volume, rinse, max_volume_allowed, reagent_volume, reagent_reservoir_volume, num_wells, h_cono, v_fondo, tip_recycling = 'none', dead_vol = DEFAULT_DEAD_VOL):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -141,7 +143,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     max_volume_allowed = 280,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
                     reagent_reservoir_volume = NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1,
-                    num_wells = math.ceil(NUM_SAMPLES  * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500),
+                    num_wells = math.ceil((NUM_SAMPLES  * BEADS_VOLUME_PER_SAMPLE * 1.1) / 11500),
                     h_cono = 1.95,
                     v_fondo = 695) #1.95 * multi_well_rack_area / 2, #Prismatic
 
@@ -179,7 +181,15 @@ def run(ctx: protocol_api.ProtocolContext):
 
     Wash.vol_well               = Wash.vol_well_original
     Ethanol.vol_well            = Ethanol.vol_well_original
+    
+    # Reajusting Channel volume to fit complete miti-tip trips
+    trips = math.ceil(BEADS_VOLUME_PER_SAMPLE/Beads_PK_Binding.max_volume_allowed)
+    trip_vol = 8 * Beads_PK_Binding.max_volume_allowed* 1.1
+    trips_per_well = math.ceil ((Beads_PK_Binding.vol_well_original - DEFAULT_DEAD_VOL) / trip_vol)
+    Beads_PK_Binding.vol_well_original = trips_per_well * trip_vol + DEFAULT_DEAD_VOL
+    ctx.comment('Reajusting Bead Channel volume to: ' + str(Beads_PK_Binding.vol_well_original) + ' ul')
     Beads_PK_Binding.vol_well   = Beads_PK_Binding.vol_well_original
+
     Elution.vol_well            = Elution.vol_well_original
     Sample.vol_well             = 350 # Arbitrary value
 
@@ -469,10 +479,13 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment(' ')
 
         beads_trips = math.ceil(Beads_PK_Binding.reagent_volume / Beads_PK_Binding.max_volume_allowed)
-        ctx.comment("ZAPOLO:"+str(beads_trips))
+        
         beads_volume = Beads_PK_Binding.reagent_volume / beads_trips #136.66
+        ctx.comment('bead_trips= ' + str(beads_trips))
+        ctx.comment('beads_volume= ' + str(beads_volume) + 'ul  --> trip volume')
         beads_transfer_vol = []
         for i in range(beads_trips):
+            ctx.comment ('Trip ' +str(i) + ' --> ' + str(beads_volume + Beads_PK_Binding.disposal_volume) + ' ul')
             beads_transfer_vol.append(beads_volume + Beads_PK_Binding.disposal_volume)
         x_offset_source = 0
         x_offset_dest   = 0
