@@ -21,14 +21,14 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLES                     = 64
+NUM_SAMPLES                     = 8
 
 BEADS_VOLUME_PER_SAMPLE         = 280
 WASH_VOLUME_PER_SAMPLE          = 500
 ETHANOL_VOLUME_PER_SAMPLE       = 500
 ELUTION_VOLUME_PER_SAMPLE       = 50
 
-BEADS_WELL_FIRST_TIME_NUM_MIXES = 10
+BEADS_WELL_FIRST_TIME_NUM_MIXES = 7
 BEADS_WELL_NUM_MIXES            = 3
 BEADS_NUM_MIXES                 = 2
 
@@ -106,7 +106,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
                     rinse = True,
-                    max_volume_allowed = 180,
+                    max_volume_allowed = 270,
                     reagent_volume = WASH_VOLUME_PER_SAMPLE, # reagent volume needed per sample
                     reagent_reservoir_volume =  (NUM_SAMPLES + 5) * WASH_VOLUME_PER_SAMPLE, #70000, #51648
                     num_wells = 1,
@@ -122,7 +122,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
                     rinse = True,
-                    max_volume_allowed = 180,
+                    max_volume_allowed = 270,
                     reagent_volume = ETHANOL_VOLUME_PER_SAMPLE,
                     reagent_reservoir_volume = (NUM_SAMPLES + 5) * ETHANOL_VOLUME_PER_SAMPLE,
                     num_wells = 1, 
@@ -138,7 +138,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
                     rinse = True,
-                    max_volume_allowed = 180,
+                    max_volume_allowed = 280,
                     reagent_volume = BEADS_VOLUME_PER_SAMPLE,
                     reagent_reservoir_volume = NUM_SAMPLES * BEADS_VOLUME_PER_SAMPLE * 1.1,
                     num_wells = math.ceil(NUM_SAMPLES  * BEADS_VOLUME_PER_SAMPLE * 1.1 / 11500),
@@ -154,7 +154,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     air_gap_vol_top = 0,
                     disposal_volume = 1,
                     rinse = False,
-                    max_volume_allowed = 180,
+                    max_volume_allowed = 270,
                     reagent_volume = ELUTION_VOLUME_PER_SAMPLE,
                     reagent_reservoir_volume = (NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE,
                     num_wells = math.ceil((NUM_SAMPLES + 5) * ELUTION_VOLUME_PER_SAMPLE / 13000),
@@ -386,7 +386,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         # TODO: Añadir refills a los tip_racks
         # used_tips = tip_track['num_refills'][m300] * 96 * len(m300.tip_racks) + tip_track['counts'][m300]
-        ctx.comment('Puntas de 200 uL utilizadas: ' + str(tip_track['counts'][m300]) + ' (' + str(round(tip_track['counts'][m300] / 96, 2)) + ' caja(s))')
+        ctx.comment('Puntas de 300 uL utilizadas: ' + str(tip_track['counts'][m300]) + ' (' + str(round(tip_track['counts'][m300] / 96, 2)) + ' caja(s))')
         ctx.comment('###############################################')
 
         if not ctx.is_simulating():
@@ -428,7 +428,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
 ####################################
     ######### Load tip_racks
-    tips300 = [ctx.load_labware('opentrons_96_tiprack_300ul', slot, '200µl filter tiprack')
+    tips300 = [ctx.load_labware('opentrons_96_tiprack_300ul', slot, '300µl filter tiprack')
         for slot in ['8', '9']]
 
 ###############################################################################
@@ -469,6 +469,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment(' ')
 
         beads_trips = math.ceil(Beads_PK_Binding.reagent_volume / Beads_PK_Binding.max_volume_allowed)
+        ctx.comment("ZAPOLO:"+str(beads_trips))
         beads_volume = Beads_PK_Binding.reagent_volume / beads_trips #136.66
         beads_transfer_vol = []
         for i in range(beads_trips):
