@@ -41,6 +41,7 @@ path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto              = 'finalizado.mp3'
 
 DEFAULT_DEAD_VOL            = 700
+BEADS_MIX_VOLUME            = 250
 
 recycle_tip     = False #
 L_deepwell = 8 # Deepwell lenght (NEST deepwell)
@@ -504,12 +505,12 @@ def run(ctx: protocol_api.ProtocolContext):
                 if change_col == True or not first_mix_done: #If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment('Mixing new reservoir column: ' + str(Beads_PK_Binding.col))
                     custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
-                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
+                            vol = BEADS_MIX_VOLUME, rounds = BEADS_WELL_FIRST_TIME_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
                     first_mix_done = True
                 else:
                     ctx.comment('Mixing reservoir column: ' + str(Beads_PK_Binding.col))
                     custom_mix(m300, Beads_PK_Binding, Beads_PK_Binding.reagent_reservoir[Beads_PK_Binding.col],
-                            vol = Beads_PK_Binding.max_volume_allowed, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
+                            vol = BEADS_MIX_VOLUME, rounds = BEADS_WELL_NUM_MIXES, blow_out = False, mix_height = 0.5, offset = 0)
                 ctx.comment('Aspirate from reservoir column: ' + str(Beads_PK_Binding.col))
                 ctx.comment('Pickup height is ' + str(round(pickup_height, 2)) + ' mm')
                 #if j!=0:
@@ -524,7 +525,7 @@ def run(ctx: protocol_api.ProtocolContext):
             
             ctx.comment(' ')
             ctx.comment('Mixing sample ')
-            custom_mix(m300, Beads_PK_Binding, location = work_destinations[i], vol =  Beads_PK_Binding.max_volume_allowed,
+            custom_mix(m300, Beads_PK_Binding, location = work_destinations[i], vol = BEADS_MIX_VOLUME,
                     rounds = BEADS_NUM_MIXES, blow_out = False, mix_height = 0, offset = 0, wait_time = 2, two_thirds_mix_bottom = True)
             m300.air_gap(Beads_PK_Binding.air_gap_vol_bottom, height = 0) #air gap
 
