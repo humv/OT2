@@ -28,9 +28,9 @@ WASH_VOLUME_PER_SAMPLE          = 500
 ETHANOL_VOLUME_PER_SAMPLE       = 500
 ELUTION_VOLUME_PER_SAMPLE       = 50
 
-BEADS_WELL_FIRST_TIME_NUM_MIXES = 7
-BEADS_WELL_NUM_MIXES            = 3
-BEADS_NUM_MIXES                 = 2
+BEADS_WELL_FIRST_TIME_NUM_MIXES = 1
+BEADS_WELL_NUM_MIXES            = 1
+BEADS_NUM_MIXES                 = 1
 
 SOUND_NUM_PLAYS                 = 1
 PHOTOSENSITIVE                  = False # True if it has photosensitive reagents
@@ -61,9 +61,9 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
             1:{'Execute': True, 'description': 'Transferir solución con bolas magnéticas'},
-            2:{'Execute': True, 'description': 'Transferir solución de lavado'},
-            3:{'Execute': True, 'description': 'Transferir etanol'},
-            4:{'Execute': True, 'description': 'Transferir elución'}
+            2:{'Execute': False, 'description': 'Transferir solución de lavado'},
+            3:{'Execute': False, 'description': 'Transferir etanol'},
+            4:{'Execute': False, 'description': 'Transferir elución'}
             }
 
     #Folder and file_path for log time
@@ -98,7 +98,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.tip_recycling = tip_recycling
             self.dead_vol = dead_vol
             self.vol_well_original = (reagent_reservoir_volume / num_wells) + dead_vol if num_wells > 0 else 0
-
+   
     #Reagents and their characteristics
     Wash = Reagent(name = 'Wash',
                     flow_rate_aspirate = 25, # Original = 0.5
@@ -179,18 +179,34 @@ def run(ctx: protocol_api.ProtocolContext):
                     num_wells = num_cols, #num_cols comes from available columns
                     h_cono = 4,
                     v_fondo = 4 * math.pi * 4**3 / 3) #Sphere
+     
+    # Calculate Beads channel volumes
+    def calc_beads_vol_well_original (beads):
+            # Reajusting Channel volume to fit complete miti-tip dispense
+            trips = math.ceil(BEADS_VOLUME_PER_SAMPLE/beads.max_volume_allowed)
+            total_trips = math.ceil(NUM_SAMPLES/8) * trips
+            trip_vol = 8 * beads.max_volume_allowed* 1.1
+            max_trips_per_well = math.floor(11500 / trip_vol)
+
+            trips_per_well = math.ceil(total_trips / beads.num_wells)
+
+            # Add an additional channel if needed
+            if trips_per_well > max_trips_per_well:
+                ctx.comment('Adding an additional beads channel')
+                beads.num_wells = beads.num_wells + 1
+                trips_per_well = math.ceil(total_trips / beads.num_wells)
+
+            beads.vol_well_original = trips_per_well * trip_vol + DEFAULT_DEAD_VOL
+            ctx.comment('Reajusting Bead Channels volume to: ' + str(beads.vol_well_original) + ' ul')
+            ctx.comment('Number of Beads channels: ' + str(beads.num_wells))
+            beads.vol_well   = beads.vol_well_original
+            return beads.vol_well_original
+
+    calc_beads_vol_well_original (Beads_PK_Binding)
 
     Wash.vol_well               = Wash.vol_well_original
-    Ethanol.vol_well            = Ethanol.vol_well_original
-    
-    # Reajusting Channel volume to fit complete miti-tip trips
-    trips = math.ceil(BEADS_VOLUME_PER_SAMPLE/Beads_PK_Binding.max_volume_allowed)
-    trip_vol = 8 * Beads_PK_Binding.max_volume_allowed* 1.1
-    trips_per_well = math.ceil ((Beads_PK_Binding.vol_well_original - DEFAULT_DEAD_VOL) / trip_vol)
-    Beads_PK_Binding.vol_well_original = trips_per_well * trip_vol + DEFAULT_DEAD_VOL
-    ctx.comment('Reajusting Bead Channel volume to: ' + str(Beads_PK_Binding.vol_well_original) + ' ul')
+    Ethanol.vol_well            = Ethanol.vol_well_original   
     Beads_PK_Binding.vol_well   = Beads_PK_Binding.vol_well_original
-
     Elution.vol_well            = Elution.vol_well_original
     Sample.vol_well             = 350 # Arbitrary value
 
