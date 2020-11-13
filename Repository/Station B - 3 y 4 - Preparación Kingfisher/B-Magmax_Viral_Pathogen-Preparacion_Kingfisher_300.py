@@ -28,9 +28,9 @@ WASH_VOLUME_PER_SAMPLE          = 500
 ETHANOL_VOLUME_PER_SAMPLE       = 500
 ELUTION_VOLUME_PER_SAMPLE       = 50
 
-BEADS_WELL_FIRST_TIME_NUM_MIXES = 1
-BEADS_WELL_NUM_MIXES            = 1
-BEADS_NUM_MIXES                 = 1
+BEADS_WELL_FIRST_TIME_NUM_MIXES = 7
+BEADS_WELL_NUM_MIXES            = 3
+BEADS_NUM_MIXES                 = 2
 
 SOUND_NUM_PLAYS                 = 1
 PHOTOSENSITIVE                  = False # True if it has photosensitive reagents
@@ -61,9 +61,9 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = { #Dictionary with STEP activation, description, and times
             1:{'Execute': True, 'description': 'Transferir solución con bolas magnéticas'},
-            2:{'Execute': False, 'description': 'Transferir solución de lavado'},
-            3:{'Execute': False, 'description': 'Transferir etanol'},
-            4:{'Execute': False, 'description': 'Transferir elución'}
+            2:{'Execute': True, 'description': 'Transferir solución de lavado'},
+            3:{'Execute': True, 'description': 'Transferir etanol'},
+            4:{'Execute': True, 'description': 'Transferir elución'}
             }
 
     #Folder and file_path for log time
