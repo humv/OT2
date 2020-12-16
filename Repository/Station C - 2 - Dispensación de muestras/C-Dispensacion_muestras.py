@@ -10,11 +10,11 @@ from datetime import datetime
 
 # metadata
 metadata = {
-    'protocolName': 'Station C - Certest setup',
+    'protocolName': 'Station C - Sample dispensing',
     'author': 'Aitor Gastaminza, José Luis Villanueva (Hospital Clinic Barcelona) & Alex Gasulla, Manuel Alba, Daniel Peñil & David Martínez',
-    'source': 'Hospital Clínic Barcelona & HU Marqués de Valdecilla',
-    'apiLevel': '2.3',
-    'description': 'Protocol for sample setup (C) prior to qPCR'
+    'source': 'HU Marqués de Valdecilla',
+    'apiLevel': '2.6',
+    'description': 'Protocol for sample dispensing prior to qPCR'
     }
 
 '''
@@ -25,15 +25,15 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_SAMPLES                 = 96    # Including controls. 94 samples + 2 controls = 96
-HYDR_VOL_PER_SAMPLE         = 15
 VOLUME_SAMPLE               = 5     # Volume of the sample
 
-PHOTOSENSITIVE              = True # True if it has photosensitive reagents
 SOUND_NUM_PLAYS             = 1
+PHOTOSENSITIVE              = True # True if it has photosensitive reagents
 ################################################
 
-run_id                      = 'C-Certest'
+run_id                      = 'C-Dispensacion'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
+sonido_defecto              = 'finalizado.mp3'
 
 air_gap_vol                 = 5
 air_gap_sample              = 2
@@ -43,17 +43,14 @@ switch_off_lights           = True # Switch of the lights when the program finis
 extra_dispensal             = 1     # Extra volume for master mix in each distribute transfer
 pipette_allowed_capacity    = 180   # Volume allowed in the pipette of 200µl
 x_offset                    = [0,0]
-
-size_transfer = math.floor(pipette_allowed_capacity / HYDR_VOL_PER_SAMPLE) # Number of wells the distribute function will fill
+num_cols                    = math.ceil(NUM_SAMPLES / 8) # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
 
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Hidratate'},
-        2: {'Execute': True, 'description': 'Transfer negative control'},
-        3: {'Execute': True, 'description': 'Transfer positive control'}
+        1: {'Execute': True, 'description': 'Transfer samples'}
     }
 
     for s in STEPS:  # Create an empty wait_time
@@ -61,11 +58,11 @@ def run(ctx: protocol_api.ProtocolContext):
             STEPS[s]['wait_time'] = 0
 
     #Folder and file_path for log time
-    folder_path = '/var/lib/jupyter/notebooks' + run_id
+    folder_path = '/var/lib/jupyter/notebooks/' + run_id
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
-        file_path = folder_path + '/Station_C_qPCR_time_log.txt'
+        file_path = folder_path + '/Station_C_Dispensacion_time_log.txt'
 
     # Define Reagents as objects with their properties
     class Reagent:
@@ -83,15 +80,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.vol_well_original          = reagent_reservoir_volume / num_wells
 
     # Reagents and their characteristics
-    Hydr    = Reagent(name                      = 'Hydr',
-                      rinse                     = False,
-                      flow_rate_aspirate        = 3,
-                      flow_rate_dispense        = 3,
-                      reagent_reservoir_volume  = 1800,
-                      num_wells                 = 1,
-                      delay                     = 0
-                      )
-
+    
     Samples = Reagent(name                      = 'Samples',
                       rinse                     = False,
                       flow_rate_aspirate        = 1,
@@ -101,7 +90,6 @@ def run(ctx: protocol_api.ProtocolContext):
                       num_wells                 = NUM_SAMPLES 
                       )
 
-    Hydr.vol_well       = Hydr.vol_well_original
     Samples.vol_well    = Samples.vol_well_original
 
     
@@ -111,11 +99,10 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment(' ')
     ctx.comment('Número de muestras: ' + str(NUM_SAMPLES) + ' las dos primeras son controles.')
     ctx.comment(' ')
-    ctx.comment('Volumen de Hidratante por muestra: ' + str(HYDR_VOL_PER_SAMPLE) + ' uL')
     ctx.comment('Volumen de muestra: ' + str(VOLUME_SAMPLE) + ' uL')
     ctx.comment(' ')
-    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment(' ')
 
     ##################
@@ -125,27 +112,30 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(0, len(l), n):
             yield l[i:i + n]
 
-    def shake_pipet (pipet, rounds = 2, speed = 100, v_offset = 0):
-        ctx.comment("Shaking " + str(rounds) + " rounds.")
-        for i in range(rounds):
-                pipet.touch_tip(speed = speed, radius = 0.1, v_offset = v_offset)
-
-    def distribute_custom(pipette, volume, src, dest, waste_pool, pickup_height, extra_dispensal, dest_x_offset, disp_height = 0, touch_tip = False, num_shakes = 0):
+    def distribute_custom(pipette, volume, src, dest, waste_pool, pickup_height, extra_dispensal, dest_x_offset, disp_height = 0):
+        # Custom distribute function that allows for blow_out in different location and adjustement of touch_tip
         pipette.aspirate((len(dest) * volume) + extra_dispensal, src.bottom(pickup_height))
-        if touch_tip :
-            pipette.touch_tip(speed = 20, v_offset = -5)
+        pipette.touch_tip(speed = 20, v_offset = -5)
+        pipette.move_to(src.top(z = 5))
+        pipette.aspirate(5)  # air gap
 
         for d in dest:
-            drop = d.top(z = disp_height)
+            pipette.dispense(5, d.top())
+            drop = d.top(z = disp_height).move(Point(x = dest_x_offset))
             pipette.dispense(volume, drop)
-
-            shake_pipet(pipette, rounds = num_shakes, v_offset = disp_height)
+            pipette.move_to(d.top(z = 5))
+            pipette.aspirate(5)  # air gap
         try:
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
         except:
             pipette.blow_out(waste_pool.bottom(pickup_height + 3))
 
         return (len(dest) * volume)
+
+    def shake_pipet (pipet, rounds = 2, speed = 100, v_offset = 0):
+        ctx.comment("Shaking " + str(rounds) + " rounds.")
+        for i in range(rounds):
+                pipet.touch_tip(speed = speed, radius = 0.1, v_offset = v_offset)
 
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
                        pickup_height, rinse, disp_height, blow_out, touch_tip, num_shakes = 0):
@@ -173,15 +163,16 @@ def run(ctx: protocol_api.ProtocolContext):
         drop = dest.top(z = disp_height).move(Point(x = x_offset[1]))
         pipet.dispense(vol + air_gap_vol, drop,
                        rate = reagent.flow_rate_dispense)  # dispense all
+        
 
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
 
         shake_pipet(pipet, rounds = num_shakes, v_offset = disp_height)
 
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -10))
+            pipet.blow_out(dest.top(z = -disp_height))
         if touch_tip == True:
-            pipet.touch_tip(speed = 20, v_offset = -10, radius = 0.5)
+            pipet.touch_tip(speed = 20, v_offset = disp_height, radius = 0.5)
 
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
@@ -219,6 +210,8 @@ def run(ctx: protocol_api.ProtocolContext):
         print('Next\t--> CTRL-C')
         try:
             run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
+            run_quiet_process('mpg123 {}'.format(path_sounds + sonido_defecto))
+            run_quiet_process('mpg123 {}'.format(path_sounds + filename + '.mp3'))
         except KeyboardInterrupt:
             pass
             print()
@@ -247,25 +240,22 @@ def run(ctx: protocol_api.ProtocolContext):
         if switch_off_lights:
             ctx._hw_manager.hardware.set_lights(button = True, rails =  False)
 
-        ctx.comment('Puntas de 20 uL utilizadas: ' + str(tip_track['counts'][p20]) + ' (' + str(round(tip_track['counts'][p20] / 96, 2)) + ' caja(s))')
-        ctx.comment('Puntas de 200 uL utilizadas: ' + str(tip_track['counts'][p300]) + ' (' + str(round(tip_track['counts'][p300] / 96, 2)) + ' caja(s))')
+        ctx.comment('Puntas de 20 uL utilizadas: ' + str(tip_track['counts'][m20]) + ' (' + str(round(tip_track['counts'][m20] / 96, 2)) + ' caja(s))')
         ctx.comment('###############################################')
 
         if not ctx.is_simulating():
             for i in range(SOUND_NUM_PLAYS):
                 if i > 0:
                     time.sleep(60)
-                play_sound('finalizado')
+                play_sound('finished_process_esp')
 
         return finish_time
 
-    ####################################
-    # load labware and modules
-    # 24 well rack
-    tuberack = ctx.load_labware(
-        'opentrons_24_aluminumblock_generic_2ml_screwcap', '3',
-        'Opentrons 24 Well Aluminum Block with Generic 2 mL Screwcap')
-
+    ##################################
+    # Sample plate - comes from B
+    source_plate = ctx.load_labware(
+        'biorad_96_wellplate_200ul_pcr', '3', 
+        'Bio-Rad 96 Well Plate 200 µL PCR')
     ##################################
     # qPCR plate - final plate, goes to PCR
     qpcr_plate = ctx.load_labware(
@@ -279,33 +269,21 @@ def run(ctx: protocol_api.ProtocolContext):
         for slot in ['2']
     ]
 
-    tips200 = [
-        ctx.load_labware('opentrons_96_filtertiprack_200ul', slot)
-        for slot in ['5']
-    ]
-
-    ################################################################################
-    # Declare which reagents are in each reservoir as well as deepwell and elution plate
-    Hydr.reagent_reservoir = tuberack.rows()[0][0] # A1
-
     # setup up sample sources and destinations
-    pcr_wells           = qpcr_plate.wells()[:NUM_SAMPLES]
+    samples             = source_plate.rows()[0][:num_cols]
+    pcr_wells_samples   = qpcr_plate.rows()[0][:num_cols]
+    tipCols             = tips20[0].rows()[0][:num_cols]
 
-    # Divide destination wells in small groups for P300 pipette
-    dests = list(divide_destinations(pcr_wells, size_transfer))
 
     # pipettes
-    p20 = ctx.load_instrument(
-        'p20_single_gen2', mount = 'right', tip_racks = tips20)
-    p300 = ctx.load_instrument(
-        'p300_single_gen2', mount = 'left', tip_racks = tips200)
+    m20 = ctx.load_instrument(
+        'p20_multi_gen2', mount = 'right', 
+        tip_racks = tips20) # load m20 pipette
 
     # used tip counter and set maximum tips available
     tip_track = {
-        'counts': {p300: 0,
-                    p20: 0},
-        'maxes': {p300: 96 * len(p300.tip_racks),
-                   p20: 96 * len(p20.tip_racks)}
+        'counts': {m20: 0},
+        'maxes': {m20: 96 * len(m20.tip_racks)}
     }
 
     ##########
@@ -324,7 +302,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ##########
 
     ############################################################################
-    # STEP 1: HIDRATATE
+    # STEP 1: TRANSFER SAMPLES
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -334,88 +312,26 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step '+str(STEP)+': '+STEPS[STEP]['description'])
         ctx.comment('###############################################')
         ctx.comment(' ')
+        
+        i = 0
+        for s, d in zip(samples, pcr_wells_samples):
+            pick_up(m20)
 
-        pick_up(p300)
-        used_vol = []
+            move_vol_multichannel(m20, reagent = Samples, source = s, dest = d,
+                    vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
+                    pickup_height = 0.2, disp_height = -10, rinse = False,
+                    blow_out=False, touch_tip=False, num_shakes = 1)
+            
+            m20.drop_tip(home_after = False)
 
-        for dest in dests:
-            aspirate_volume = HYDR_VOL_PER_SAMPLE * len(dest) + extra_dispensal
-            used_vol_temp = distribute_custom(p300, volume = HYDR_VOL_PER_SAMPLE,
-                src = Hydr.reagent_reservoir, dest = dest, touch_tip = False,
-                waste_pool = Hydr.reagent_reservoir, pickup_height = 0.2,
-                extra_dispensal = extra_dispensal, dest_x_offset = 0, 
-                disp_height = -15, num_shakes = 1)
-            used_vol.append(used_vol_temp)
-
-        p300.drop_tip(home_after = False)
-        tip_track['counts'][p300] += 1
-
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('Step ' + str(STEP) + ': ' +
-                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
-        STEPS[STEP]['Time:'] = str(time_taken)
-
-    ############################################################################
-    # STEP 2: TRANSFER NEGATIVE CONTROL
-    ############################################################################
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        start = datetime.now()
-        ctx.comment(' ')
-        ctx.comment('###############################################')
-        ctx.comment('Step '+str(STEP)+': '+STEPS[STEP]['description'])
-        ctx.comment('###############################################')
-        ctx.comment(' ')
-
-        pick_up(p20)
-
-        s = tuberack.rows()[0][1]   # A2
-        d = qpcr_plate.wells()[NUM_SAMPLES - 2]
-        move_vol_multichannel(p20, reagent = Samples, source = s, dest = d,
-                vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                pickup_height = 0.2, disp_height = -10, rinse = False,
-                blow_out = True, touch_tip = False, num_shakes = 1)
-
-        p20.drop_tip(home_after = False)
-        tip_track['counts'][p20]+=1
+            tip_track['counts'][m20] += 8
+            i = i + 1
 
         end = datetime.now()
         time_taken = (end - start)
         ctx.comment('Step ' + str(STEP) + ': ' +
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:'] = str(time_taken)
-
-    ############################################################################
-    # STEP 3: TRANSFER POSITIVE CONTROL
-    ############################################################################
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        start = datetime.now()
-        ctx.comment(' ')
-        ctx.comment('###############################################')
-        ctx.comment('Step '+str(STEP)+': '+STEPS[STEP]['description'])
-        ctx.comment('###############################################')
-        ctx.comment(' ')
-
-        pick_up(p20)
-
-        s = tuberack.rows()[0][2]   # A3
-        d = qpcr_plate.wells()[NUM_SAMPLES - 1]
-        move_vol_multichannel(p20, reagent = Samples, source = s, dest = d,
-                vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                pickup_height = 0.2, disp_height = -10, rinse = False,
-                blow_out = True, touch_tip = False, num_shakes = 1)
-
-        p20.drop_tip(home_after = False)
-        tip_track['counts'][p20]+=1
-
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('Step ' + str(STEP) + ': ' +
-                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
-        STEPS[STEP]['Time:'] = str(time_taken)
-
 
     # Export the time log to a tsv file
     if not ctx.is_simulating():

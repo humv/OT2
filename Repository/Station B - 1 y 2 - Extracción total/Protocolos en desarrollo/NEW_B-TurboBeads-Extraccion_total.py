@@ -12,11 +12,11 @@ import csv
 
 # metadata
 metadata = {
-    'protocolName': 'Station B - RNA extraction - Magmax (Viral Pathogen)',
-    'author': 'Aitor Gastaminza & José Luis Villanueva & Alex Gasulla & Manuel Alba & Daniel Peñil & David Martínez',
+    'protocolName': 'Station B - TurboBeads - RNA extraction',
+    'author': 'Aitor Gastaminza & José Luis Villanueva & Alex Gasulla & Manuel Alba, Daniel Peñil & David Martínez',
     'source': 'HU Marqués de Valdecilla',
     'apiLevel': '2.6',
-    'description': 'Protocol for RNA extraction'
+    'description': 'Protocol for TurboBeads RNA extraction'
 }
 
 ################################################
@@ -25,7 +25,7 @@ metadata = {
 NUM_SAMPLES                         = 96     # Must be multiple of 8
 USE_300_TIPS                        = False  # Check that TIP_RECYCLING variables have desired values 
 
-VOLUME_SAMPLE                       = 410    # Volume received from station A
+VOLUME_SAMPLE                       = 500    # Volume received from station A
 BEADS_VOLUME_PER_SAMPLE             = 200
 WASH_1_VOLUME_PER_SAMPLE            = 200
 WASH_2_VOLUME_PER_SAMPLE            = 200
@@ -35,8 +35,8 @@ ELUTION_FINAL_VOLUME_PER_SAMPLE     = 50    # Volume transfered to final plates
 BEADS_WELL_FIRST_TIME_NUM_MIXES     = 10
 BEADS_WELL_NUM_MIXES                = 3
 BEADS_NUM_MIXES                     = 10    # 20
-WASH_NUM_MIXES                      = 10    # 10  
-EHTANOL_NUM_MIXES                   = 10    # 10
+WASH_1_NUM_MIXES                    = 10    # 10  
+WASH_2_NUM_MIXES                    = 10    # 10
 ELUTION_NUM_MIXES                   = 10    # 5
 
 TIP_RECYCLING_IN_WASH               = True
@@ -45,11 +45,11 @@ TIP_RECYCLING_IN_ELUTION            = True
 SET_TEMP_ON                         = False  # Do you want to start temperature module?
 TEMPERATURE                         = 4     # Set temperature. It will be uesed if set_temp_on is set to True
 
+SOUND_NUM_PLAYS                     = 1
 PHOTOSENSITIVE                      = False # True if it has photosensitive reagents
-SOUND_NUM_PLAYS                     = 0
 ################################################
 
-run_id                      = 'B-Extraccion_total-Bikop'
+run_id                      = 'B-TurboBeads-Extraccion_total'
 path_sounds                 = '/var/lib/jupyter/notebooks/sonidos/'
 sonido_defecto              = 'finalizado.mp3'
 
@@ -102,7 +102,7 @@ def run(ctx: protocol_api.ProtocolContext):
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
-        file_path = folder_path + '/Station_B_Extraccion_total_time_log.txt'
+        file_path = folder_path + '/time_log.txt'
 
     #Define Reagents as objects with their properties
     class Reagent:
@@ -221,8 +221,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Número de mezclas en la primera recogida de un canal con bolas magnéticas: ' + str(BEADS_WELL_FIRST_TIME_NUM_MIXES))
     ctx.comment('Número de mezclas en el resto de recogidas de un canal con bolas magnéticas: ' + str(BEADS_WELL_NUM_MIXES)) 	
     ctx.comment('Número de mezclas con la solución de bolas magnéticas: ' + str(BEADS_NUM_MIXES))
-    ctx.comment('Número de mezclas con el lavado: ' + str(WASH_NUM_MIXES))
-    ctx.comment('Número de mezclas con el etanol lavado: ' + str(EHTANOL_NUM_MIXES))
+    ctx.comment('Número de mezclas con el lavado: ' + str(WASH_1_NUM_MIXES))
+    ctx.comment('Número de mezclas con el etanol lavado: ' + str(WASH_2_NUM_MIXES))
     ctx.comment('Número de mezclas con la elución: ' + str(ELUTION_NUM_MIXES))
     ctx.comment(' ')
     ctx.comment('Reciclado de puntas en los lavados activado: ' + str(TIP_RECYCLING_IN_WASH))
@@ -231,8 +231,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Activar módulo de temperatura: ' + str(SET_TEMP_ON))
     ctx.comment('Valor objetivo módulo de temepratura: ' + str(TEMPERATURE) + ' ºC')
     ctx.comment(' ')
-    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment('Repeticiones del sonido final: ' + str(SOUND_NUM_PLAYS))
+    ctx.comment('Foto-sensible: ' + str(PHOTOSENSITIVE))
     ctx.comment(' ')
 
     #########
@@ -705,10 +705,10 @@ def run(ctx: protocol_api.ProtocolContext):
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, drop_height = deepwell_top_drop_height, blow_out = False)
 
-            if WASH_NUM_MIXES > 0:
+            if WASH_1_NUM_MIXES > 0:
                 mix_volume = min(Wash_1.max_volume_allowed, Wash_1.reagent_volume)
                 custom_mix(m300, Wash_1, location = work_destinations[i], vol = mix_volume, two_thirds_mix_bottom = True,
-                        rounds = WASH_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
+                        rounds = WASH_1_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
 
             m300.air_gap(Wash_1.air_gap_vol_bottom, height = 0) #air gap
 
@@ -822,10 +822,10 @@ def run(ctx: protocol_api.ProtocolContext):
                         vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                         pickup_height = pickup_height, drop_height = deepwell_top_drop_height, blow_out = False)
 
-            if EHTANOL_NUM_MIXES > 0:
+            if WASH_2_NUM_MIXES > 0:
                 mix_volume = min(Wash_2.max_volume_allowed, Wash_2.reagent_volume)
                 custom_mix(m300, Wash_2, location = work_destinations[i], vol = mix_volume, two_thirds_mix_bottom = True,
-                        rounds = EHTANOL_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
+                        rounds = WASH_2_NUM_MIXES, blow_out = False, mix_height = 1.5, offset = x_offset_dest)
 
             m300.air_gap(Wash_2.air_gap_vol_bottom, height = 0) #air gap
 
