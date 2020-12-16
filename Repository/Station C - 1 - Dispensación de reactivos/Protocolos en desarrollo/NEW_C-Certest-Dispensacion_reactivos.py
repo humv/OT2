@@ -45,6 +45,8 @@ switch_off_lights           = True # Switch of the lights when the program finis
 extra_dispensal             = 1     # Extra volume for master mix in each distribute transfer
 pipette_allowed_capacity    = 180   # Volume allowed in the pipette of 200µl
 x_offset                    = [0,0]
+CONTROL_SHORT_TUBES         = True
+SHORT_TUBE_PHEIGHT          = 22
 
 size_transfer = math.floor(pipette_allowed_capacity / HYDR_VOL_PER_SAMPLE) # Number of wells the distribute function will fill
 
@@ -53,7 +55,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Hidratar'},
+        1: {'Execute': False, 'description': 'Hidratar'},
         2: {'Execute': True, 'description': 'Transferir control negativo'},
         3: {'Execute': True, 'description': 'Transferir control positivo'}
     }
@@ -372,13 +374,19 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
+        pickupheight = 0.2
+
+        if CONTROL_SHORT_TUBES == True:
+            ctx.comment('Using Short tubes....')
+            pickupheight = SHORT_TUBE_PHEIGHT 
+
         pick_up(p20)
 
         s = tuberack.rows()[0][1]   # A2
         d = qpcr_plate.wells()[NUM_SAMPLES - 2]
         move_vol_multichannel(p20, reagent = Samples, source = s, dest = d,
                 vol = CONTROL_VOLUME, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                pickup_height = 0.2, disp_height = -10, rinse = False,
+                pickup_height = pickupheight, disp_height = -10, rinse = False,
                 blow_out = True, touch_tip = False, num_shakes = 1)
 
         p20.drop_tip(home_after = False)
@@ -402,13 +410,19 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment(' ')
 
+        pickupheight = 0.2
+
+        if CONTROL_SHORT_TUBES == True:
+            ctx.comment('Using Short tubes....')
+            pickupheight = SHORT_TUBE_PHEIGHT 
+
         pick_up(p20)
 
         s = tuberack.rows()[0][2]   # A3
         d = qpcr_plate.wells()[NUM_SAMPLES - 1]
         move_vol_multichannel(p20, reagent = Samples, source = s, dest = d,
                 vol = CONTROL_VOLUME, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                pickup_height = 0.2, disp_height = -10, rinse = False,
+                pickup_height = pickupheight, disp_height = -10, rinse = False,
                 blow_out = True, touch_tip = False, num_shakes = 1)
 
         p20.drop_tip(home_after = False)
