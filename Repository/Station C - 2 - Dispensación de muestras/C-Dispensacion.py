@@ -317,7 +317,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(m20, reagent = Samples, source = s, dest = d,
                     vol = VOLUME_SAMPLE, air_gap_vol = air_gap_sample, x_offset = x_offset,
                     pickup_height = 0.2, disp_height = -10, rinse = False,
-                    blow_out=True, touch_tip=False, num_shakes = 1)
+                    blow_out=False, touch_tip=False, num_shakes = 1)
             
             m20.drop_tip(home_after = False)
 
