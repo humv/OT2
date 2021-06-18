@@ -295,7 +295,7 @@ def run(ctx: protocol_api.ProtocolContext):
     destinations        = dest_plate.wells()[NUM_CONTROL_SPACES:num_samples]
 
     p1000 = ctx.load_instrument(
-        'p1000_single_gen2', 'right', 
+        'p1000_single_gen2', 'left', 
         tip_racks = tips1000) # load P1000 pipette
 
     # used tip counter and set maximum tips available
@@ -329,7 +329,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
-                pickup_height = 5, rinse = Samples.rinse, disp_height = -10,
+                pickup_height = 9, rinse = Samples.rinse, disp_height = -10,
                 blow_out = True, touch_tip = False, shakes = SAMPLE_SAKES)
 
             p1000.drop_tip(home_after = False)

@@ -27,12 +27,10 @@ metadata = {
 NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
 NUM_REAL_SAMPLES        = 94   
 NUM_MIXES               = 0
-VOLUME_SAMPLE           = 70 # Sample volume to place in deepwell
+VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
 
 SOUND_NUM_PLAYS         = 1
 PHOTOSENSITIVE          = False # True if it has photosensitive reagents
-
-SAMPLE_SAKES            = 0 # Shake pipet while aspirating sample to avoid 
 
 ################################################
 
@@ -90,7 +88,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ##################
     # Custom functions
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
-                       pickup_height, rinse, disp_height, blow_out, touch_tip, shakes= 0, shake_v_offset = -45):
+                       pickup_height, rinse, disp_height, blow_out, touch_tip):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -107,14 +105,10 @@ def run(ctx: protocol_api.ProtocolContext):
         # SOURCE
         s = source.bottom(pickup_height).move(Point(x = x_offset[0]))
         pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate)  # aspirate liquid
-
-        if shakes > 0:
-            shake_pipet (pipet, v_offset = shake_v_offset)
-
         if air_gap_vol != 0:  # If there is air_gap_vol, switch pipette to slow speed
             pipet.aspirate(air_gap_vol, source.top(z = -2),
                            rate = reagent.flow_rate_aspirate)  # air gap
-        
+
         # GO TO DESTINATION
         drop = dest.top(z = disp_height).move(Point(x = x_offset[1]))
         pipet.dispense(vol + air_gap_vol, drop,
@@ -170,12 +164,6 @@ def run(ctx: protocol_api.ProtocolContext):
             else:
                 s += source[2].columns()[i - 6] + source[3].columns()[i - 6]
         return s
-
-
-    def shake_pipet (pipet, rounds = 2, speed = 100, v_offset = 0):
-        ctx.comment("Shaking " + str(rounds) + " rounds.")
-        for i in range(rounds):
-                pipet.touch_tip(speed = speed, radius = 0.1, v_offset = v_offset)
 
     ##########
     # pick up tip and if there is none left, prompt user for a new rack
@@ -264,16 +252,9 @@ def run(ctx: protocol_api.ProtocolContext):
     else:
         rack_num = 4
 
-    #source_racks = [ctx.load_labware(
-    #    'pcr_24_wellplate_13200ul', slot,
-    #    'source tuberack with snapcap' + str(i + 1)) for i, slot in enumerate(['4', '1', '5', '2'][:rack_num])
-    #]
-
-    source_racks = [
-        ctx.load_labware('vitrobiocomma_24_tuberack_15000ul_1', '4', 'samples grid 1')
-        ,ctx.load_labware('vitrobiocomma_24_tuberack_15000ul_2', '1', 'samples grid 2')
-        ,ctx.load_labware('vitrobiocomma_24_tuberack_15000ul_3', '5', 'samples grid 3')
-        ,ctx.load_labware('vitrobiocomma_24_tuberack_15000ul_4', '2', 'samples grid 4')
+    source_racks = [ctx.load_labware(
+        'opentrons_24_tuberack_nest_2ml_snapcap', slot,
+        'source tuberack with snapcap' + str(i + 1)) for i, slot in enumerate(['4', '1', '5', '2'][:rack_num])
     ]
 
     ##################################
@@ -295,7 +276,7 @@ def run(ctx: protocol_api.ProtocolContext):
     destinations        = dest_plate.wells()[NUM_CONTROL_SPACES:num_samples]
 
     p1000 = ctx.load_instrument(
-        'p1000_single_gen2', 'right', 
+        'p1000_single_gen2', 'left', 
         tip_racks = tips1000) # load P1000 pipette
 
     # used tip counter and set maximum tips available
@@ -325,12 +306,12 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample BEFORE dispensing
             if NUM_MIXES > 0:
                 custom_mix(p1000, reagent = Samples, location = s, vol = volume_mix, 
-                    rounds = NUM_MIXES, blow_out = True, mix_height = 5, x_offset = x_offset)
+                    rounds = NUM_MIXES, blow_out = True, mix_height = 15, x_offset = x_offset)
 
             move_vol_multichannel(p1000, reagent = Samples, source = s, dest = d,
                 vol = VOLUME_SAMPLE, air_gap_vol = air_gap_vol_sample, x_offset = x_offset,
-                pickup_height = 5, rinse = Samples.rinse, disp_height = -10,
-                blow_out = True, touch_tip = False, shakes = SAMPLE_SAKES)
+                pickup_height = 3, rinse = Samples.rinse, disp_height = -10,
+                blow_out = True, touch_tip = False)
 
             p1000.drop_tip(home_after = False)
             tip_track['counts'][p1000] += 1
