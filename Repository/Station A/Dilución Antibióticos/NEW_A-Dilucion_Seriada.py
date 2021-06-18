@@ -24,15 +24,12 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_SAMPLE_ANTIBIOTIC   = 24   
+NUM_ANTIBIOTIC_SAMPLES   = 24   
 NUM_REAL_SAMPLES        = 88
-NUM_MIX_SPACES          = 8     # The control spaces are being ignored at the last cycles
+NUM_DILUTION_MIXES      = 2
 
 VOLUME_ANTBIOTIC        = 100   # Sample volume to place in deepwell
 VOLUME_SAMPLE           = 50   # Sample volume to place in deepwell
-
-BEADS_WELL_FIRST_TIME_NUM_MIXES     = 20
-BEADS_WELL_NUM_MIXES            = 3
 
 TUBE_NUM_MIXES          = 0
 
@@ -123,7 +120,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     flow_rate_dispense_mix = 50,
                     air_gap_vol_bottom = 5,
                     air_gap_vol_top = 0,
-                    disposal_volume = 1,
+                    disposal_volume = 0,
                     rinse = True,
                     max_volume_allowed = 180,
                     reagent_volume = VOLUME_SAMPLE,
@@ -137,7 +134,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('VALORES DE VARIABLES')
     ctx.comment(' ')
     ctx.comment('Número de muestras: ' + str(NUM_REAL_SAMPLES) + ' (' + str(num_cols_antibiotic) + ' columnas)')
-    ctx.comment('Número de mezclas: ' + str(NUM_MIX_SPACES))
+    ctx.comment('Número de mezclas: ' + str(NUM_DILUTION_MIXES))
     ctx.comment(' ')
     ctx.comment('Volumen de muestra a mover al deepwell: ' + str(VOLUME_SAMPLE) + ' ul')
     ctx.comment(' ')
@@ -150,11 +147,15 @@ def run(ctx: protocol_api.ProtocolContext):
     ##################
     # Custom functions
     def move_multichanel_caldo(dest):
-        beads_trips = math.ceil(Caldo.reagent_volume / Caldo.max_volume_allowed)
-        beads_volume = Caldo.reagent_volume / beads_trips #136.66
-        beads_transfer_vol = []
-        for i in range(beads_trips):
-            beads_transfer_vol.append(beads_volume + Caldo.disposal_volume)
+        
+        if not m300.hw_pipette['has_tip']:
+            pick_up_multi(m300)
+
+        caldo_trips = math.ceil(Caldo.reagent_volume / Caldo.max_volume_allowed)
+        caldo_volume = Caldo.reagent_volume / caldo_trips #136.66
+        caldo_transfer_vol = []
+        for i in range(caldo_trips):
+            caldo_transfer_vol.append(caldo_volume + Caldo.disposal_volume)
 
         x_offset_source = 0
         x_offset_dest   = 0
@@ -163,7 +164,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         for i in range(num_cols_caldo):
             ctx.comment("Column: " + str(i))
-            for j,transfer_vol in enumerate(beads_transfer_vol):
+            for j,transfer_vol in enumerate(caldo_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Caldo, multi_well_rack_area, transfer_vol * 8)
                 ctx.comment('Aspirate from reservoir column: ' + str(Caldo.col))
@@ -171,15 +172,15 @@ def run(ctx: protocol_api.ProtocolContext):
  
                 move_vol_multi(m300, reagent = Caldo, source = Caldo.reagent_reservoir,
                         dest = dest[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True, drop_height = -1)
+                        pickup_height = pickup_height, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False, drop_height = -1)
         
     
     def move_multichanel_mezcla(origin,dest):
-        beads_trips = math.ceil(Caldo.reagent_volume / Caldo.max_volume_allowed)
-        beads_volume = Caldo.reagent_volume / beads_trips #136.66
-        beads_transfer_vol = []
-        for i in range(beads_trips):
-            beads_transfer_vol.append(beads_volume + Caldo.disposal_volume)
+        caldo_trips = math.ceil(Caldo.reagent_volume / Caldo.max_volume_allowed)
+        caldo_volume = Caldo.reagent_volume / caldo_trips #136.66
+        caldo_transfer_vol = []
+        for i in range(caldo_trips):
+            caldo_transfer_vol.append(caldo_volume + Caldo.disposal_volume)
 
         x_offset_source = 0
         x_offset_dest   = 0
@@ -189,7 +190,7 @@ def run(ctx: protocol_api.ProtocolContext):
             pick_up(m300)
         for i in range(num_cols_caldo):
             ctx.comment("Column: " + str(i))
-            for j,transfer_vol in enumerate(beads_transfer_vol):
+            for j,transfer_vol in enumerate(caldo_transfer_vol):
                 #Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(Caldo, multi_well_rack_area, transfer_vol * 8)
                 ctx.comment('Aspirate from reservoir column: ' + str(Caldo.col))
@@ -197,7 +198,9 @@ def run(ctx: protocol_api.ProtocolContext):
  
                 move_vol_multi(m300, reagent = Caldo, source = origin[i],
                         dest = dest[i], vol = transfer_vol, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
-                        pickup_height = pickup_height, rinse = True, avoid_droplet = False, wait_time = 2, blow_out = True, touch_tip = True, drop_height = -1)
+                        pickup_height = pickup_height, rinse = True, avoid_droplet = False, wait_time = 0, blow_out = True, touch_tip = False, drop_height = -1)
+                # Aspirar la mitad del último destino para dejar el mismo volumen en todos.
+                m300.aspirate(Caldo.reagent_volume, location = dest[num_cols_caldo -1].bottom(z = pickup_height), rate = Caldo.flow_rate_aspirate, )
                 
     
         m300.drop_tip(home_after = False)
@@ -244,7 +247,7 @@ def run(ctx: protocol_api.ProtocolContext):
         # Rinse before aspirating
         if rinse == True:
             #pipet.aspirate(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_aspirate) #air gap
-            custom_mix(pipet, reagent, location = source, vol = vol, rounds = 20, blow_out = False, mix_height = 3, offset = 0)
+            custom_mix(pipet, reagent, location = source, vol = vol, rounds = NUM_DILUTION_MIXES, blow_out = False, mix_height = 3, offset = 0)
             #pipet.dispense(air_gap_vol_top, location = source.top(z = -5), rate = reagent.flow_rate_dispense)
 
         # SOURCE
@@ -450,10 +453,6 @@ def run(ctx: protocol_api.ProtocolContext):
     def validate_parameters():
         result = True
 
-        if NUM_REAL_SAMPLES + NUM_MIX_SPACES > 96:
-            ctx.comment ("ERROR: La suma de cada gradilla del número de muestras ("+ str(NUM_REAL_SAMPLES) +") y el número de mezclas ("+ str(NUM_MIX_SPACES) +") es mayor que 96, verifique los valores y vuelva a cargar el protocolo.")
-            result = False
-
         return result
 
     ####################################
@@ -502,9 +501,10 @@ def run(ctx: protocol_api.ProtocolContext):
     ]
     ################################################################################
     # setup samples and destinations
-    sample_antibiotic      = source_antibiotic.wells()[:NUM_SAMPLE_ANTIBIOTIC]
+    num_destionation_plates = math.ceil (NUM_ANTIBIOTIC_SAMPLES / 8)
+    sample_antibiotic      = source_antibiotic.wells()[:NUM_ANTIBIOTIC_SAMPLES]
     Caldo.reagent_reservoir      = source_caldo.wells()[0]
-    destinations_antibiotic  = generate_source_antibiotico([dest_plate1,dest_plate2,dest_plate3])[:NUM_SAMPLE_ANTIBIOTIC]
+    destinations_antibiotic  = generate_source_antibiotico([dest_plate1,dest_plate2,dest_plate3])[:NUM_ANTIBIOTIC_SAMPLES]
     destinations1        = dest_plate1.rows()[0][1:]
     destinations2        = dest_plate2.rows()[0][1:]
     destinations3        = dest_plate3.rows()[0][1:]
@@ -540,7 +540,7 @@ def run(ctx: protocol_api.ProtocolContext):
         start_run()
 
         ############################################################################
-        # STEP 1: MIX 1 AND MOVE SAMPLES
+        # STEP 1: Dispensación de antibiótico
         ############################################################################
         STEP += 1
         if STEPS[STEP]['Execute'] == True:
@@ -568,7 +568,7 @@ def run(ctx: protocol_api.ProtocolContext):
             STEPS[STEP]['Time:'] = str(time_taken)
 
         ############################################################################
-        # STEP 2: PREPARE MIX AND MOVE SAMPLES
+        # STEP 2: Dilución de Antibiótico sobre el caldo
         ############################################################################
         STEP += 1
         if STEPS[STEP]['Execute'] == True:
@@ -576,19 +576,18 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment('###############################################')
 
             start = datetime.now()
-            if not m300.hw_pipette['has_tip']:
-                pick_up_multi(m300)
-            move_multichanel_caldo(destinations1)
-            move_multichanel_caldo(destinations2)
-            move_multichanel_caldo(destinations3)
 
-            move_multichanel_mezcla(sourceMix1, destinationsMix1)
-            move_multichanel_mezcla(sourceMix2, destinationsMix2)
-            move_multichanel_mezcla(sourceMix3, destinationsMix3)
-            
-
-
-            # Time statistics
+            if num_destionation_plates >= 1 : 
+                move_multichanel_caldo(destinations1)
+                move_multichanel_mezcla(sourceMix1, destinationsMix1)
+            if num_destionation_plates >= 2 : 
+                move_multichanel_caldo(destinations2)
+                move_multichanel_mezcla(sourceMix2, destinationsMix2)
+            if num_destionation_plates >= 3 : 
+                move_multichanel_caldo(destinations3)
+                move_multichanel_mezcla(sourceMix3, destinationsMix3)
+        
+           # Time statistics
             end = datetime.now()
             time_taken = (end - start)
             ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] +

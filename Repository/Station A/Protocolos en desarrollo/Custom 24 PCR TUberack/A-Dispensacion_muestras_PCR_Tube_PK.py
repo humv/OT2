@@ -24,8 +24,8 @@ metadata = {
 ################################################
 # CHANGE THESE VARIABLES ONLY
 ################################################
-NUM_CONTROL_SPACES      = 0  # The control spaces are being ignored at the first cycles
-NUM_REAL_SAMPLES        = 93   
+NUM_CONTROL_SPACES      = 2  # The control spaces are being ignored at the first cycles
+NUM_REAL_SAMPLES        = 94   
 NUM_MIXES               = 0
 VOLUME_SAMPLE           = 200 # Sample volume to place in deepwell
 
@@ -34,7 +34,8 @@ PK_VOL_PER_SAMPLE       = 10
 SOUND_NUM_PLAYS         = 1
 PHOTOSENSITIVE          = False # True if it has photosensitive reagents
 
-SAMPLE_SAKES            = 1 # Shake pipet while aspirating sample to avoid 
+SAMPLE_SAKES            = 0 # Shake pipet while aspirating sample to avoid get the stick fixed to the tip
+PK_SAKES                = 1 # Shake pipet while aspirating sample to avoid dots
 
 ################################################
 
@@ -51,7 +52,6 @@ switch_off_lights       = False # Switch of the lights when the program finishes
 pipette_allowed_capacity    = 270   # Volume allowed in the pipette of 300µl
 extra_dispensal             = 1
 size_transfer = math.floor(pipette_allowed_capacity / PK_VOL_PER_SAMPLE) # Number of wells the distribute function will fill
-
 
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
@@ -393,12 +393,13 @@ def run(ctx: protocol_api.ProtocolContext):
         used_vol = []
 
         for dest in dests:
+            ctx.comment ('dest length ---------------------------------------------- ' + str(len(dest)))
             aspirate_volume = PK_VOL_PER_SAMPLE * len(dest) + extra_dispensal
             used_vol_temp = distribute_custom(p300, volume = PK_VOL_PER_SAMPLE,
                 src = Pk.reagent_reservoir, dest = dest, touch_tip = False,
                 waste_pool = Pk.reagent_reservoir, pickup_height = 0.2,
                 extra_dispensal = extra_dispensal, dest_x_offset = 0, 
-                disp_height = -15, num_shakes = 1)
+                disp_height = -15, num_shakes = PK_SAKES)
             used_vol.append(used_vol_temp)
 
         p300.drop_tip(home_after = False)
