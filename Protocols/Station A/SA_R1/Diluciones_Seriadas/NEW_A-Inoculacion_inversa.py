@@ -25,10 +25,13 @@ metadata = {
 # CHANGE THESE VARIABLES ONLY
 ################################################
 NUM_SAMPLE_ANTIBIOTIC   = 24
-NUM_DILUTION_MIXES      = 2
+
+################################################
 
 VOLUME_ANTBIOTIC        = 100   # Sample volume to place in deepwell
 VOLUME_SAMPLE           = 50   # Sample volume to place in deepwell
+
+NUM_DILUTION_MIXES      = 2
 
 BEADS_WELL_FIRST_TIME_NUM_MIXES     = 20
 BEADS_WELL_NUM_MIXES            = 3
@@ -54,12 +57,12 @@ switch_off_lights       = False # Switch of the lights when the program finishes
 multi_well_rack_area        = 8 * 71 #Cross section of the 12 well reservoir
 
 num_cols_antibiotic = 1
-num_cols_caldo = 11
+num_cols_caldo = 12
 
 def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description and times
-        1: {'Execute': True, 'description': 'Dispensar Antibioticos'},
+        1: {'Execute': False, 'description': 'Dispensar Antibioticos'},
         2: {'Execute': True, 'description': 'Dispensar caldo y mezclar '}
     }
     for s in STEPS:  # Create an empty wait_time
@@ -151,6 +154,11 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ##################
     # Custom functions
+    def shake_pipet (pipet, rounds = 2, speed = 100, v_offset = 0):
+        ctx.comment("Shaking " + str(rounds) + " rounds.")
+        for i in range(rounds):
+                pipet.touch_tip(speed = speed, radius = 0.1, v_offset = v_offset)
+
     def move_multichanel_caldo(dest):
         
         if not m300.hw_pipette['has_tip']:
@@ -178,6 +186,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multi(m300, reagent = Caldo, source = Caldo.reagent_reservoir,
                     dest = dest[i], vol = Caldo.reagent_volume, x_offset_source = x_offset_source, x_offset_dest = x_offset_dest,
                     pickup_height = 0, rinse = rinse, avoid_droplet = False, wait_time = 0, blow_out = False, touch_tip = False, drop_height = -1,recharge = recharge)
+            shake_pipet (m300)
             actual_pipette_vol = actual_pipette_vol - VOLUME_SAMPLE  
     
     def move_multichanel_mezcla(origin,dest, pickup_height = 1 , air_gap_vol = 5):
@@ -509,16 +518,20 @@ def run(ctx: protocol_api.ProtocolContext):
     sample_antibiotic      = source_antibiotic.wells()[:NUM_SAMPLE_ANTIBIOTIC]
     Caldo.reagent_reservoir      = source_caldo.wells()[0]
     destinations_antibiotic  = generate_source_antibiotico([dest_plate1,dest_plate2,dest_plate3])[:NUM_SAMPLE_ANTIBIOTIC]
-    destinations1        = dest_plate1.rows()[0][1:]
-    destinations2        = dest_plate2.rows()[0][1:]
-    destinations3        = dest_plate3.rows()[0][1:]
+    destinations1        = dest_plate1.rows()[0][:12]
+    destinations2        = dest_plate2.rows()[0][:12]
+    destinations3        = dest_plate3.rows()[0][:12]
+
+    destinations1.reverse()
+    destinations2.reverse()
+    destinations3.reverse()
     
     sourceMix1        = dest_plate1.rows()[0][:11]
     sourceMix2        = dest_plate2.rows()[0][:11]
     sourceMix3        = dest_plate3.rows()[0][:11]
-    destinationsMix1        = dest_plate1.rows()[0][1:12]
-    destinationsMix2        = dest_plate2.rows()[0][1:12]
-    destinationsMix3        = dest_plate3.rows()[0][1:12]
+    destinationsMix1        = dest_plate1.rows()[0][0:12]
+    destinationsMix2        = dest_plate2.rows()[0][0:12]
+    destinationsMix3        = dest_plate3.rows()[0][0:12]
 
     m300 = ctx.load_instrument(
         'p300_multi_gen2', 'right', 
@@ -583,15 +596,16 @@ def run(ctx: protocol_api.ProtocolContext):
             
             if num_destination_plates >= 1:
                 move_multichanel_caldo(destinations1)
-                m300.blow_out(Caldo.reagent_reservoir.top(z = 0))
-                move_multichanel_mezcla(sourceMix1, destinationsMix1)
+                #m300.blow_out(Caldo.reagent_reservoir.top(z = 0))
+                #move_multichanel_mezcla(sourceMix1, destinationsMix1)
             if num_destination_plates >= 2:
                 move_multichanel_caldo(destinations2)
-                move_multichanel_mezcla(sourceMix2, destinationsMix2)
+                #move_multichanel_mezcla(sourceMix2, destinationsMix2)
             if num_destination_plates >= 3:
                 move_multichanel_caldo(destinations3)
-                move_multichanel_mezcla(sourceMix3, destinationsMix3)
+                #move_multichanel_mezcla(sourceMix3, destinationsMix3)
             
+            m300.drop_tip(home_after = True)
 
 
             # Time statistics
